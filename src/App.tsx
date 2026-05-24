@@ -1,5 +1,4 @@
-import WebApp from '@twa-dev/sdk';
-
+// 1. Описываем строгие типы для Telegram SDK
 interface WebAppUser {
   id: number;
   first_name: string;
@@ -8,20 +7,42 @@ interface WebAppUser {
   language_code?: string;
 }
 
-// Инициализируем данные ОДИН раз сразу при старте файла, а не внутри компонента
-if (typeof window !== 'undefined' && WebApp) {
-  WebApp.ready();
-  WebApp.expand();
+interface TelegramWebApp {
+  ready: () => void;
+  expand: () => void;
+  showAlert: (message: string) => void;
+  initDataUnsafe?: {
+    user?: WebAppUser;
+  };
+}
+
+// Расширяем глобальный объект window для TypeScript
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp: TelegramWebApp;
+    };
+  }
+}
+
+// 2. Инициализируем нативные методы Telegram ОДИН раз при загрузке скрипта
+const tgInstance = typeof window !== 'undefined' ? window.Telegram?.WebApp : undefined;
+
+if (tgInstance) {
+  tgInstance.ready();
+  tgInstance.expand();
 }
 
 function App() {
-  // Достаем юзера напрямую в дефолтное состояние стейта. 
-  // Никаких лишних рендеров и эффектов!
-  const tgUser = WebApp.initDataUnsafe?.user as WebAppUser | undefined;
+  // Достаем данные синхронно прямо в константы. Никаких эффектов и лишних рендеров!
+  const isTelegram = Boolean(tgInstance);
+  const tgUser = tgInstance?.initDataUnsafe?.user;
 
   const showAlert = () => {
-    if (typeof window !== 'undefined' && WebApp) {
-      WebApp.showAlert(`Привет, ${tgUser?.first_name || 'Незнакомец'}! Это твой первый TWA.`);
+    if (tgInstance) {
+      tgInstance.showAlert(`Привет, ${tgUser?.first_name || 'Пользователь'}!`);
+    } else {
+      alert(`Привет из обычного браузера!`);
     }
   };
 
@@ -31,7 +52,7 @@ function App() {
         <h1 className="text-2xl font-bold mb-2 text-indigo-600">МастерВитрина 💅</h1>
         <p className="text-sm text-slate-500 mb-6">Тестовый запуск Web App</p>
 
-        {tgUser ? (
+        {isTelegram && tgUser ? (
           <div className="bg-indigo-50 p-4 rounded-xl mb-6 text-left">
             <p className="text-xs text-indigo-400 font-semibold uppercase">Данные из TG:</p>
             <p className="font-medium text-slate-700">Имя: {tgUser.first_name} {tgUser.last_name || ''}</p>
@@ -40,7 +61,9 @@ function App() {
           </div>
         ) : (
           <div className="bg-amber-50 p-3 rounded-xl mb-6 text-sm text-amber-700">
-            Приложение запущено в обычном браузере. Открой его в Telegram!
+            {isTelegram 
+              ? "Загрузка данных Telegram..." 
+              : "Приложение запущено в обычных браузерах. Открой его в Telegram!"}
           </div>
         )}
 
@@ -48,7 +71,7 @@ function App() {
           onClick={showAlert}
           className="w-full bg-indigo-600 active:bg-indigo-700 text-white font-medium py-3 px-4 rounded-xl transition duration-150 shadow-sm"
         >
-          Проверить Native Alert
+          Проверить Alert
         </button>
       </div>
     </div>

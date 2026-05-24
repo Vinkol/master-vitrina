@@ -1,79 +1,94 @@
-// 1. Описываем строгие типы для Telegram SDK
-interface WebAppUser {
-  id: number;
-  first_name: string;
-  last_name?: string;
-  username?: string;
-  language_code?: string;
-}
+import { useEffect } from 'react';
+import { useBookingStore } from './store/bookingStore';
+import { MainView } from './views/MainView';
+import { CalendarView } from './views/CalendarView';
+import { AdminDashboardView } from './views/AdminDashboardView';
+import { AdminServicesView } from './views/AdminServicesView';
 
-interface TelegramWebApp {
-  ready: () => void;
-  expand: () => void;
-  showAlert: (message: string) => void;
-  initDataUnsafe?: {
-    user?: WebAppUser;
-  };
-}
-
-// Расширяем глобальный объект window для TypeScript
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp: TelegramWebApp;
-    };
-  }
-}
-
-// 2. Инициализируем нативные методы Telegram ОДИН раз при загрузке скрипта
+// Инициализируем Telegram SDK один раз при старте приложения
 const tgInstance = typeof window !== 'undefined' ? window.Telegram?.WebApp : undefined;
-
 if (tgInstance) {
   tgInstance.ready();
   tgInstance.expand();
 }
 
 function App() {
-  // Достаем данные синхронно прямо в константы. Никаких эффектов и лишних рендеров!
-  const isTelegram = Boolean(tgInstance);
-  const tgUser = tgInstance?.initDataUnsafe?.user;
+  const {
+    currentScreen,
+    currentRole,
+    setRole,
+    fetchServices,
+    fetchProfile,
+    fetchAppointments,
+    masterProfile,
+  } = useBookingStore();
 
-  const showAlert = () => {
-    if (tgInstance) {
-      tgInstance.showAlert(`Привет, ${tgUser?.first_name || 'Пользователь'}!`);
-    } else {
-      alert(`Привет из обычного браузера!`);
-    }
-  };
+  useEffect(() => {
+    fetchProfile();
+    fetchServices();
+    fetchAppointments();
+  }, [fetchServices, fetchProfile, fetchAppointments]);
+
+  // ПРОВЕРКА АВТОРИЗАЦИИ:
+  // 1. Получаем реальный ID пользователя из Telegram SDK
+  const currentTgId = tgInstance?.initDataUnsafe?.user?.id;
+  // 2. Получаем ID владельца из нашей облачной базы данных profiles
+  const ownerTgId = masterProfile.owner_tg_id;
+
+  // 3. Мастер авторизован, если мы на ПК в браузере (для тестов) ИЛИ если зашедший ID совпал с ID из базы
+  const isMaster =
+    !tgInstance || (currentTgId && ownerTgId && Number(currentTgId) === Number(ownerTgId));
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 text-slate-800">
-      <div className="bg-white p-6 rounded-2xl shadow-md w-full max-w-sm text-center border border-slate-100">
-        <h1 className="text-2xl font-bold mb-2 text-indigo-600">МастерВитрина 💅</h1>
-        <p className="text-sm text-slate-500 mb-6">Тестовый запуск Web App</p>
+    <div className="min-h-screen bg-slate-100 text-slate-800 pb-20">
+      {/* Локальный бар отладки для ПК (скроется в Телеграме) */}
+      {!tgInstance && (
+        <div className="bg-indigo-950 text-white text-[10px] px-4 py-1.5 flex justify-between items-center shadow-inner font-mono">
+          <span>Режим разработки ПК (Админка доступна)</span>
+          <span>Роль: {currentRole === 'master' ? 'МАСТЕР' : 'КЛИЕНТ'}</span>
+        </div>
+      )}
 
-        {isTelegram && tgUser ? (
-          <div className="bg-indigo-50 p-4 rounded-xl mb-6 text-left">
-            <p className="text-xs text-indigo-400 font-semibold uppercase">Данные из TG:</p>
-            <p className="font-medium text-slate-700">Имя: {tgUser.first_name} {tgUser.last_name || ''}</p>
-            <p className="text-sm text-slate-500">ID: {tgUser.id}</p>
-            {tgUser.username && <p className="text-sm text-indigo-600">@{tgUser.username}</p>}
-          </div>
-        ) : (
-          <div className="bg-amber-50 p-3 rounded-xl mb-6 text-sm text-amber-700">
-            {isTelegram 
-              ? "Загрузка данных Telegram..." 
-              : "Приложение запущено в обычных браузерах. Открой его в Telegram!"}
-          </div>
-        )}
+      {/* ДИСПЕТЧЕР ЭКРАНОВ КЛИЕНТА */}
+      {currentRole === 'client' && (
+        <>
+          {currentScreen === 'profile' && <MainView />}
+          {currentScreen === 'calendar' && <CalendarView />}
+        </>
+      )}
 
-        <button 
-          onClick={showAlert}
-          className="w-full bg-indigo-600 active:bg-indigo-700 text-white font-medium py-3 px-4 rounded-xl transition duration-150 shadow-sm"
-        >
-          Проверить Alert
-        </button>
-      </div>
+      {/* ДИСПЕТЧЕР ЭКРАНОВ МАСТЕРА */}
+      {currentRole === 'master' && isMaster && (
+        <>
+          {currentScreen === 'admin-dashboard' && <AdminDashboardView />}
+          {currentScreen === 'admin-services' && <AdminServicesView />}
+        </>
+      )}
+
+      {/* НИЖНИЙ ТАБ-БАР: Показывается ТОЛЬКО если пользователь — верифицированный Мастер */}
+      {isMaster && (
+        <div className="fixed bottom-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-t border-slate-200/60 flex items-center justify-around px-6 z-40 max-w-md mx-auto rounded-t-2xl shadow-lg">
+          <button
+            onClick={() => setRole('client')}
+            className={`flex flex-col items-center space-y-0.5 text-xs font-bold transition-colors ${
+              currentRole === 'client' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <span className="text-lg">🛍️</span>
+            <span>Витрина (Клиент)</span>
+          </button>
+
+          <button
+            onClick={() => setRole('master')}
+            className={`flex flex-col items-center space-y-0.5 text-xs font-bold transition-colors ${
+              currentRole === 'master' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <span className="text-lg">⚙️</span>
+            <span>Админка (Мастер)</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

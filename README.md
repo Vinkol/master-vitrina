@@ -1,8 +1,8 @@
 # 💅 МАСТЕР ВИТРИНА
 
 <div align="center">
-  <img src="./src/assets/preview1.png" alt="Витрина Клиента" width="47%" />
-  <img src="./src/assets/preview2.png" alt="Админка Мастера" width="47%" />
+  <img src="./src/assets/prewclient.png" alt="Витрина Клиента" width="47%" />
+  <img src="./src/assets/prew.png" alt="Админка Мастера" width="47%" />
 </div>
 
 <br />

@@ -353,7 +353,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
       const { data, error } = await supabase
         .from('appointments')
         .select('*')
-        .eq('master_id', masterId)
+        .eq('master_tg_id', masterId)
         .order('date', { ascending: true })
         .order('time', { ascending: true });
       if (error) throw error;
@@ -373,7 +373,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
         date: selectedDate,
         time: selectedTime,
         client_name: clientName,
-        master_id: currentMasterId,
+        master_tg_id: currentMasterId,
       };
 
       const { error } = await supabase.from('appointments').insert([newAppointment]);

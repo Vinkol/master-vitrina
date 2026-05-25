@@ -104,17 +104,44 @@ export const useBookingStore = create<BookingState>((set, get) => ({
       let targetMasterId = null;
       let isOwner = false;
 
-      // 1. ЕСЛИ ЗАПУСК ВНУТРИ ТЕЛЕГРАМА
+      // 1. ЖЕСТКАЯ ПРОВЕРКА: ЕСЛИ ЗАПУСК ВНУТРИ ТЕЛЕГРАМА (есть юзер)
       if (currentTgUser?.id) {
         if (startParam) {
+          // Клиент перешел по ссылке мастера
           targetMasterId = parseInt(startParam, 10) || null;
           isOwner = targetMasterId === currentTgUser.id;
         } else {
+          // Прямой запуск бота из чата
           targetMasterId = currentTgUser.id;
           isOwner = true;
         }
+
+        // Проверяем в базе именно ЭТОГО конкретного пользователя Telegram
+        const { data: checkProfile } = await supabase
+          .from('profiles')
+          .select('owner_tg_id')
+          .eq('owner_tg_id', targetMasterId)
+          .maybeSingle();
+
+        // Если это запуск мастера, но его НЕТ в базе — жестко кидаем на РЕГИСТРАЦИЮ
+        if (isOwner && !checkProfile) {
+          set({
+            isRegistered: false,
+            currentRole: 'master',
+            currentScreen: 'admin-dashboard',
+            currentMasterId: targetMasterId, // Сохраняем твой РЕАЛЬНЫЙ ТГ айди для регистрации
+            masterProfile: {
+              name: '',
+              bio: '',
+              avatar: '💅',
+              working_start: '10:00',
+              working_end: '20:00',
+            },
+          });
+          return; // Прерываем функцию, чтобы код ниже не выполнялся!
+        }
       }
-      // 2. ЕСЛИ ЗАПУСК НА ПК В БРАУЗЕРЕ ДЛЯ ТЕСТОВ
+      // 2. ФОЛБЕК ДЛЯ ПК (срабатывает только если currentTgUser.id пустой)
       else {
         const { data: fallbackList } = await supabase
           .from('profiles')
@@ -122,8 +149,9 @@ export const useBookingStore = create<BookingState>((set, get) => ({
           .limit(1);
         if (fallbackList && fallbackList.length > 0) {
           targetMasterId = fallbackList[0].owner_tg_id;
-          isOwner = true;
+          isOwner = true; // В браузере разрешаем админить первого из базы
         } else {
+          // Если база пустая даже на ПК
           targetMasterId = 123456789;
           isOwner = true;
           set({
@@ -143,33 +171,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
         }
       }
 
-      // Проверяем, зарегистрирован ли мастер в базе
-      if (targetMasterId && isOwner) {
-        const { data: checkProfile } = await supabase
-          .from('profiles')
-          .select('owner_tg_id')
-          .eq('owner_tg_id', targetMasterId)
-          .maybeSingle();
-
-        if (!checkProfile) {
-          // Если мастера нет в очищенной базе — кидаем на регистрацию
-          set({
-            isRegistered: false,
-            currentRole: 'master',
-            currentScreen: 'admin-dashboard',
-            currentMasterId: targetMasterId,
-            masterProfile: {
-              name: '',
-              bio: '',
-              avatar: '💅',
-              working_start: '10:00',
-              working_end: '20:00',
-            },
-          });
-          return;
-        }
-      }
-
+      // Если проверки пройдены — ставим данные в стейт
       set({
         currentMasterId: targetMasterId,
         currentRole: isOwner ? 'master' : 'client',

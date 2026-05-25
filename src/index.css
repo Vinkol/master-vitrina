@@ -1,5 +1,47 @@
 @import 'tailwindcss';
 
+@layer base {
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+    background-color: transparent;
+    border-style: none;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  textarea {
+    resize: none;
+  }
+
+  button,
+  a,
+  input,
+  div,
+  span {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  input,
+  textarea,
+  [contenteditable='true'],
+  .select-all {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
 @keyframes slideUp {
   from {
     transform: translateY(100%);

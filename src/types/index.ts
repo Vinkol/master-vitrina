@@ -7,6 +7,15 @@ export interface WebAppUser {
   language_code?: string;
 }
 
+// Тип для нативной кнопки Telegram
+export interface TelegramMainButton {
+  text: string;
+  show: () => void;
+  hide: () => void;
+  onClick: (callback: () => void) => void;
+  offClick: (callback: () => void) => void;
+}
+
 // Нативные методы Telegram SDK
 export interface TelegramWebApp {
   ready: () => void;
@@ -14,7 +23,9 @@ export interface TelegramWebApp {
   showAlert: (message: string) => void;
   initDataUnsafe?: {
     user?: WebAppUser;
+    start_param?: string; // ← Добавили параметр для мультимастера
   };
+  MainButton: TelegramMainButton;
 }
 
 // Сущность Услуги мастера
@@ -23,6 +34,7 @@ export interface Service {
   title: string;
   duration: number; // в минутах
   price: number;
+  description?: string;
 }
 
 // Сущность Записи клиента
@@ -51,37 +63,12 @@ export interface WorkingHours {
   end: string;
 }
 
-export interface Service {
-  id: string;
-  title: string;
-  duration: number; // в минутах
-  price: number;
-  description?: string;
-}
-
 declare global {
   interface Window {
     Telegram?: {
-      WebApp: TelegramWebApp;
+      WebApp: TelegramWebApp & {
+        openTelegramLink?: (url: string) => void;
+      };
     };
   }
-}
-
-// Тип для нативной кнопки Telegram
-export interface TelegramMainButton {
-  text: string;
-  show: () => void;
-  hide: () => void;
-  onClick: (callback: () => void) => void;
-  offClick: (callback: () => void) => void;
-}
-
-export interface TelegramWebApp {
-  ready: () => void;
-  expand: () => void;
-  showAlert: (message: string) => void;
-  initDataUnsafe?: {
-    user?: WebAppUser;
-  };
-  MainButton: TelegramMainButton;
 }

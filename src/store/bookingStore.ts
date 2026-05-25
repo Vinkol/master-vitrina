@@ -2,8 +2,31 @@ import { create } from 'zustand';
 import { supabase } from '../../supabaseClient';
 import type { Service, MasterProfile } from '../types';
 
-type Screen = 'profile' | 'calendar' | 'admin-dashboard' | 'admin-services';
+type Screen =
+  | 'profile'
+  | 'calendar'
+  | 'admin-dashboard'
+  | 'admin-services'
+  | 'admin-profile-edit'
+  | 'admin-hours-edit'
+  | 'admin-link-share';
+
 type Role = 'client' | 'master';
+
+interface TelegramUser {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  language_code?: string;
+}
+
+interface TelegramInstance {
+  initDataUnsafe?: {
+    user?: TelegramUser;
+    start_param?: string;
+  };
+}
 
 interface BookingState {
   currentRole: Role;
@@ -11,9 +34,16 @@ interface BookingState {
   setRole: (role: Role) => void;
   setScreen: (screen: Screen) => void;
   createAppointment: (clientName: string) => Promise<void>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  appointments: any[];
+  appointments: unknown[];
   fetchAppointments: () => Promise<void>;
+
+  // Стейты мультимастера
+  currentMasterId: string | null;
+  botUsername: string;
+  botAppName: string;
+  isRegistered: boolean;
+  fetchMasterData: (tgInstance: TelegramInstance | undefined) => Promise<void>;
+  registerMaster: (name: string, tgInstance: TelegramInstance | undefined) => Promise<void>;
 
   masterProfile: MasterProfile;
   services: Service[];
@@ -40,6 +70,11 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   currentScreen: 'profile',
   appointments: [],
 
+  currentMasterId: null,
+  botUsername: 'mastervitrinabot',
+  botAppName: 'app',
+  isRegistered: true,
+
   masterProfile: {
     name: 'Загрузка...',
     bio: 'Загрузка данных...',
@@ -60,9 +95,141 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     }),
   setScreen: (screen) => set({ currentScreen: screen }),
 
-  fetchProfile: async () => {
+  // Главный метод инициализации при старте
+  fetchMasterData: async (tgInstance) => {
     try {
-      const { data, error } = await supabase.from('profiles').select('*').limit(1);
+      const currentTgUser = tgInstance?.initDataUnsafe?.user;
+      const startParam = tgInstance?.initDataUnsafe?.start_param;
+
+      let targetMasterId = null;
+      let isOwner = false;
+
+      if (startParam) {
+        // Зашли по ссылке мастера
+        targetMasterId = startParam;
+
+        // ДОБАВЛЕНО: Проверяем, не является ли этот startParam профилем самого вошедшего юзера
+        if (currentTgUser?.id) {
+          const { data: ownProfile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('owner_tg_id', currentTgUser.id)
+            .maybeSingle();
+
+          // Если ID профиля совпал с ID из ссылки — значит зашел сам мастер
+          if (ownProfile && ownProfile.id === startParam) {
+            isOwner = true;
+          }
+        }
+      } else if (currentTgUser?.id) {
+        // Ищем существующего мастера по owner_tg_id
+        const { data: foundProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('owner_tg_id', currentTgUser.id)
+          .maybeSingle();
+
+        if (foundProfile) {
+          targetMasterId = foundProfile.id;
+          isOwner = true;
+        } else {
+          // Если мастера нет в базе — включаем экран регистрации
+          set({
+            isRegistered: false,
+            currentRole: 'master',
+            currentScreen: 'admin-dashboard',
+            masterProfile: {
+              name: '',
+              bio: '',
+              avatar: '💅',
+              working_start: '10:00',
+              working_end: '20:00',
+            },
+          });
+          return;
+        }
+      }
+
+      // Если запуск на ПК в браузере (берем первую запись для тестов)
+      if (!targetMasterId) {
+        const { data: fallbackList } = await supabase.from('profiles').select('id').limit(1);
+        if (fallbackList && fallbackList.length > 0) {
+          targetMasterId = fallbackList[0].id;
+        } else {
+          set({
+            isRegistered: false,
+            currentRole: 'master',
+            currentScreen: 'admin-dashboard',
+            masterProfile: {
+              name: '',
+              bio: '',
+              avatar: '💅',
+              working_start: '10:00',
+              working_end: '20:00',
+            },
+          });
+          return;
+        }
+      }
+
+      set({
+        currentMasterId: targetMasterId,
+        currentRole: isOwner ? 'master' : 'client',
+        // ДОБАВЛЕНО: Если зашел клиент, перекидываем его на экран витрины,
+        // а если мастер — оставляем на его текущем экране (например, админке)
+        currentScreen: isOwner ? get().currentScreen : 'profile',
+        isRegistered: true,
+      });
+
+      // Скачиваем данные конкретного мастера
+      await get().fetchProfile();
+      await get().fetchServices();
+      await get().fetchAppointments();
+    } catch (e) {
+      console.error('Ошибка мультимастерной инициализации:', e);
+    }
+  },
+
+  // Регистрация нового мастера
+  registerMaster: async (name, tgInstance) => {
+    try {
+      const currentTgUser = tgInstance?.initDataUnsafe?.user;
+      const newProfile = {
+        name,
+        bio: 'Добро пожаловать в мою студию записи!',
+        avatar: '💅',
+        working_start: '10:00',
+        working_end: '20:00',
+        owner_tg_id: currentTgUser?.id || 123456789,
+      };
+
+      const { data, error } = await supabase.from('profiles').insert([newProfile]).select();
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        set({
+          masterProfile: data[0],
+          currentMasterId: data[0].id,
+          isRegistered: true,
+          currentRole: 'master',
+          currentScreen: 'admin-dashboard',
+        });
+        console.log('Новый мастер зарегистрирован с ID:', data[0].id);
+      }
+    } catch (e) {
+      console.error('Ошибка регистрации мастера в БД:', e);
+    }
+  },
+
+  fetchProfile: async () => {
+    const masterId = get().currentMasterId;
+    if (!masterId) return;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', masterId)
+        .limit(1);
       if (error) throw error;
       if (data && data.length > 0) {
         set({ masterProfile: data[0] });
@@ -73,8 +240,10 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   },
 
   fetchServices: async () => {
+    const masterId = get().currentMasterId;
+    if (!masterId) return;
     try {
-      const { data, error } = await supabase.from('services').select('*');
+      const { data, error } = await supabase.from('services').select('*').eq('master_id', masterId);
       if (error) throw error;
       if (data) set({ services: data });
     } catch (e) {
@@ -83,12 +252,11 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   },
 
   updateProfileInDB: async (updatedFields) => {
+    const masterId = get().currentMasterId;
+    if (!masterId) return;
     try {
       set((state) => ({ masterProfile: { ...state.masterProfile, ...updatedFields } }));
-      const { error } = await supabase
-        .from('profiles')
-        .update(updatedFields)
-        .not('name', 'is', null);
+      const { error } = await supabase.from('profiles').update(updatedFields).eq('id', masterId);
       if (error) throw error;
     } catch (e) {
       console.error('Ошибка профиля в БД:', e);
@@ -96,8 +264,13 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   },
 
   addService: async (newService) => {
+    const masterId = get().currentMasterId;
+    if (!masterId) return;
     try {
-      const { data, error } = await supabase.from('services').insert([newService]).select();
+      const { data, error } = await supabase
+        .from('services')
+        .insert([{ ...newService, master_id: masterId }])
+        .select();
       if (error) throw error;
       if (data && data.length > 0) {
         set((state) => ({ services: [...state.services, data[0]] }));
@@ -130,10 +303,13 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   },
 
   fetchAppointments: async () => {
+    const masterId = get().currentMasterId;
+    if (!masterId) return;
     try {
       const { data, error } = await supabase
         .from('appointments')
         .select('*')
+        .eq('master_id', masterId)
         .order('date', { ascending: true })
         .order('time', { ascending: true });
       if (error) throw error;
@@ -144,8 +320,8 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   },
 
   createAppointment: async (clientName) => {
-    const { selectedService, selectedDate, selectedTime } = get();
-    if (!selectedService || !selectedDate || !selectedTime) return;
+    const { selectedService, selectedDate, selectedTime, currentMasterId } = get();
+    if (!selectedService || !selectedDate || !selectedTime || !currentMasterId) return;
 
     try {
       const newAppointment = {
@@ -153,6 +329,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
         date: selectedDate,
         time: selectedTime,
         client_name: clientName,
+        master_id: currentMasterId,
       };
 
       const { error } = await supabase.from('appointments').insert([newAppointment]);

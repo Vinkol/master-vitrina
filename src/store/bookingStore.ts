@@ -107,16 +107,14 @@ export const useBookingStore = create<BookingState>((set, get) => ({
       // 1. ЕСЛИ ЗАПУСК ВНУТРИ ТЕЛЕГРАМА
       if (currentTgUser?.id) {
         if (startParam) {
-          // Клиент перешел по ссылке мастера
           targetMasterId = parseInt(startParam, 10) || null;
           isOwner = targetMasterId === currentTgUser.id;
         } else {
-          // Прямой запуск бота из чата мастером
           targetMasterId = currentTgUser.id;
           isOwner = true;
         }
       }
-      // 2. ЕСЛИ ЗАПУСК НА ПК В БРАУЗЕРЕ ДЛЯ ТЕСТОВ (Фолбек)
+      // 2. ЕСЛИ ЗАПУСК НА ПК В БРАУЗЕРЕ ДЛЯ ТЕСТОВ
       else {
         const { data: fallbackList } = await supabase
           .from('profiles')
@@ -124,11 +122,28 @@ export const useBookingStore = create<BookingState>((set, get) => ({
           .limit(1);
         if (fallbackList && fallbackList.length > 0) {
           targetMasterId = fallbackList[0].owner_tg_id;
-          isOwner = true; // В браузере притворяемся админом
+          isOwner = true;
+        } else {
+          targetMasterId = 123456789;
+          isOwner = true;
+          set({
+            isRegistered: false,
+            currentRole: 'master',
+            currentScreen: 'admin-dashboard',
+            currentMasterId: targetMasterId,
+            masterProfile: {
+              name: '',
+              bio: '',
+              avatar: '💅',
+              working_start: '10:00',
+              working_end: '20:00',
+            },
+          });
+          return;
         }
       }
 
-      // Если мастера вообще нет в базе — включаем экран регистрации
+      // Проверяем, зарегистрирован ли мастер в базе
       if (targetMasterId && isOwner) {
         const { data: checkProfile } = await supabase
           .from('profiles')
@@ -137,6 +152,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
           .maybeSingle();
 
         if (!checkProfile) {
+          // Если мастера нет в очищенной базе — кидаем на регистрацию
           set({
             isRegistered: false,
             currentRole: 'master',
@@ -205,14 +221,23 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     const masterTgId = get().currentMasterId;
     if (!masterTgId) return;
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('owner_tg_id', masterTgId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('owner_tg_id', masterTgId)
+        .maybeSingle(); // ИСПРАВЛЕНО: maybeSingle не вызывает ошибку при пустой БД
 
-    if (data && !error) {
-      set({ masterProfile: data });
+      if (error) throw error;
+
+      if (data) {
+        set({ masterProfile: data });
+      } else {
+        // Если профиля в базе нет — сбрасываем флаг регистрации, чтобы открылся экран создания мастера
+        set({ isRegistered: false });
+      }
+    } catch (err) {
+      console.error('Ошибка загрузки профиля мастера:', err);
     }
   },
 

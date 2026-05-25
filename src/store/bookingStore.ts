@@ -263,42 +263,62 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     }
   },
 
-  addService: async (newService) => {
+  // 1. Добавление услуги
+  addService: async (service) => {
     const masterId = get().currentMasterId;
-    if (!masterId) return;
+
+    if (!masterId) {
+      console.error('Ошибка: нет ID мастера для добавления услуги');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('services')
-        .insert([{ ...newService, master_id: masterId }])
-        .select();
+        .insert([{ ...service, master_id: masterId }])
+        .select()
+        .single();
+
       if (error) throw error;
-      if (data && data.length > 0) {
-        set((state) => ({ services: [...state.services, data[0]] }));
+      if (data) {
+        set((state) => ({ services: [...state.services, data] }));
       }
-    } catch (e) {
-      console.error('Ошибка добавления услуги в БД:', e);
+    } catch (err) {
+      console.error('Не удалось сохранить услугу в Supabase:', err);
     }
   },
 
+  // 2. Обновление услуги
   updateService: async (id, updatedService) => {
     try {
-      const { error } = await supabase.from('services').update(updatedService).eq('id', id);
+      const { data, error } = await supabase
+        .from('services')
+        .update(updatedService)
+        .eq('id', id)
+        .select()
+        .single();
+
       if (error) throw error;
-      set((state) => ({
-        services: state.services.map((s) => (s.id === id ? { ...s, ...updatedService } : s)),
-      }));
-    } catch (e) {
-      console.error('Ошибка обновления услуги в БД:', e);
+      if (data) {
+        set((state) => ({
+          services: state.services.map((s) => (s.id === id ? data : s)),
+        }));
+      }
+    } catch (err) {
+      console.error('Не удалось обновить услугу в Supabase:', err);
     }
   },
 
+  // 3. Удаление услуги
   deleteService: async (id) => {
     try {
       const { error } = await supabase.from('services').delete().eq('id', id);
       if (error) throw error;
-      set((state) => ({ services: state.services.filter((s) => s.id !== id) }));
-    } catch (e) {
-      console.error('Ошибка удаления услуги из БД:', e);
+      set((state) => ({
+        services: state.services.filter((s) => s.id !== id),
+      }));
+    } catch (err) {
+      console.error('Не удалось удалить услугу из Supabase:', err);
     }
   },
 

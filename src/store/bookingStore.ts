@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../../supabaseClient';
-import type { Service, MasterProfile } from '../types';
+import type { Service, MasterProfile, DaySchedule, Appointment } from '../types';
 
 type Screen =
   | 'profile'
@@ -9,7 +9,9 @@ type Screen =
   | 'admin-services'
   | 'admin-profile-edit'
   | 'admin-hours-edit'
-  | 'admin-link-share';
+  | 'admin-link-share'
+  | 'admin-placeholder-main'
+  | 'admin-placeholder-clients';
 
 type Role = 'client' | 'master';
 
@@ -34,20 +36,19 @@ interface BookingState {
   setRole: (role: Role) => void;
   setScreen: (screen: Screen) => void;
   createAppointment: (clientName: string) => Promise<void>;
-  appointments: unknown[];
+  appointments: Appointment[];
   fetchAppointments: () => Promise<void>;
 
   // Стейты мультимастера
   currentMasterId: number | null;
   botUsername: string;
   botAppName: string;
-  isRegistered: boolean;
+  isRegistered: boolean | null;
   fetchMasterData: (tgInstance: TelegramInstance | undefined) => Promise<void>;
   registerMaster: (name: string, tgInstance: TelegramInstance | undefined) => Promise<void>;
 
-  masterProfile: MasterProfile;
+  masterProfile: MasterProfile | null;
   services: Service[];
-
   fetchProfile: () => Promise<void>;
   fetchServices: () => Promise<void>;
   updateProfileInDB: (updatedFields: Partial<MasterProfile>) => Promise<void>;
@@ -65,6 +66,15 @@ interface BookingState {
   resetBooking: () => void;
 }
 
+// Дефолтное 24-часовое расписание для новых мастеров
+const defaultSchedule: DaySchedule[] = Array.from({ length: 7 }, (_, i) => ({
+  day_index: i,
+  is_working: i < 5,
+  working_start: '10:00',
+  working_end: '20:00',
+  breaks: [],
+}));
+
 export const useBookingStore = create<BookingState>((set, get) => ({
   currentRole: 'client',
   currentScreen: 'profile',
@@ -73,15 +83,9 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   currentMasterId: null,
   botUsername: 'mastervitrinabot',
   botAppName: 'app',
-  isRegistered: true,
+  isRegistered: null,
 
-  masterProfile: {
-    name: 'Загрузка...',
-    bio: 'Загрузка данных...',
-    avatar: '💅',
-    working_start: '10:00',
-    working_end: '20:00',
-  },
+  masterProfile: null,
   services: [],
 
   selectedService: null,
@@ -101,14 +105,14 @@ export const useBookingStore = create<BookingState>((set, get) => ({
       const currentTgUser = tgInstance?.initDataUnsafe?.user;
       const startParam = tgInstance?.initDataUnsafe?.start_param;
 
-      let targetMasterId = null;
+      let targetMasterId: number | undefined = undefined;
       let isOwner = false;
 
       // 1. ЖЕСТКАЯ ПРОВЕРКА: ЕСЛИ ЗАПУСК ВНУТРИ ТЕЛЕГРАМА (есть юзер)
       if (currentTgUser?.id) {
         if (startParam) {
           // Клиент перешел по ссылке мастера
-          targetMasterId = parseInt(startParam, 10) || null;
+          targetMasterId = parseInt(startParam, 10) || undefined;
           isOwner = targetMasterId === currentTgUser.id;
         } else {
           // Прямой запуск бота из чата
@@ -120,7 +124,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
         const { data: checkProfile } = await supabase
           .from('profiles')
           .select('owner_tg_id')
-          .eq('owner_tg_id', targetMasterId)
+          .eq('owner_tg_id', targetMasterId ?? 0)
           .maybeSingle();
 
         // Если это запуск мастера, но его НЕТ в базе — жестко кидаем на РЕГИСТРАЦИЮ
@@ -129,16 +133,16 @@ export const useBookingStore = create<BookingState>((set, get) => ({
             isRegistered: false,
             currentRole: 'master',
             currentScreen: 'admin-dashboard',
-            currentMasterId: targetMasterId, // Сохраняем твой РЕАЛЬНЫЙ ТГ айди для регистрации
+            currentMasterId: targetMasterId,
             masterProfile: {
+              owner_tg_id: targetMasterId,
               name: '',
               bio: '',
               avatar: '💅',
-              working_start: '10:00',
-              working_end: '20:00',
+              schedule: defaultSchedule,
             },
           });
-          return; // Прерываем функцию, чтобы код ниже не выполнялся!
+          return;
         }
       }
       // 2. ФОЛБЕК ДЛЯ ПК (срабатывает только если currentTgUser.id пустой)
@@ -147,6 +151,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
           .from('profiles')
           .select('owner_tg_id')
           .limit(1);
+
         if (fallbackList && fallbackList.length > 0) {
           targetMasterId = fallbackList[0].owner_tg_id;
           isOwner = true; // В браузере разрешаем админить первого из базы
@@ -160,11 +165,11 @@ export const useBookingStore = create<BookingState>((set, get) => ({
             currentScreen: 'admin-dashboard',
             currentMasterId: targetMasterId,
             masterProfile: {
+              owner_tg_id: targetMasterId,
               name: '',
               bio: '',
               avatar: '💅',
-              working_start: '10:00',
-              working_end: '20:00',
+              schedule: defaultSchedule,
             },
           });
           return;
@@ -173,7 +178,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
 
       // Если проверки пройдены — ставим данные в стейт
       set({
-        currentMasterId: targetMasterId,
+        currentMasterId: targetMasterId ?? 123456789,
         currentRole: isOwner ? 'master' : 'client',
         currentScreen: isOwner ? get().currentScreen : 'profile',
         isRegistered: true,
@@ -192,13 +197,14 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   registerMaster: async (name, tgInstance) => {
     try {
       const currentTgUser = tgInstance?.initDataUnsafe?.user;
+      const tgId = currentTgUser?.id || 123456789;
+
       const newProfile = {
         name,
         bio: 'Добро пожаловать в мою студию записи!',
         avatar: '💅',
-        working_start: '10:00',
-        working_end: '20:00',
-        owner_tg_id: currentTgUser?.id || 123456789,
+        schedule: defaultSchedule,
+        owner_tg_id: tgId,
       };
 
       const { data, error } = await supabase.from('profiles').insert([newProfile]).select();
@@ -206,7 +212,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
 
       if (data && data.length > 0) {
         set({
-          masterProfile: data[0],
+          masterProfile: data[0] as MasterProfile,
           currentMasterId: data[0].owner_tg_id,
           isRegistered: true,
           currentRole: 'master',
@@ -228,32 +234,17 @@ export const useBookingStore = create<BookingState>((set, get) => ({
         .from('profiles')
         .select('*')
         .eq('owner_tg_id', masterTgId)
-        .maybeSingle(); // ИСПРАВЛЕНО: maybeSingle не вызывает ошибку при пустой БД
+        .maybeSingle();
 
       if (error) throw error;
 
       if (data) {
-        set({ masterProfile: data });
+        set({ masterProfile: data as MasterProfile });
       } else {
-        // Если профиля в базе нет — сбрасываем флаг регистрации, чтобы открылся экран создания мастера
         set({ isRegistered: false });
       }
     } catch (err) {
       console.error('Ошибка загрузки профиля мастера:', err);
-    }
-  },
-
-  fetchServices: async () => {
-    const masterTgId = get().currentMasterId;
-    if (!masterTgId) return;
-
-    const { data, error } = await supabase
-      .from('services')
-      .select('*')
-      .eq('master_tg_id', masterTgId);
-
-    if (data && !error) {
-      set({ services: data });
     }
   },
 
@@ -270,10 +261,24 @@ export const useBookingStore = create<BookingState>((set, get) => ({
       if (error) throw error;
 
       set((state) => ({
-        masterProfile: { ...state.masterProfile, ...updatedFields },
+        masterProfile: state.masterProfile ? { ...state.masterProfile, ...updatedFields } : null,
       }));
     } catch (err) {
       console.error('Ошибка обновления профиля:', err);
+    }
+  },
+
+  fetchServices: async () => {
+    const masterTgId = get().currentMasterId;
+    if (!masterTgId) return;
+
+    const { data, error } = await supabase
+      .from('services')
+      .select('*')
+      .eq('master_tg_id', masterTgId);
+
+    if (data && !error) {
+      set({ services: data as Service[] });
     }
   },
 
@@ -291,7 +296,8 @@ export const useBookingStore = create<BookingState>((set, get) => ({
 
       if (error) throw error;
       if (data) {
-        set((state) => ({ services: [...state.services, data] }));
+        // Явно приводим data к типу Service для Zustand
+        set((state) => ({ services: [...state.services, data as Service] }));
       }
     } catch (err) {
       console.error('Ошибка сохранения услуги:', err);
@@ -308,7 +314,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
         .from('services')
         .update(updatedService)
         .eq('id', id)
-        .eq('master_tg_id', masterTgId) // Гарантия, что мастер правит свою услугу
+        .eq('master_tg_id', masterTgId)
         .select()
         .single();
 
@@ -316,7 +322,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
 
       if (data) {
         set((state) => ({
-          services: state.services.map((s) => (s.id === id ? data : s)),
+          services: state.services.map((s) => (s.id === id ? (data as Service) : s)),
         }));
       }
     } catch (err) {
@@ -334,7 +340,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
         .from('services')
         .delete()
         .eq('id', id)
-        .eq('master_tg_id', masterTgId); // Гарантия, что мастер удаляет свою услугу
+        .eq('master_tg_id', masterTgId);
 
       if (error) throw error;
 

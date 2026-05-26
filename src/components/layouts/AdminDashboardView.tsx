@@ -1,12 +1,18 @@
-import { useBookingStore } from '../store/bookingStore';
+import { useBookingStore } from '../../store/bookingStore';
+import { Loader } from '../ui/Loader'; // Импортируем наш крутой лоадер
 
 export function AdminDashboardView() {
   const { masterProfile, appointments } = useBookingStore();
 
+  if (!masterProfile) {
+    return <Loader text="Загрузка панели..." />;
+  }
+
   const activeAppointmentsCount = appointments?.length || 0;
+  const workingDaysCount = masterProfile.schedule?.filter((d) => d.is_working).length || 0;
 
   return (
-    <div className="w-full max-w-md mx-auto p-4 space-y-4 bg-slate-50 min-h-screen text-slate-800 pb-24">
+    <div className="w-full max-w-md mx-auto p-4 space-y-4 bg-slate-50 min-h-screen text-slate-800 pb-24 select-none">
       {/* Шапка админки */}
       <div className="bg-indigo-900 text-white p-5 rounded-3xl shadow-md relative overflow-hidden">
         <div className="relative z-10 flex items-center space-x-4">
@@ -41,7 +47,6 @@ export function AdminDashboardView() {
           className="w-full p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center active:scale-[0.99] transition-all group hover:border-indigo-100 text-left"
         >
           <div className="flex items-center space-x-3">
-            {/* Рендерим аватарку прямо на кнопке перехода для красоты */}
             <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-slate-100">
               {masterProfile.avatar?.startsWith('data:image') ? (
                 <img src={masterProfile.avatar} className="w-full h-full object-cover" alt="" />
@@ -119,8 +124,7 @@ export function AdminDashboardView() {
                 Рабочее время
               </p>
               <p className="text-xs text-slate-400">
-                График: {masterProfile.working_start || '10:00'} —{' '}
-                {masterProfile.working_end || '20:00'}
+                Рабочих дней на этой неделе: {workingDaysCount} из 7
               </p>
             </div>
           </div>

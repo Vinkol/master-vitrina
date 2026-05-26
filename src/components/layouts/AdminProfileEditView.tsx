@@ -1,4 +1,4 @@
-import { useBookingStore } from '../store/bookingStore';
+import { useBookingStore } from '../../store/bookingStore';
 
 export function AdminProfileEditView() {
   const { masterProfile, updateProfileInDB } = useBookingStore();
@@ -100,8 +100,8 @@ export function AdminProfileEditView() {
       {/* Информационная подсказка */}
       <div className="p-4 bg-slate-100/70 rounded-2xl border border-slate-200/30 text-left">
         <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-          ✨ Изменения сохраняются автоматически в облачную СУБД Supabase при вводе. Ваши клиенты
-          сразу увидят обновленные данные на витрине.
+          ✨ Изменения сохраняются автоматически при вводе. Ваши клиенты сразу увидят обновленные
+          данные на витрине.
         </p>
       </div>
     </div>

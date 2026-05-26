@@ -1,4 +1,4 @@
-import { useBookingStore } from '../store/bookingStore';
+import { useBookingStore } from '../../store/bookingStore';
 
 export function AdminLinkShareView() {
   const { currentMasterId } = useBookingStore();

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { useBookingStore } from '../store/bookingStore';
-import { MOCK_TIME_SLOTS } from '../../constants';
+import { useBookingStore } from '../../store/bookingStore';
+import { MOCK_TIME_SLOTS } from '../../../constants';
 
 // Генерируем 30 дней вперед
 function getNext30Days() {

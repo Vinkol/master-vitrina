@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useBookingStore } from '../store/bookingStore';
-import type { Service } from '../types';
+import { useBookingStore } from '../../store/bookingStore';
+import type { Service } from '../../types';
 
 export function AdminServicesView() {
   const { services, addService, updateService, deleteService, setScreen } = useBookingStore();

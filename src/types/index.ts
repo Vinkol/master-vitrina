@@ -23,7 +23,7 @@ export interface TelegramWebApp {
   showAlert: (message: string) => void;
   initDataUnsafe?: {
     user?: WebAppUser;
-    start_param?: string; // ← Добавили параметр для мультимастера
+    start_param?: string;
   };
   MainButton: TelegramMainButton;
 }
@@ -32,7 +32,7 @@ export interface TelegramWebApp {
 export interface Service {
   id: string;
   title: string;
-  duration: number; // в минутах
+  duration: number;
   price: number;
   description?: string;
 }
@@ -47,28 +47,31 @@ export interface Appointment {
   clientPhone: string;
 }
 
+export interface TimeInterval {
+  id: string;
+  start: string;
+  end: string;
+}
+
+export interface DaySchedule {
+  day_index: number;
+  is_working: boolean;
+  working_start: string;
+  working_end: string;
+  breaks: TimeInterval[];
+}
+
 // Сущность Профиля Мастера
 export interface MasterProfile {
   name: string;
   bio: string;
   avatar: string;
-  working_start: string;
-  working_end: string;
   owner_tg_id?: number;
+  schedule: DaySchedule[];
 }
 
 // Сущность Настроек Рабочих Часов
 export interface WorkingHours {
   start: string;
   end: string;
-}
-
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp: TelegramWebApp & {
-        openTelegramLink?: (url: string) => void;
-      };
-    };
-  }
 }

@@ -1,19 +1,27 @@
 import { useBookingStore } from '../../store/bookingStore';
 
 export function AdminLinkShareView() {
-  const { currentMasterId } = useBookingStore();
-
-  // Достаем актуальные данные по боту напрямую из Zustand
-  const botUsername = useBookingStore.getState().botUsername || 'mastervitrinabot';
-  const botAppName = useBookingStore.getState().botAppName || 'app';
+  const currentMasterId = useBookingStore((state) => state.currentMasterId);
+  const botUsername = useBookingStore((state) => state.botUsername) || 'mastervitrinabot';
+  const botAppName = useBookingStore((state) => state.botAppName) || 'app';
+  const setScreen = useBookingStore((state) => state.setScreen);
 
   // Собираем правильную официальную ссылку для Mini App
   const clientLink = `https://t.me/${botUsername}/${botAppName}?startapp=${currentMasterId || ''}`;
 
-  // Нативный шеринг внутри Telegram
+  const triggerHaptic = (style: 'light' | 'medium' = 'light') => {
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
+      window.Telegram.WebApp.HapticFeedback.impactOccurred(style);
+    }
+  };
+
+  // ИСПРАВЛЕНО: Официальный и стабильный нативный шеринг внутри Telegram
   const handleShareInTelegram = () => {
+    triggerHaptic('medium');
     const shareMessage = `Привет! По этой ссылке можно посмотреть мои услуги и записаться онлайн в пару кликов:`;
-    const tgShareUrl = `https://t.me/${encodeURIComponent(clientLink)}&text=${encodeURIComponent(shareMessage)}`;
+
+    // Используем правильный endpoint /share/url для открытия нативного окна пересылки
+    const tgShareUrl = `https://t.me{encodeURIComponent(clientLink)}&text=${encodeURIComponent(shareMessage)}`;
 
     if (window.Telegram?.WebApp?.openTelegramLink) {
       window.Telegram.WebApp.openTelegramLink(tgShareUrl);
@@ -22,12 +30,26 @@ export function AdminLinkShareView() {
     }
   };
 
+  const handleCopyLink = () => {
+    triggerHaptic('light');
+    navigator.clipboard.writeText(clientLink).then(() => {
+      if (window.Telegram?.WebApp?.showAlert) {
+        window.Telegram.WebApp.showAlert('Ссылка скопирована в буфер обмена!');
+      } else {
+        alert('Ссылка скопирована в буфер обмена!');
+      }
+    });
+  };
+
   return (
-    <div className="w-full max-w-md mx-auto p-4 space-y-5 bg-slate-50 min-h-screen text-slate-800 pb-24">
+    <div className="w-full max-w-md mx-auto p-4 space-y-5 bg-slate-50 min-h-screen text-slate-800 pb-24 select-none animate-fadeIn">
       {/* Кнопка назад и заголовок */}
       <div className="flex items-center space-x-3">
         <button
-          onClick={() => useBookingStore.getState().setScreen('admin-dashboard')}
+          onClick={() => {
+            triggerHaptic('light');
+            setScreen('admin-dashboard');
+          }}
           className="p-2.5 bg-white rounded-xl border border-slate-100 shadow-sm text-slate-400 active:scale-95 transition-all text-sm font-bold"
         >
           ← Назад
@@ -59,23 +81,13 @@ export function AdminLinkShareView() {
 
         {/* Кнопки действий */}
         <div className="grid grid-cols-2 gap-3 pt-2">
-          {/* Кнопка простого копирования */}
           <button
-            onClick={() => {
-              navigator.clipboard.writeText(clientLink).then(() => {
-                if (window.Telegram?.WebApp?.showAlert) {
-                  window.Telegram.WebApp.showAlert('Ссылка скопирована в буфер обмена!');
-                } else {
-                  alert('Ссылка скопирована в буфер обмена!');
-                }
-              });
-            }}
+            onClick={handleCopyLink}
             className="p-3 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 text-xs font-bold rounded-xl transition-all shadow-sm text-center"
           >
             📋 Копировать
           </button>
 
-          {/* НОВАЯ КНОПКА: Переслать в Telegram */}
           <button
             onClick={handleShareInTelegram}
             className="p-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-sm text-center"

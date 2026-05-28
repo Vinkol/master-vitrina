@@ -35,25 +35,28 @@ interface BookingState {
   currentScreen: Screen;
   setRole: (role: Role) => void;
   setScreen: (screen: Screen) => void;
-  createAppointment: (clientName: string) => Promise<void>;
+
   appointments: Appointment[];
   fetchAppointments: () => Promise<void>;
+  createAppointment: (clientName: string) => Promise<void>;
 
-  // Стейты мультимастера
+  // Стор мультимастера
   currentMasterId: number | null;
   botUsername: string;
   botAppName: string;
   isRegistered: boolean | null;
+
   fetchMasterData: (tgInstance: TelegramInstance | undefined) => Promise<void>;
   registerMaster: (name: string, tgInstance: TelegramInstance | undefined) => Promise<void>;
 
   masterProfile: MasterProfile | null;
   services: Service[];
+
   fetchProfile: () => Promise<void>;
-  fetchServices: () => Promise<void>;
   updateProfileInDB: (updatedFields: Partial<MasterProfile>) => Promise<void>;
 
-  addService: (service: Omit<Service, 'id'>) => Promise<void>;
+  fetchServices: () => Promise<void>;
+  addService: (service: Omit<Service, 'id' | 'master_tg_id'>) => Promise<void>;
   updateService: (id: string, updatedService: Partial<Service>) => Promise<void>;
   deleteService: (id: string) => Promise<void>;
 
@@ -66,7 +69,6 @@ interface BookingState {
   resetBooking: () => void;
 }
 
-// Дефолтное 24-часовое расписание для новых мастеров
 const defaultSchedule: DaySchedule[] = Array.from({ length: 7 }, (_, i) => ({
   day_index: i,
   is_working: i < 5,
@@ -95,58 +97,46 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   setRole: (role) =>
     set({
       currentRole: role,
-      currentScreen: role === 'master' ? 'admin-dashboard' : 'profile',
+      currentScreen: role === 'master' ? 'admin-placeholder-main' : 'profile',
     }),
+
   setScreen: (screen) => set({ currentScreen: screen }),
 
-  // Главный метод инициализации при старте по Telegram ID
+  // Инициализация при старте приложения
   fetchMasterData: async (tgInstance) => {
     try {
       const currentTgUser = tgInstance?.initDataUnsafe?.user;
       const startParam = tgInstance?.initDataUnsafe?.start_param;
-
       let targetMasterId: number | undefined = undefined;
       let isOwner = false;
-
-      // 1. ЖЕСТКАЯ ПРОВЕРКА: ЕСЛИ ЗАПУСК ВНУТРИ ТЕЛЕГРАМА (есть юзер)
       if (currentTgUser?.id) {
         if (startParam) {
-          // Клиент перешел по ссылке мастера
           targetMasterId = parseInt(startParam, 10) || undefined;
           isOwner = targetMasterId === currentTgUser.id;
         } else {
-          // Прямой запуск бота из чата
           targetMasterId = currentTgUser.id;
           isOwner = true;
         }
 
-        // Проверяем в базе именно ЭТОГО конкретного пользователя Telegram
+        // Проверяем наличие профиля по owner_tg_id
         const { data: checkProfile } = await supabase
           .from('profiles')
           .select('owner_tg_id')
           .eq('owner_tg_id', targetMasterId ?? 0)
           .maybeSingle();
 
-        // Если это запуск мастера, но его НЕТ в базе — жестко кидаем на РЕГИСТРАЦИЮ
         if (isOwner && !checkProfile) {
           set({
             isRegistered: false,
             currentRole: 'master',
             currentScreen: 'admin-dashboard',
             currentMasterId: targetMasterId,
-            masterProfile: {
-              owner_tg_id: targetMasterId,
-              name: '',
-              bio: '',
-              avatar: '💅',
-              schedule: defaultSchedule,
-            },
+            masterProfile: null, // Будет создан при вызове registerMaster
           });
           return;
         }
-      }
-      // 2. ФОЛБЕК ДЛЯ ПК (срабатывает только если currentTgUser.id пустой)
-      else {
+      } else {
+        // Режим локальной отладки в браузере (ПК)
         const { data: fallbackList } = await supabase
           .from('profiles')
           .select('owner_tg_id')
@@ -154,9 +144,8 @@ export const useBookingStore = create<BookingState>((set, get) => ({
 
         if (fallbackList && fallbackList.length > 0) {
           targetMasterId = fallbackList[0].owner_tg_id;
-          isOwner = true; // В браузере разрешаем админить первого из базы
+          isOwner = true;
         } else {
-          // Если база пустая даже на ПК
           targetMasterId = 123456789;
           isOwner = true;
           set({
@@ -164,30 +153,18 @@ export const useBookingStore = create<BookingState>((set, get) => ({
             currentRole: 'master',
             currentScreen: 'admin-dashboard',
             currentMasterId: targetMasterId,
-            masterProfile: {
-              owner_tg_id: targetMasterId,
-              name: '',
-              bio: '',
-              avatar: '💅',
-              schedule: defaultSchedule,
-            },
+            masterProfile: null,
           });
           return;
         }
       }
-
-      // Если проверки пройдены — ставим данные в стейт
       set({
         currentMasterId: targetMasterId ?? 123456789,
         currentRole: isOwner ? 'master' : 'client',
         currentScreen: isOwner ? get().currentScreen : 'profile',
         isRegistered: true,
       });
-
-      // Скачиваем данные конкретного мастера
-      await get().fetchProfile();
-      await get().fetchServices();
-      await get().fetchAppointments();
+      await Promise.all([get().fetchProfile(), get().fetchServices(), get().fetchAppointments()]);
     } catch (e) {
       console.error('Ошибка мультимастерной инициализации:', e);
     }
@@ -198,46 +175,45 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     try {
       const currentTgUser = tgInstance?.initDataUnsafe?.user;
       const tgId = currentTgUser?.id || 123456789;
-
       const newProfile = {
+        owner_tg_id: tgId,
         name,
         bio: 'Добро пожаловать в мою студию записи!',
         avatar: '💅',
         schedule: defaultSchedule,
-        owner_tg_id: tgId,
       };
 
-      const { data, error } = await supabase.from('profiles').insert([newProfile]).select();
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert([newProfile])
+        .select()
+        .single();
       if (error) throw error;
-
-      if (data && data.length > 0) {
+      if (data) {
         set({
-          masterProfile: data[0] as MasterProfile,
-          currentMasterId: data[0].owner_tg_id,
+          masterProfile: data as MasterProfile,
+          currentMasterId: data.owner_tg_id,
           isRegistered: true,
           currentRole: 'master',
           currentScreen: 'admin-dashboard',
         });
-        console.log('Новый мастер зарегистрирован с Telegram ID:', data[0].owner_tg_id);
       }
     } catch (e) {
       console.error('Ошибка регистрации мастера в БД:', e);
     }
   },
 
+  // Получение профиля мастера
   fetchProfile: async () => {
     const masterTgId = get().currentMasterId;
     if (!masterTgId) return;
-
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('owner_tg_id', masterTgId)
         .maybeSingle();
-
       if (error) throw error;
-
       if (data) {
         set({ masterProfile: data as MasterProfile });
       } else {
@@ -248,18 +224,16 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     }
   },
 
+  // Обновление профиля мастера
   updateProfileInDB: async (updatedFields) => {
     const masterTgId = get().currentMasterId;
     if (!masterTgId) return;
-
     try {
       const { error } = await supabase
         .from('profiles')
         .update(updatedFields)
         .eq('owner_tg_id', masterTgId);
-
       if (error) throw error;
-
       set((state) => ({
         masterProfile: state.masterProfile ? { ...state.masterProfile, ...updatedFields } : null,
       }));
@@ -268,21 +242,26 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     }
   },
 
+  // Получение списка услуг мастера
   fetchServices: async () => {
     const masterTgId = get().currentMasterId;
     if (!masterTgId) return;
 
-    const { data, error } = await supabase
-      .from('services')
-      .select('*')
-      .eq('master_tg_id', masterTgId);
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('master_tg_id', masterTgId);
 
-    if (data && !error) {
-      set({ services: data as Service[] });
+      if (data && !error) {
+        set({ services: data as Service[] });
+      }
+    } catch (e) {
+      console.error('Ошибка загрузки услуг:', e);
     }
   },
 
-  // 1. Добавление услуги
+  // Добавление новой услуги
   addService: async (service) => {
     const masterTgId = get().currentMasterId;
     if (!masterTgId) return;
@@ -296,7 +275,6 @@ export const useBookingStore = create<BookingState>((set, get) => ({
 
       if (error) throw error;
       if (data) {
-        // Явно приводим data к типу Service для Zustand
         set((state) => ({ services: [...state.services, data as Service] }));
       }
     } catch (err) {
@@ -304,7 +282,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     }
   },
 
-  // 2. Обновление услуги
+  // Обновление существующей услуги
   updateService: async (id, updatedService) => {
     const masterTgId = get().currentMasterId;
     if (!masterTgId) return;
@@ -319,7 +297,6 @@ export const useBookingStore = create<BookingState>((set, get) => ({
         .single();
 
       if (error) throw error;
-
       if (data) {
         set((state) => ({
           services: state.services.map((s) => (s.id === id ? (data as Service) : s)),
@@ -330,7 +307,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     }
   },
 
-  // 3. Удаление услуги
+  // Удаление услуги
   deleteService: async (id) => {
     const masterTgId = get().currentMasterId;
     if (!masterTgId) return;
@@ -352,46 +329,46 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     }
   },
 
+  // Получение списка всех записей мастера
   fetchAppointments: async () => {
-    const masterId = get().currentMasterId;
-    if (!masterId) return;
+    const masterTgId = get().currentMasterId;
+    if (!masterTgId) return;
+
     try {
       const { data, error } = await supabase
         .from('appointments')
         .select('*')
-        .eq('master_tg_id', masterId)
+        .eq('master_tg_id', masterTgId)
         .order('date', { ascending: true })
         .order('time', { ascending: true });
+
       if (error) throw error;
-      if (data) set({ appointments: data });
+      if (data) set({ appointments: data as Appointment[] });
     } catch (e) {
       console.error('Ошибка получения записей из БД:', e);
     }
   },
 
+  // Создание новой записи клиента
   createAppointment: async (clientName) => {
     const { selectedService, selectedDate, selectedTime, currentMasterId } = get();
     if (!selectedService || !selectedDate || !selectedTime || !currentMasterId) return;
-
     try {
       const newAppointment = {
+        master_tg_id: currentMasterId,
         service_title: selectedService.title,
         date: selectedDate,
         time: selectedTime,
         client_name: clientName,
-        master_tg_id: currentMasterId,
       };
-
       const { error } = await supabase.from('appointments').insert([newAppointment]);
       if (error) throw error;
-
       await get().fetchAppointments();
       get().resetBooking();
     } catch (e) {
       console.error('Ошибка создания записи в БД:', e);
     }
   },
-
   selectService: (service) => set({ selectedService: service, currentScreen: 'calendar' }),
   setDate: (date) => set({ selectedDate: date }),
   setTime: (slot) => set({ selectedTime: slot }),

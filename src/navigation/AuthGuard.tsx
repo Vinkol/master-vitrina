@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useBookingStore } from '../../store/bookingStore';
-import type { TelegramWebApp } from '../../types';
+import { useBookingStore } from '../store/bookingStore';
+import type { TelegramWebApp } from '../types/telegram';
 
 interface AuthGuardProps {
   children: React.ReactNode;

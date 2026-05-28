@@ -1,6 +1,6 @@
 import { useBookingStore } from '../store/bookingStore';
-import { MainView } from '../components/layouts/MainView';
-import { CalendarView } from '../components/layouts/CalendarView';
+import { MainView } from '../views/client/MainView';
+import { CalendarView } from '../views/client/CalendarView';
 
 export function ClientRouter() {
   const currentScreen = useBookingStore((state) => state.currentScreen);

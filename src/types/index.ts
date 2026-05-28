@@ -1,52 +1,36 @@
-// Данные пользователя Telegram
-export interface WebAppUser {
-  id: number;
-  first_name: string;
-  last_name?: string;
-  username?: string;
-  language_code?: string;
+// Таблица profiles
+export interface MasterProfile {
+  id: string; // uuid (Primary Key)
+  owner_tg_id: number; // int8 (Ваш главный ключ связи по TG)
+  name: string; // text
+  bio: string; // text
+  avatar: string; // text
+  schedule: DaySchedule[]; // jsonb (Массив расписания дней)
 }
 
-// Тип для нативной кнопки Telegram
-export interface TelegramMainButton {
-  text: string;
-  show: () => void;
-  hide: () => void;
-  onClick: (callback: () => void) => void;
-  offClick: (callback: () => void) => void;
-}
-
-// Нативные методы Telegram SDK
-export interface TelegramWebApp {
-  ready: () => void;
-  expand: () => void;
-  showAlert: (message: string) => void;
-  initDataUnsafe?: {
-    user?: WebAppUser;
-    start_param?: string;
-  };
-  MainButton: TelegramMainButton;
-}
-
-// Сущность Услуги мастера
+// Таблица services
 export interface Service {
-  id: string;
-  title: string;
-  duration: number;
-  price: number;
-  description?: string;
+  id: string; // uuid (Primary Key)
+  master_tg_id: number; // int8 (Связь с profiles.owner_tg_id)
+  title: string; // text
+  description: string; // text
+  price: number; // int8
+  duration: number; // int8
+  master_id?: string; // uuid
 }
 
-// Сущность Записи клиента
+// Таблица appointments
 export interface Appointment {
-  id: string;
-  serviceId: string;
-  date: string; // Формат "YYYY-MM-DD"
-  timeSlot: string; // Формат "HH:MM"
-  clientName: string;
-  clientPhone: string;
+  id: string; // uuid (Primary Key)
+  master_tg_id: number; // int8 (Связь с profiles.owner_tg_id)
+  service_title: string; // text
+  date: string; // text ("YYYY-MM-DD")
+  time: string; // text ("HH:MM")
+  client_name: string; // text
+  master_id?: string; // uuid
 }
 
+// ВСПОМОГАТЕЛЬНЫЕ И СИСТЕМНЫЕ ТИПЫ фронтенда
 export interface TimeInterval {
   id: string;
   start: string;
@@ -61,17 +45,26 @@ export interface DaySchedule {
   breaks: TimeInterval[];
 }
 
-// Сущность Профиля Мастера
-export interface MasterProfile {
-  name: string;
-  bio: string;
-  avatar: string;
-  owner_tg_id?: number;
-  schedule: DaySchedule[];
+export interface CalendarDay {
+  dayOfWeek: string;
+  dayOfMonth: number;
+  monthLabel: string;
+  isoDate: string;
 }
 
-// Сущность Настроек Рабочих Часов
-export interface WorkingHours {
-  start: string;
-  end: string;
+// Системные интерфейсы Telegram SDK
+export interface WebAppUser {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  language_code?: string;
+}
+
+export interface TelegramMainButton {
+  text: string;
+  show: () => void;
+  hide: () => void;
+  onClick: (callback: () => void) => void;
+  offClick: (callback: () => void) => void;
 }

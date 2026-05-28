@@ -4,25 +4,34 @@ export interface TelegramHapticFeedback {
   selectionChanged: () => void;
 }
 
+export interface TelegramWebApp {
+  ready: () => void;
+  expand: () => void;
+  showAlert: (message: string) => void;
+  openTelegramLink?: (url: string) => void;
+  initDataUnsafe?: {
+    user?: {
+      id: number;
+      first_name: string;
+      last_name?: string;
+      username?: string;
+    };
+    start_param?: string;
+  };
+  MainButton: {
+    text: string;
+    show: () => void;
+    hide: () => void;
+    onClick: (callback: () => void) => void;
+    offClick: (callback: () => void) => void;
+  };
+  HapticFeedback?: TelegramHapticFeedback;
+}
+
 declare global {
   interface Window {
-    д;
     Telegram?: {
-      WebApp: {
-        ready: () => void;
-        expand: () => void;
-        initDataUnsafe?: {
-          user?: {
-            id: number;
-            first_name: string;
-            last_name?: string;
-            username?: string;
-          };
-          start_param?: string;
-        };
-        openTelegramLink?: (url: string) => void;
-        HapticFeedback?: TelegramHapticFeedback;
-      };
+      WebApp: TelegramWebApp;
     };
   }
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useBookingStore } from '../../store/bookingStore';
-import { Loader } from '../ui/Loader';
+import { Loader } from '../../components/common/Loader';
 import type { DaySchedule, TimeInterval } from '../../types';
 
 const DAYS_OF_WEEK = [

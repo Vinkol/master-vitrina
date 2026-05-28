@@ -1,10 +1,11 @@
 import { useBookingStore } from '../store/bookingStore';
-import { AdminDashboardView } from '../components/layouts/AdminDashboardView';
-import { AdminServicesView } from '../components/layouts/AdminServicesView';
-import { AdminLinkShareView } from '../components/layouts/AdminLinkShareView';
-import { AdminProfileEditView } from '../components/layouts/AdminProfileEditView';
-import { AdminHoursEditView } from '../components/layouts/AdminHoursEditView';
-import { AdminPlaceholderView } from '../components/layouts/AdminPlaceholderView';
+import { AdminDashboardView } from '../views/admin/AdminDashboardView';
+import { AdminServicesView } from '../views/admin/AdminServicesView';
+import { AdminLinkShareView } from '../views/admin/AdminLinkShareView';
+import { AdminProfileEditView } from '../views/admin/AdminProfileEditView';
+import { AdminHoursEditView } from '../views/admin/AdminHoursEditView';
+import { AdminPlaceholderView } from '../components/admin/AdminPlaceholderView';
+import { AdminMainDashboardView } from '../views/admin/AdminMainDashboardView';
 
 export function AdminRouter() {
   const currentScreen = useBookingStore((state) => state.currentScreen);
@@ -21,10 +22,10 @@ export function AdminRouter() {
     case 'admin-hours-edit':
       return <AdminHoursEditView />;
     case 'admin-placeholder-main':
-      return <AdminPlaceholderView title="Главная" icon="📅" />;
+      return <AdminMainDashboardView />;
     case 'admin-placeholder-clients':
       return <AdminPlaceholderView title="Клиенты" icon="👥" />;
     default:
-      return <AdminDashboardView />;
+      return <AdminMainDashboardView />;
   }
 }

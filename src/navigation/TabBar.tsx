@@ -1,4 +1,4 @@
-import { useBookingStore } from '../../store/bookingStore';
+import { useBookingStore } from '../store/bookingStore';
 
 export function TabBar() {
   const { currentScreen, setScreen } = useBookingStore();

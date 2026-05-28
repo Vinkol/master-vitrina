@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { useBookingStore } from './store/bookingStore';
-import { AuthGuard } from './components/layouts/AuthGuard';
-import { ClientRouter } from './views/ClientRouter';
-import { AdminRouter } from './views/AdminRouter';
-import { TabBar } from './components/navigation/TabBar';
-import type { TelegramWebApp } from './types';
-import { Loader } from './components/ui/Loader';
+import { AuthGuard } from './navigation/AuthGuard';
+import { ClientRouter } from './navigation/ClientRouter';
+import { AdminRouter } from './navigation/AdminRouter';
+import { TabBar } from './navigation/TabBar';
+import type { TelegramWebApp } from './types/telegram';
+import { Loader } from './components/common/Loader';
 
 const getTelegramWebApp = (): TelegramWebApp | null => {
   if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
@@ -30,23 +30,26 @@ function App() {
     fetchMasterData(tg ?? undefined);
   }, [fetchMasterData, tg]);
 
-  // Вычисляем права доступа (Секретная админка)
+  // Вычисляем права доступа (Является ли зашедший пользователь владельцем этой витрины)
   const currentTgId = tg?.initDataUnsafe?.user?.id;
   const ownerTgId = masterProfile?.owner_tg_id;
-  const isMaster = !tg || (currentTgId && ownerTgId && Number(currentTgId) === Number(ownerTgId));
+  const isOwner = !tg || (currentTgId && ownerTgId && Number(currentTgId) === Number(ownerTgId));
 
   if (!masterProfile) {
-    return <Loader text="Загрузка панели" />;
+    return <Loader text="Загрузка панели..." />;
   }
 
   return (
     <AuthGuard tg={tg}>
-      <div className="min-h-screen bg-slate-100 text-slate-800 pb-20">
-        {/* Главный роутинг ролей */}
+      <div className="min-h-screen bg-slate-100 text-slate-800 pb-20 select-none">
+        {/* РОУТЕР КЛИЕНТА: Показывается обычным клиентам или мастеру в режиме предпросмотра */}
         {currentRole === 'client' && <ClientRouter />}
-        {currentRole === 'master' && isMaster && <AdminRouter />}
-        {/* Навигация только для верифицированного владельца */}
-        {isMaster && <TabBar />}
+
+        {/* РОУТЕР АДМИНКИ: Доступен только если пользователь — владелец и включена роль мастера */}
+        {currentRole === 'master' && isOwner && <AdminRouter />}
+
+        {/* НАВИГАЦИЯ ТАБ БАРА: Рендерится в режиме администрирования */}
+        {currentRole === 'master' && isOwner && <TabBar />}
       </div>
     </AuthGuard>
   );

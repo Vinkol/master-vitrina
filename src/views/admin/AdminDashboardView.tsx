@@ -3,6 +3,7 @@ import { useBookingStore } from '../../store/bookingStore';
 import { Loader } from '../../components/common/Loader';
 import { DashboardStats } from '../../components/admin/DashboardStats';
 import { MenuRowButton } from '../../components/admin/MenuRowButton';
+import { haptic } from '../../utils/haptic';
 
 export function AdminDashboardView() {
   const masterProfile = useBookingStore((state) => state.masterProfile);
@@ -17,18 +18,13 @@ export function AdminDashboardView() {
     return <Loader text="Загрузка панели..." />;
   }
 
-  const triggerHaptic = (style: 'light' | 'medium' = 'light') => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
-      window.Telegram.WebApp.HapticFeedback.impactOccurred(style);
-    }
-  };
   const handleNavigate = (screenName: Parameters<typeof setScreen>[0]) => {
-    triggerHaptic('light');
+    haptic.impact('light');
     setScreen(screenName);
   };
 
   const handleViewAsClient = () => {
-    triggerHaptic('medium');
+    haptic.impact('medium');
     setScreen('profile');
     setRole('client');
   };

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useBookingStore } from '../../store/bookingStore';
 import { Loader } from '../../components/common/Loader';
+import { haptic } from '../../utils/haptic';
 
 export function AdminProfileEditView() {
   const masterProfile = useBookingStore((state) => state.masterProfile);
@@ -14,15 +15,9 @@ export function AdminProfileEditView() {
     return <Loader text="Загрузка профиля..." />;
   }
 
-  const triggerHaptic = (style: 'light' | 'medium' = 'light') => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
-      window.Telegram.WebApp.HapticFeedback.impactOccurred(style);
-    }
-  };
-
   // Хендлер сохранения данных одной кнопкой
   const handleSave = async () => {
-    triggerHaptic('medium');
+    haptic.impact('medium');
     setIsSaving(true);
     try {
       await updateProfileInDB({ name, bio });
@@ -38,7 +33,7 @@ export function AdminProfileEditView() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      triggerHaptic('light');
+      haptic.impact('light');
       const reader = new FileReader();
       reader.onloadend = () => {
         if (typeof reader.result === 'string') {
@@ -56,7 +51,7 @@ export function AdminProfileEditView() {
         <div className="flex items-center space-x-2">
           <button
             onClick={() => {
-              triggerHaptic('light');
+              haptic.impact('light');
               setScreen('admin-dashboard');
             }}
             className="p-2 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-100 text-slate-400 font-bold active:scale-95 transition-all text-xs"
@@ -65,9 +60,7 @@ export function AdminProfileEditView() {
           </button>
           <div>
             <h2 className="text-sm font-black text-slate-800 leading-tight">Данные витрины</h2>
-            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-              Настройка внешнего вида
-            </p>
+            <p className="text-[10px] text-slate-400 font-medium">Настройка внешнего вида</p>
           </div>
         </div>
 

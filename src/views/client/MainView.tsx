@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useBookingStore } from '../../store/bookingStore';
 import { Loader } from '../../components/common/Loader';
 import type { Service } from '../../types';
+import { haptic } from '../../utils/haptic';
 
 export function MainView() {
   const services = useBookingStore((state) => state.services);
@@ -20,19 +21,13 @@ export function MainView() {
     return <Loader text="Загрузка витрины мастера..." />;
   }
 
-  const triggerHaptic = (style: 'light' | 'medium' = 'light') => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
-      window.Telegram.WebApp.HapticFeedback.impactOccurred(style);
-    }
-  };
-
   const handleOpenDetail = (service: Service) => {
-    triggerHaptic('light');
+    haptic.impact('light');
     setActiveBottomSheet(service);
   };
 
   const handleSelectService = (service: Service) => {
-    triggerHaptic('medium');
+    haptic.impact('medium');
     selectService(service);
     setActiveBottomSheet(null);
   };

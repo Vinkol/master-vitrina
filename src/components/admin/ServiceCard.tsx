@@ -1,4 +1,5 @@
 import type { Service } from '../../types';
+import { haptic } from '../../utils/haptic';
 
 interface ServiceCardProps {
   service: Service;
@@ -7,17 +8,11 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({ service, onEdit, onDelete }: ServiceCardProps) {
-  const triggerHaptic = (style: 'light' | 'medium' = 'light') => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
-      window.Telegram.WebApp.HapticFeedback.impactOccurred(style);
-    }
-  };
-
   return (
     <div className="p-4 bg-white rounded-2xl border border-slate-100 hover:border-indigo-100 shadow-xs flex justify-between items-center group animate-fadeIn cursor-pointer transition-all active:scale-[0.99]">
       <div
         onClick={() => {
-          triggerHaptic('light');
+          haptic.impact('light');
           onEdit(service);
         }}
         className="space-y-0.5 flex-1 pr-4"
@@ -42,7 +37,7 @@ export function ServiceCard({ service, onEdit, onDelete }: ServiceCardProps) {
       <button
         onClick={(e) => {
           e.stopPropagation();
-          triggerHaptic('medium');
+          haptic.impact('medium');
           if (confirm(`Удалить услугу "${service.title}"?`)) {
             onDelete(service.id);
           }

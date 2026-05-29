@@ -1,4 +1,5 @@
 import { useBookingStore } from '../../store/bookingStore';
+import { haptic } from '../../utils/haptic';
 
 export function AdminLinkShareView() {
   const currentMasterId = useBookingStore((state) => state.currentMasterId);
@@ -9,15 +10,9 @@ export function AdminLinkShareView() {
   // Собираем правильную официальную ссылку для Mini App
   const clientLink = `https://t.me/${botUsername}/${botAppName}?startapp=${currentMasterId || ''}`;
 
-  const triggerHaptic = (style: 'light' | 'medium' = 'light') => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
-      window.Telegram.WebApp.HapticFeedback.impactOccurred(style);
-    }
-  };
-
   // ИСПРАВЛЕНО: Официальный и стабильный нативный шеринг внутри Telegram
   const handleShareInTelegram = () => {
-    triggerHaptic('medium');
+    haptic.impact('medium');
     const shareMessage = `Привет! По этой ссылке можно посмотреть мои услуги и записаться онлайн в пару кликов:`;
 
     // Используем правильный endpoint /share/url для открытия нативного окна пересылки
@@ -31,7 +26,7 @@ export function AdminLinkShareView() {
   };
 
   const handleCopyLink = () => {
-    triggerHaptic('light');
+    haptic.impact('light');
     navigator.clipboard.writeText(clientLink).then(() => {
       if (window.Telegram?.WebApp?.showAlert) {
         window.Telegram.WebApp.showAlert('Ссылка скопирована в буфер обмена!');
@@ -47,7 +42,7 @@ export function AdminLinkShareView() {
       <div className="flex items-center space-x-3">
         <button
           onClick={() => {
-            triggerHaptic('light');
+            haptic.impact('light');
             setScreen('admin-dashboard');
           }}
           className="p-2.5 bg-white rounded-xl border border-slate-100 shadow-sm text-slate-400 active:scale-95 transition-all text-sm font-bold"

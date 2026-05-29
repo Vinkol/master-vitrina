@@ -4,6 +4,7 @@ import { useBookingStore } from '../../store/bookingStore';
 import { ServiceCard } from '../../components/admin/ServiceCard';
 import { ServiceFormSheet } from '../../features/service-management/ServiceFormSheet';
 import type { Service } from '../../types';
+import { haptic } from '../../utils/haptic';
 
 export function AdminServicesView() {
   const { services, addService, updateService, deleteService, setScreen } = useBookingStore();
@@ -15,14 +16,8 @@ export function AdminServicesView() {
   const [duration, setDuration] = useState<string>('60');
   const [description, setDescription] = useState<string>('');
 
-  const triggerHaptic = (style: 'light' | 'medium' = 'light') => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
-      window.Telegram.WebApp.HapticFeedback.impactOccurred(style);
-    }
-  };
-
   const handleOpenCreate = () => {
-    triggerHaptic('light');
+    haptic.impact('light');
     setEditingService(null);
     setTitle('');
     setPrice('');
@@ -44,7 +39,7 @@ export function AdminServicesView() {
     e.preventDefault();
     if (!title || !price || !duration) return;
 
-    triggerHaptic('medium');
+    haptic.impact('medium');
 
     const serviceData = {
       title: title.trim(),
@@ -68,7 +63,7 @@ export function AdminServicesView() {
       <div className="flex items-center space-x-3 bg-white p-4 rounded-2xl shadow-xs border border-slate-100">
         <button
           onClick={() => {
-            triggerHaptic('light');
+            haptic.impact('light');
             setScreen('admin-dashboard');
           }}
           className="p-2 hover:bg-slate-100 active:scale-95 rounded-xl text-indigo-600 transition-all text-sm font-bold"
@@ -77,7 +72,9 @@ export function AdminServicesView() {
         </button>
         <div>
           <h3 className="font-black text-slate-800 text-sm">Управление прайсом</h3>
-          <p className="text-xs text-slate-400 font-medium">Нажми на услугу для редактирования</p>
+          <p className="text-[10px] text-slate-400 font-medium">
+            Нажми на услугу для редактирования
+          </p>
         </div>
       </div>
 

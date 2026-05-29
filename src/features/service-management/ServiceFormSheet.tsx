@@ -1,5 +1,6 @@
 import type { FormEvent, ChangeEvent } from 'react';
 import type { Service } from '../../types';
+import { haptic } from '../../utils/haptic';
 
 interface ServiceFormSheetProps {
   isOpen: boolean;
@@ -32,18 +33,12 @@ export function ServiceFormSheet({
 }: ServiceFormSheetProps) {
   if (!isOpen) return null;
 
-  const triggerHaptic = (style: 'light' | 'medium' = 'light') => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
-      window.Telegram.WebApp.HapticFeedback.impactOccurred(style);
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-end justify-center animate-fadeIn">
       <div
         className="absolute inset-0"
         onClick={() => {
-          triggerHaptic('light');
+          haptic.impact('light');
           onClose();
         }}
       />
@@ -121,7 +116,7 @@ export function ServiceFormSheet({
           <button
             type="button"
             onClick={() => {
-              triggerHaptic('light');
+              haptic.impact('light');
               onClose();
             }}
             className="w-1/3 bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold py-3 rounded-xl border border-slate-200 transition-all text-sm active:scale-95"

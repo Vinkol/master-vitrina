@@ -4,16 +4,16 @@
   <table border="0" cellpadding="0" cellspacing="0">
     <tr>
       <td width="24%" align="center" valign="top">
-        <img src="./src/assets/2.png" alt="Витрина Клиента" width="100%" />
+        <img src="./src/assets/2.png" alt="Профиль мастера" width="100%" />
       </td>
       <td width="24%" align="center" valign="top">
-        <img src="./src/assets/1.png" alt="Админка Мастера" width="100%" />
+        <img src="./src/assets/1.png" alt="Главная мастера" width="100%" />
       </td>
       <td width="24%" align="center" valign="top">
-        <img src="./src/assets/3.png" alt="Календарь Записей" width="100%" />
+        <img src="./src/assets/3.png" alt="Страница клиента" width="100%" />
       </td>
       <td width="24%" align="center" valign="top">
-        <img src="./src/assets/4.png" alt="Настройка Прайса" width="100%" />
+        <img src="./src/assets/4.png" alt="Выбор услуги" width="100%" />
       </td>
     </tr>
   </table>

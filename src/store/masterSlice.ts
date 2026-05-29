@@ -33,14 +33,17 @@ export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> 
         .single();
 
       if (error) throw error;
+
       if (data) {
         set({
+          appStatus: 'AUTHORIZED',
           masterProfile: data as MasterProfile,
           currentMasterId: data.owner_tg_id,
           isRegistered: true,
           currentRole: 'master',
           currentScreen: 'admin-dashboard',
         });
+        await Promise.all([get().fetchServices(), get().fetchAppointments()]);
       }
     } catch (e) {
       console.error('Ошибка регистрация мастера в БД:', e);

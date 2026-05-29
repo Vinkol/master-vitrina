@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useBookingStore } from '../store/useBookingStore';
 import type { TelegramWebApp } from '../types/telegram';
+import { Loader } from '../components/common/Loader';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -8,20 +9,16 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children, tg }: AuthGuardProps) {
-  const { isRegistered, masterProfile, registerMaster } = useBookingStore();
+  const { isRegistered, registerMaster } = useBookingStore();
   const [newMasterName, setNewMasterName] = useState('');
 
-  // 1. Слой загрузки: ждем ответа от Supabase
-  if (masterProfile === null && isRegistered === null) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-xs font-bold text-slate-400 font-mono tracking-widest uppercase animate-pulse">
-        Поиск мастера в облаке...
-      </div>
-    );
+  // Слой загрузки
+  if (isRegistered === null) {
+    return <Loader text="Поиск мастера в облаке..." />;
   }
 
-  // 2. Слой регистрации: если мастера нет в БД
-  if (!isRegistered) {
+  // Слой регистрации
+  if (isRegistered === false) {
     const handleRegister = (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       const trimmedName = newMasterName.trim();
@@ -72,6 +69,6 @@ export function AuthGuard({ children, tg }: AuthGuardProps) {
     );
   }
 
-  // 3. Проверка пройдена — рендерим основное приложение
+  // Проверка пройдена
   return <>{children}</>;
 }

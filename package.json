@@ -10,7 +10,7 @@
     "build": "tsc && vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css,html}\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css,html}\" \"supabase/**/*.ts\"",
     "preview": "vite preview"
   },
   "dependencies": {

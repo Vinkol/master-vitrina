@@ -45,14 +45,17 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
     }
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/telegram-auth`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData }),
-        },
-      );
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl) {
+        throw new Error(
+          'Критическая ошибка: Переменная VITE_SUPABASE_URL не задана в окружении приложения',
+        );
+      }
+      const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData }),
+      });
       if (!response.ok) {
         throw new Error('Бэкенд отклонил авторизацию Telegram');
       }

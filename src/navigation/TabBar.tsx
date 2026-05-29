@@ -1,4 +1,4 @@
-import { useBookingStore } from '../store/bookingStore';
+import { useBookingStore } from '../store/useBookingStore';
 
 export function TabBar() {
   const { currentScreen, setScreen } = useBookingStore();
@@ -20,7 +20,7 @@ export function TabBar() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-t border-slate-200/60 flex items-center justify-around px-2 z-40 max-w-md mx-auto rounded-t-2xl shadow-lg pb-[env(safe-area-inset-bottom)]">
-      {/* 1. ГЛАВНАЯ (Заглушка) */}
+      {/* ГЛАВНАЯ */}
       <button
         onClick={() => handleNavigation('admin-placeholder-main')}
         className={`flex flex-col items-center space-y-0.5 w-16 text-[10px] font-bold transition-colors ${
@@ -31,7 +31,7 @@ export function TabBar() {
         <span>Главная</span>
       </button>
 
-      {/* 2. КАТАЛОГ */}
+      {/* КАТАЛОГ */}
       <button
         onClick={() => handleNavigation('admin-services')}
         className={`flex flex-col items-center space-y-0.5 w-16 text-[10px] font-bold transition-colors ${
@@ -42,7 +42,7 @@ export function TabBar() {
         <span>Каталог</span>
       </button>
 
-      {/* 3. КЛИЕНТЫ (Заглушка) */}
+      {/* КЛИЕНТЫ */}
       <button
         onClick={() => handleNavigation('admin-placeholder-clients')}
         className={`flex flex-col items-center space-y-0.5 w-16 text-[10px] font-bold transition-colors ${
@@ -53,7 +53,7 @@ export function TabBar() {
         <span>Клиенты</span>
       </button>
 
-      {/* 4. ЕЩЕ (Настройки / Профиль из твоего App.tsx) */}
+      {/* Профиль */}
       <button
         onClick={() => handleNavigation('admin-dashboard')}
         className={`flex flex-col items-center space-y-0.5 w-16 text-[10px] font-bold transition-colors ${

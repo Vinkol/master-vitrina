@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useBookingStore } from '../../store/bookingStore';
+import { useBookingStore } from '../../store/useBookingStore';
 import { Loader } from '../../components/common/Loader';
 import type { Service } from '../../types';
 import { haptic } from '../../utils/haptic';
@@ -50,7 +50,7 @@ export function MainView() {
           )}
         </div>
 
-        {/* Имя и БИО из СУБД */}
+        {/* Имя и БИО */}
         <h2 className="text-xl font-black mt-3 text-slate-800">
           {masterProfile.name || 'Бьюти-Мастер'}
         </h2>
@@ -61,7 +61,7 @@ export function MainView() {
           </p>
         )}
 
-        {/* Блок рабочего времени на основе реального schedule */}
+        {/* Блок рабочего времени */}
         <div className="mt-4 pt-3 border-t border-slate-50 flex justify-center items-center space-x-2 text-[11px] text-slate-400 font-bold uppercase tracking-wide">
           <span>🕒 Время работы:</span>
           <span className="text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md normal-case font-extrabold">
@@ -110,7 +110,7 @@ export function MainView() {
         </div>
       </div>
 
-      {/* BOTTOM SHEET (Шторка описания услуги) */}
+      {/* Шторка описания услуги */}
       {activeBottomSheet && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-end justify-center animate-fadeIn">
           <div className="absolute inset-0" onClick={() => setActiveBottomSheet(null)} />

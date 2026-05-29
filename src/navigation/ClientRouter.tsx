@@ -1,4 +1,4 @@
-import { useBookingStore } from '../store/bookingStore';
+import { useBookingStore } from '../store/useBookingStore';
 import { MainView } from '../views/client/MainView';
 import { CalendarView } from '../views/client/CalendarView';
 

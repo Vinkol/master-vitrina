@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useBookingStore } from '../../store/bookingStore';
+import { useBookingStore } from '../../store/useBookingStore';
 import { Loader } from '../../components/common/Loader';
 import { WorkDayConfigCard } from '../../components/admin/WorkDayConfigCard';
 import { haptic } from '../../utils/haptic';

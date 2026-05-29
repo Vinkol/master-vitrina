@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useBookingStore } from '../../store/bookingStore';
+import { useBookingStore } from '../../store/useBookingStore';
 import { Loader } from '../../components/common/Loader';
 import { DashboardStats } from '../../components/admin/DashboardStats';
 import { MenuRowButton } from '../../components/admin/MenuRowButton';

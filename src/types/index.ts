@@ -28,6 +28,7 @@ export interface Appointment {
   time: string; // text ("HH:MM")
   client_name: string; // text
   master_id?: string; // uuid
+  client_phone: string; // text
 }
 
 // ВСПОМОГАТЕЛЬНЫЕ И СИСТЕМНЫЕ ТИПЫ фронтенда
@@ -50,6 +51,24 @@ export interface CalendarDay {
   dayOfMonth: number;
   monthLabel: string;
   isoDate: string;
+}
+
+// Данные заблокированного клиента
+export interface BlockedClient {
+  id: string;
+  master_tg_id: number;
+  client_name: string;
+}
+
+// Тип клиента
+export interface CrmClient {
+  master_tg_id: number;
+  client_name: string;
+  client_phone: string;
+  visits_count: number;
+  last_visit_date: string;
+  has_future_appointment: boolean;
+  is_blocked: boolean;
 }
 
 // Системные интерфейсы Telegram SDK

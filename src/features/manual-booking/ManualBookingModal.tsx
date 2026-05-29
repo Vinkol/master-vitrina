@@ -1,6 +1,6 @@
 import { useMemo, type ChangeEvent } from 'react';
 import { useManualBooking } from './useManualBooking';
-import { useBookingStore } from '../../store/bookingStore';
+import { useBookingStore } from '../../store/useBookingStore';
 import { ServiceDropdown } from '../../components/admin/ServiceDropdown';
 import { generateAvailableSlots } from '../slot-generation/slotGenerator';
 import { haptic } from '../../utils/haptic';

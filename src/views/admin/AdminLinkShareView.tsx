@@ -1,5 +1,5 @@
 import { PageHeader } from '../../components/common/PageHeader';
-import { useBookingStore } from '../../store/bookingStore';
+import { useBookingStore } from '../../store/useBookingStore';
 import { haptic } from '../../utils/haptic';
 
 export function AdminLinkShareView() {
@@ -82,7 +82,6 @@ export function AdminLinkShareView() {
         </div>
       </div>
 
-      {/* Короткая памятка для мастера */}
       <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/40 text-left">
         <p className="text-[11px] text-indigo-900 font-semibold leading-relaxed">
           💡 Клиенту не нужно ничего скачивать. Ссылка откроет приложение прямо поверх вашего чата.

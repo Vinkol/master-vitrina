@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useBookingStore } from '../../store/bookingStore';
+import { useBookingStore } from '../../store/useBookingStore';
 import { generateAvailableSlots } from '../../features/slot-generation/slotGenerator';
 import { PreviewModeBanner } from '../../components/client/PreviewModeBanner';
 import { ClientCalendarRibbon } from '../../components/client/ClientCalendarRibbon';
@@ -115,7 +115,7 @@ export function CalendarView() {
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-6 min-h-screen bg-slate-50 text-slate-800 pb-24 relative select-none animate-fadeIn">
       {/* БАННЕР РЕЖИМА ПРЕДПРОСМОТРА */}
-      <PreviewModeBanner isPreviewMode={isPreviewMode} onExitPreview={handleExitPreview} />
+      <PreviewModeBanner isPreviewMode={!!isPreviewMode} onExitPreview={handleExitPreview} />
 
       {/* ШАПКА НАВИГАЦИИ */}
       <div className="flex items-center space-x-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">

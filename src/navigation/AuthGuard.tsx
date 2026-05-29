@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useBookingStore } from '../store/bookingStore';
+import { useBookingStore } from '../store/useBookingStore';
 import type { TelegramWebApp } from '../types/telegram';
 
 interface AuthGuardProps {

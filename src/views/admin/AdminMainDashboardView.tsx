@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { useBookingStore } from '../../store/bookingStore';
+import { useBookingStore } from '../../store/useBookingStore';
 import { DashboardHeader } from '../../components/admin/DashboardHeader';
 import { CalendarRibbon } from '../../components/admin/CalendarRibbon';
 import { AppointmentRow } from '../../components/admin/AppointmentRow';

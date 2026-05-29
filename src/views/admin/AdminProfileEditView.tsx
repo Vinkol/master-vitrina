@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useBookingStore } from '../../store/bookingStore';
+import { useBookingStore } from '../../store/useBookingStore';
 import { Loader } from '../../components/common/Loader';
 import { haptic } from '../../utils/haptic';
 import { PageHeader } from '../../components/common/PageHeader';
@@ -122,7 +122,6 @@ export function AdminProfileEditView() {
         </div>
       </div>
 
-      {/* Информационная подсказка */}
       <div className="p-4 bg-indigo-50/40 rounded-2xl border border-indigo-100/30 text-left">
         <p className="text-[11px] text-indigo-900/80 font-semibold leading-relaxed">
           ✨ Данные сохраняются только после нажатия кнопки «Сохранить». Ваши клиенты сразу увидят

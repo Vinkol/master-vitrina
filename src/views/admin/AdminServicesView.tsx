@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { useBookingStore } from '../../store/bookingStore';
+import { useBookingStore } from '../../store/useBookingStore';
 import { ServiceCard } from '../../components/admin/ServiceCard';
 import { ServiceFormSheet } from '../../features/service-management/ServiceFormSheet';
 import type { Service } from '../../types';

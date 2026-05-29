@@ -1,4 +1,5 @@
 import type { Service, MasterProfile, DaySchedule, Appointment, CrmClient } from '../types';
+import type { AuthSliceState } from './authSlice';
 
 export type Screen =
   | 'profile'
@@ -70,5 +71,5 @@ export interface BookingSlice {
   fetchMasterData: (tgInstance: TelegramInstance | undefined) => Promise<void>;
 }
 
-export type BookingState = CrmSlice & MasterSlice & BookingSlice;
+export type BookingState = CrmSlice & MasterSlice & BookingSlice & AuthSliceState;
 export type { DaySchedule, Service, MasterProfile, Appointment, CrmClient };

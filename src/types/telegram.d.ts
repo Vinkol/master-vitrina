@@ -5,6 +5,7 @@ export interface TelegramHapticFeedback {
 }
 
 export interface TelegramWebApp {
+  initData: string;
   ready: () => void;
   expand: () => void;
   showAlert: (message: string) => void;

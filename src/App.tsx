@@ -14,7 +14,7 @@ const getTelegramWebApp = (): TelegramWebApp | null => {
 };
 
 export default function App() {
-  const { fetchMasterData, currentRole, masterProfile } = useBookingStore();
+  const { initializeAuth, currentRole, masterProfile } = useBookingStore();
   const tg = getTelegramWebApp();
 
   useEffect(() => {
@@ -25,8 +25,8 @@ export default function App() {
   }, [tg]);
 
   useEffect(() => {
-    fetchMasterData(tg ?? undefined);
-  }, [fetchMasterData, tg]);
+    initializeAuth(tg);
+  }, [initializeAuth, tg]);
 
   // Вычисляем права доступа
   // Если мы в режиме разработки на ПК (нет tg), мы разрешаем админку для отладки

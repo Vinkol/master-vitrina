@@ -4,6 +4,7 @@ import { Loader } from '../../components/common/Loader';
 import { WorkDayConfigCard } from '../../components/admin/WorkDayConfigCard';
 import { haptic } from '../../utils/haptic';
 import type { DaySchedule, TimeInterval } from '../../types';
+import { PageHeader } from '../../components/common/PageHeader';
 
 const DAYS_OF_WEEK = [
   'Понедельник',
@@ -85,30 +86,12 @@ export function AdminHoursEditView() {
 
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-4 bg-slate-50 min-h-screen text-slate-800 pb-28 select-none animate-fadeIn">
-      {/* Хедер с кнопкой Сохранить */}
-      <div className="flex items-center justify-between bg-white/80 backdrop-blur-md p-3 rounded-2xl border border-slate-200/60 sticky top-2 z-10 shadow-sm">
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => {
-              haptic.impact('light');
-              setScreen('admin-dashboard');
-            }}
-            className="p-2 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-100 text-slate-400 font-bold active:scale-95 transition-all text-xs"
-          >
-            ← Назад
-          </button>
-          <div>
-            <h2 className="text-sm font-black text-slate-800 leading-tight">График работы</h2>
-            <p className="text-[10px] text-slate-400 font-medium">Настройка времени</p>
-          </div>
-        </div>
-        <button
-          onClick={handleSave}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2 px-4 rounded-xl transition-all shadow-md active:scale-98"
-        >
-          Сохранить
-        </button>
-      </div>
+      <PageHeader
+        title="График работы"
+        subtitle="Настройка слотов"
+        onBackClick={() => setScreen('admin-dashboard')}
+        onSaveClick={handleSave}
+      />
 
       {/* Список дней недели */}
       <div className="space-y-3">

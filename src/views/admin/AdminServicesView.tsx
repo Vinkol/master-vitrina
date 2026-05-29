@@ -5,6 +5,7 @@ import { ServiceCard } from '../../components/admin/ServiceCard';
 import { ServiceFormSheet } from '../../features/service-management/ServiceFormSheet';
 import type { Service } from '../../types';
 import { haptic } from '../../utils/haptic';
+import { PageHeader } from '../../components/common/PageHeader';
 
 export function AdminServicesView() {
   const { services, addService, updateService, deleteService, setScreen } = useBookingStore();
@@ -59,24 +60,11 @@ export function AdminServicesView() {
 
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-6 bg-slate-50 min-h-screen text-slate-800 pb-36 select-none animate-fadeIn">
-      {/* Шапка навигации */}
-      <div className="flex items-center space-x-3 bg-white p-4 rounded-2xl shadow-xs border border-slate-100">
-        <button
-          onClick={() => {
-            haptic.impact('light');
-            setScreen('admin-dashboard');
-          }}
-          className="p-2 hover:bg-slate-100 active:scale-95 rounded-xl text-indigo-600 transition-all text-sm font-bold"
-        >
-          ← Назад
-        </button>
-        <div>
-          <h3 className="font-black text-slate-800 text-sm">Управление прайсом</h3>
-          <p className="text-[10px] text-slate-400 font-medium">
-            Нажми на услугу для редактирования
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Управление прайсом"
+        subtitle="Нажми на услугу для редактирования"
+        onBackClick={() => setScreen('admin-dashboard')}
+      />
 
       {/* Список услуг */}
       <div className="space-y-2.5">

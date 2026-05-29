@@ -1,3 +1,4 @@
+import { PageHeader } from '../../components/common/PageHeader';
 import { useBookingStore } from '../../store/bookingStore';
 import { haptic } from '../../utils/haptic';
 
@@ -38,22 +39,11 @@ export function AdminLinkShareView() {
 
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-5 bg-slate-50 min-h-screen text-slate-800 pb-24 select-none animate-fadeIn">
-      {/* Кнопка назад и заголовок */}
-      <div className="flex items-center space-x-3">
-        <button
-          onClick={() => {
-            haptic.impact('light');
-            setScreen('admin-dashboard');
-          }}
-          className="p-2.5 bg-white rounded-xl border border-slate-100 shadow-sm text-slate-400 active:scale-95 transition-all text-sm font-bold"
-        >
-          ← Назад
-        </button>
-        <div>
-          <h2 className="text-base font-black text-slate-800">Ссылка для записи</h2>
-          <p className="text-[10px] text-slate-400 font-medium">Ваша персональная витрина</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Ссылка для записи"
+        subtitle="Ваша персональная ссылка"
+        onBackClick={() => setScreen('admin-dashboard')}
+      />
 
       {/* Карточка с основной информацией */}
       <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useBookingStore } from '../../store/bookingStore';
 import { Loader } from '../../components/common/Loader';
 import { haptic } from '../../utils/haptic';
+import { PageHeader } from '../../components/common/PageHeader';
 
 export function AdminProfileEditView() {
   const masterProfile = useBookingStore((state) => state.masterProfile);
@@ -46,34 +47,13 @@ export function AdminProfileEditView() {
 
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-4 bg-slate-50 min-h-screen text-slate-800 pb-24 select-none">
-      {/* ХЕДЕР */}
-      <div className="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-100 shadow-xs sticky top-0 z-10">
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => {
-              haptic.impact('light');
-              setScreen('admin-dashboard');
-            }}
-            className="p-2 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-100 text-slate-400 font-bold active:scale-95 transition-all text-xs"
-          >
-            ← Назад
-          </button>
-          <div>
-            <h2 className="text-sm font-black text-slate-800 leading-tight">Данные витрины</h2>
-            <p className="text-[10px] text-slate-400 font-medium">Настройка внешнего вида</p>
-          </div>
-        </div>
-
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2 px-4 rounded-xl transition-all shadow-md active:scale-98 ${
-            isSaving ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-        >
-          {isSaving ? 'Сохранение...' : 'Сохранить'}
-        </button>
-      </div>
+      <PageHeader
+        title="Данные витрины"
+        subtitle="Настройка внешнего вида"
+        onBackClick={() => setScreen('admin-dashboard')}
+        onSaveClick={handleSave}
+        isSaving={isSaving}
+      />
 
       {/* Основной контейнер формы */}
       <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-5">

@@ -1,14 +1,7 @@
 import type { StateCreator } from 'zustand';
 import { supabase } from '../../supabaseClient';
-import type { BookingState, MasterSlice, DaySchedule, Service, MasterProfile } from './types';
-
-const defaultSchedule: DaySchedule[] = Array.from({ length: 7 }, (_, i) => ({
-  day_index: i,
-  is_working: i < 5,
-  working_start: '10:00',
-  working_end: '20:00',
-  breaks: [],
-}));
+import type { BookingState, MasterSlice, Service, MasterProfile } from './types';
+import type { TelegramWebApp } from '../types/telegram';
 
 export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> = (set, get) => ({
   masterProfile: null,
@@ -16,37 +9,16 @@ export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> 
 
   registerMaster: async (name, tgInstance) => {
     try {
-      const currentTgUser = tgInstance?.initDataUnsafe?.user;
-      const tgId = currentTgUser?.id || 123456789;
-      const newProfile = {
-        owner_tg_id: tgId,
-        name,
-        bio: 'Добро пожаловать в мою студию записи!',
-        avatar: '💅',
-        schedule: defaultSchedule,
-      };
+      const { executeRegistrationInFunction } = get();
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert([newProfile])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      if (data) {
-        set({
-          appStatus: 'AUTHORIZED',
-          masterProfile: data as MasterProfile,
-          currentMasterId: data.owner_tg_id,
-          isRegistered: true,
-          currentRole: 'master',
-          currentScreen: 'admin-dashboard',
-        });
-        await Promise.all([get().fetchServices(), get().fetchAppointments()]);
+      if (typeof executeRegistrationInFunction === 'function') {
+        const castedTg = tgInstance ? (tgInstance as unknown as TelegramWebApp) : null;
+        await executeRegistrationInFunction(name, castedTg);
+      } else {
+        throw new Error('Метод не найден в глобальном сторе');
       }
     } catch (e) {
-      console.error('Ошибка регистрация мастера в БД:', e);
+      console.error('Ошибка регистрации мастера:', e);
     }
   },
 

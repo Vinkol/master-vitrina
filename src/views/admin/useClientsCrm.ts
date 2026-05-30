@@ -53,13 +53,13 @@ export function useClientsCrm() {
   }, [hasMoreClients, searchQuery, activeFilter, page, fetchCrmClients, isLoading]);
 
   const toggleBlockClient = useCallback(
-    async (clientName: string, currentlyBlocked: boolean) => {
+    async (clientPhone: string, currentlyBlocked: boolean) => {
       setIsLoading(true);
       try {
         if (currentlyBlocked) {
-          await unblockClient(clientName);
+          await unblockClient(clientPhone);
         } else {
-          await blockClient(clientName);
+          await blockClient(clientPhone);
         }
       } finally {
         setIsLoading(false);

@@ -1,11 +1,12 @@
 import type { DaySchedule, Appointment, Service } from '../../types';
 
 interface GeneratorOptions {
-  selectedDate: string; // "YYYY-MM-DD"
-  daySchedule: DaySchedule; // Настройки конкретного дня из профиля
-  selectedService: Service; // Выбранная услуга (нужна её duration)
-  appointments: Appointment[]; // Все записи мастера
-  slotStepMinutes?: number; // Шаг сетки (по умолчанию каждые 30 минут)
+  selectedDate: string;
+  daySchedule: DaySchedule;
+  selectedService: Service;
+  appointments: Appointment[];
+  slotStepMinutes?: number;
+  isMaster?: boolean;
 }
 
 function timeToMinutes(timeStr: string): number {
@@ -25,26 +26,49 @@ export function generateAvailableSlots({
   selectedService,
   appointments,
   slotStepMinutes = 30,
+  isMaster = false,
 }: GeneratorOptions): string[] {
-  // Если день выходной — окошек нет
   if (!daySchedule.is_working) return [];
+
+  // Получаем текущую дату и время
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+  const currentDay = String(now.getDate()).padStart(2, '0');
+  const todayStr = `${currentYear}-${currentMonth}-${currentDay}`;
+
+  const targetDate = selectedDate.split('T')[0];
+
+  // ЗАЩИТА ОТ ПРОШЛЫХ ДНЕЙ
+  if (targetDate < todayStr) return [];
 
   const availableSlots: string[] = [];
   const workStart = timeToMinutes(daySchedule.working_start);
   const workEnd = timeToMinutes(daySchedule.working_end);
   const serviceDuration = selectedService.duration;
 
-  // Фильтруем записи из базы строго на выбранный день
-  const dayAppointments = appointments.filter((app) => app.date === selectedDate);
+  // барьер времени
+  let timeBarrierMinutes = 0;
+  if (targetDate === todayStr) {
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    // Мастеру +2 часа , клиенту +6 часов
+    const bufferMinutes = isMaster ? 120 : 360;
+    timeBarrierMinutes = currentMinutes + bufferMinutes;
+  }
 
-  // Генерируем слоты. Окошко не может начаться позже, чем "конец дня минус длительность услуги"
+  const dayAppointments = appointments.filter((app) => app.date.split('T')[0] === targetDate);
+
   for (let current = workStart; current + serviceDuration <= workEnd; current += slotStepMinutes) {
     const slotStart = current;
     const slotEnd = current + serviceDuration;
 
+    // ЗАЩИТА ОТ ПРОШЕДШЕГО ВРЕМЕНИ И БУФЕРОВ
+    if (targetDate === todayStr && slotStart < timeBarrierMinutes) {
+      continue;
+    }
+
     let isInterrupted = false;
 
-    // Проверка: Пересечение с перерывами мастера
     if (daySchedule.breaks && daySchedule.breaks.length > 0) {
       for (const brk of daySchedule.breaks) {
         const breakStart = timeToMinutes(brk.start);
@@ -59,13 +83,8 @@ export function generateAvailableSlots({
 
     if (isInterrupted) continue;
 
-    // Проверка: Пересечение с существующими записями в БД
     for (const app of dayAppointments) {
       const appStart = timeToMinutes(app.time);
-
-      // Так как у нас в appointments хранится только service_title,
-      // заложим дефолтную длительность записи (60 мин) для изоляции,
-      // в будущем сможем искать услугу по названию для вычисления точного времени
       const appDuration = 60;
       const appEnd = appStart + appDuration;
 
@@ -75,7 +94,6 @@ export function generateAvailableSlots({
       }
     }
 
-    // Если все проверки пройдены — добавляем красивое время в массив
     if (!isInterrupted) {
       availableSlots.push(minutesToTime(slotStart));
     }

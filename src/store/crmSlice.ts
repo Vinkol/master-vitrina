@@ -9,8 +9,8 @@ export const createCrmSlice: StateCreator<BookingState, [], [], CrmSlice> = (set
   hasMoreClients: true,
 
   fetchCrmClients: async (search = '', filter = 'all', page = 0) => {
-    const masterTgId = get().currentMasterId;
-    if (!masterTgId) return;
+    const masterId = get().currentMasterId;
+    if (!masterId) return;
 
     const from = page * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
@@ -18,12 +18,12 @@ export const createCrmSlice: StateCreator<BookingState, [], [], CrmSlice> = (set
     try {
       const { data: blockedData } = await supabase
         .from('blocked_clients')
-        .select('client_name')
-        .eq('master_tg_id', masterTgId);
+        .select('client_phone')
+        .eq('master_id', masterId);
 
-      const blockedNames = (blockedData || []).map((b) => b.client_name.trim());
+      const blockedPhones = (blockedData || []).map((b) => b.client_phone.trim());
 
-      let query = supabase.from('master_clients_view').select('*').eq('master_tg_id', masterTgId);
+      let query = supabase.from('master_clients_view').select('*').eq('master_id', masterId);
 
       if (search) {
         query = query.or(`client_name.ilike.%${search}%,client_phone.ilike.%${search}%`);
@@ -44,7 +44,8 @@ export const createCrmSlice: StateCreator<BookingState, [], [], CrmSlice> = (set
       if (error) throw error;
 
       const mappedClients = (rawClients || []).map((client) => {
-        const isBlocked = blockedNames.includes(client.client_name.trim());
+        const currentPhone = (client.client_phone || '').trim();
+        const isBlocked = blockedPhones.includes(currentPhone);
         return {
           ...client,
           client_phone: client.client_phone || 'Телефон не указан',
@@ -69,14 +70,14 @@ export const createCrmSlice: StateCreator<BookingState, [], [], CrmSlice> = (set
     }
   },
 
-  blockClient: async (clientName) => {
-    const masterTgId = get().currentMasterId;
-    if (!masterTgId) return;
+  blockClient: async (clientPhone) => {
+    const masterId = get().currentMasterId;
+    if (!masterId) return;
 
     try {
       const { error } = await supabase
         .from('blocked_clients')
-        .insert([{ master_tg_id: masterTgId, client_name: clientName.trim() }]);
+        .insert([{ master_id: masterId, client_phone: clientPhone.trim() }]);
 
       if (error) throw error;
       await get().fetchCrmClients();
@@ -85,16 +86,16 @@ export const createCrmSlice: StateCreator<BookingState, [], [], CrmSlice> = (set
     }
   },
 
-  unblockClient: async (clientName) => {
-    const masterTgId = get().currentMasterId;
-    if (!masterTgId) return;
+  unblockClient: async (clientPhone) => {
+    const masterId = get().currentMasterId;
+    if (!masterId) return;
 
     try {
       const { error } = await supabase
         .from('blocked_clients')
         .delete()
-        .eq('master_tg_id', masterTgId)
-        .eq('client_name', clientName.trim());
+        .eq('master_id', masterId)
+        .eq('client_phone', clientPhone.trim());
 
       if (error) throw error;
       await get().fetchCrmClients();

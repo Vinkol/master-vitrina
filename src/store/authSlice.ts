@@ -53,14 +53,13 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
     }
 
     if (startParam) {
-      console.log('[AUTH]: Обнаружен client мастера:', startParam);
+      console.log('[AUTH]: Обнаружен клиент мастера:', startParam);
       set({
         appStatus: 'AUTHORIZED',
         currentRole: 'client',
         isOwner: false,
         currentMasterId: startParam,
       });
-
       await get().fetchMasterData();
       return;
     }
@@ -101,22 +100,28 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
           isOwner: true,
         });
       } else {
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: data.access_token,
-          refresh_token: data.refresh_token || '',
+        const { data: sessionData, error: sessionError } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
         });
 
-        if (sessionError) throw sessionError;
+        if (sessionError || !sessionData.session)
+          throw sessionError || new Error('Auth session generation failed');
 
         set({
           appStatus: 'AUTHORIZED',
           currentRole: 'master',
-          authToken: data.access_token,
+          authToken: sessionData.session.access_token,
           isOwner: true,
           currentMasterId: data.masterId,
         });
 
-        await Promise.all([get().fetchServices(), get().fetchAppointments()]);
+        try {
+          await get().fetchProfile();
+          await Promise.all([get().fetchServices(), get().fetchAppointments()]);
+        } catch (e) {
+          console.log('[AUTH]: Ошибка параллельной загрузки', e);
+        }
       }
     } catch (error) {
       console.error('[AUTH КРИТИЧЕСКИЙ СБОЙ МАСТЕРА]:', error);
@@ -171,22 +176,28 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
 
       const data = await response.json();
 
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: data.access_token,
-        refresh_token: data.refresh_token || '',
+      const { data: sessionData, error: sessionError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
       });
 
-      if (sessionError) throw sessionError;
+      if (sessionError || !sessionData.session)
+        throw sessionError || new Error('Auth session generation failed');
 
       set({
         appStatus: 'AUTHORIZED',
         currentRole: 'master',
-        authToken: data.access_token,
+        authToken: sessionData.session.access_token,
         currentMasterId: data.masterId,
         isOwner: true,
       });
 
-      await Promise.all([get().fetchServices(), get().fetchAppointments()]);
+      try {
+        await get().fetchProfile();
+        await Promise.all([get().fetchServices(), get().fetchAppointments()]);
+      } catch (e) {
+        console.log('[REGISTRATION]: Ошибка загрузки данных', e);
+      }
     } catch (error) {
       console.error('[REGISTRATION КРИТИЧЕСКИЙ СБОЙ]:', error);
       set({ appStatus: 'UNAUTHORIZED' });

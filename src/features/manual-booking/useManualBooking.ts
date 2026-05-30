@@ -40,7 +40,7 @@ export function useManualBooking(selectedDate: string, onClose: () => void) {
         : cleanPhone.replace(/\D/g, '');
 
       const newAppointment = {
-        master_tg_id: currentMasterId,
+        master_id: currentMasterId,
         service_title: selectedService.title,
         date: selectedDate,
         time: selectedTime,

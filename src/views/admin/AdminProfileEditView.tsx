@@ -8,20 +8,21 @@ export function AdminProfileEditView() {
   const masterProfile = useBookingStore((state) => state.masterProfile);
   const updateProfileInDB = useBookingStore((state) => state.updateProfileInDB);
   const setScreen = useBookingStore((state) => state.setScreen);
+
   const [name, setName] = useState<string>(() => masterProfile?.name || '');
   const [bio, setBio] = useState<string>(() => masterProfile?.bio || '');
+  const [avatar, setAvatar] = useState<string | null>(() => masterProfile?.avatar || null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   if (!masterProfile) {
     return <Loader text="Загрузка профиля..." />;
   }
 
-  // Хендлер сохранения данных одной кнопкой
   const handleSave = async () => {
     haptic.impact('medium');
     setIsSaving(true);
     try {
-      await updateProfileInDB({ name, bio });
+      await updateProfileInDB({ name, bio, avatar: avatar || undefined });
       setScreen('admin-dashboard');
     } catch (e) {
       console.error('Ошибка сохранения профиля:', e);
@@ -30,7 +31,6 @@ export function AdminProfileEditView() {
     }
   };
 
-  // Обработчик загрузки фото (Base64)
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -38,7 +38,7 @@ export function AdminProfileEditView() {
       const reader = new FileReader();
       reader.onloadend = () => {
         if (typeof reader.result === 'string') {
-          updateProfileInDB({ avatar: reader.result });
+          setAvatar(reader.result);
         }
       };
       reader.readAsDataURL(file);
@@ -55,9 +55,7 @@ export function AdminProfileEditView() {
         isSaving={isSaving}
       />
 
-      {/* Основной контейнер формы */}
       <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-5">
-        {/* Загрузка фото */}
         <div className="flex flex-col items-center space-y-2 pb-4 border-b border-slate-50">
           <label className="w-full text-xs font-bold text-slate-400 uppercase tracking-wider">
             Фото профиля
@@ -65,14 +63,11 @@ export function AdminProfileEditView() {
 
           <div className="relative group">
             <div className="w-24 h-24 bg-slate-100 border-4 border-white shadow-md rounded-full flex items-center justify-center overflow-hidden">
-              {masterProfile.avatar?.startsWith('data:image') ? (
-                <img
-                  src={masterProfile.avatar}
-                  className="w-full h-full object-cover"
-                  alt="Avatar"
-                />
+              {/* ИСПРАВЛЕНО: Рендерим картинку из локального стейта аватарки для мгновенного превью */}
+              {avatar?.startsWith('data:image') ? (
+                <img src={avatar} className="w-full h-full object-cover" alt="Avatar" />
               ) : (
-                <span className="text-3xl">{masterProfile.avatar || '💅'}</span>
+                <span className="text-3xl">{avatar || '💅'}</span>
               )}
             </div>
 
@@ -92,7 +87,6 @@ export function AdminProfileEditView() {
           </p>
         </div>
 
-        {/* Текстовые поля */}
         <div className="space-y-4">
           <div>
             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">

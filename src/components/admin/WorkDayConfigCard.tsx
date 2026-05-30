@@ -28,65 +28,64 @@ export function WorkDayConfigCard({
           : 'bg-slate-100/50 border-dashed border-slate-200 opacity-70'
       }`}
     >
-      {/* Шапка конкретного дня */}
-      <div className="flex justify-between items-center mb-3">
-        <div className="flex items-center space-x-3">
-          <input
-            type="checkbox"
-            id={`day-${day.day_index}`}
-            checked={day.is_working}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              haptic.impact('light');
-              onUpdateDay({ is_working: e.target.checked });
-            }}
-            className="w-4 h-4 rounded-md border-slate-300 text-indigo-600 focus:ring-indigo-500 accent-indigo-600 cursor-pointer"
-          />
-          <label
-            htmlFor={`day-${day.day_index}`}
-            className="text-xs font-black text-slate-700 cursor-pointer"
-          >
-            {dayName}
-          </label>
-        </div>
+      {/* Шапка дня */}
+      <div
+        onClick={() => {
+          haptic.impact('light');
+          onUpdateDay({
+            is_working: !day.is_working,
+          });
+        }}
+        className="flex justify-between items-center mb-1 py-1 cursor-pointer active:scale-[0.99] transition-all select-none"
+      >
+        <span className="text-sm font-black text-slate-700 tracking-tight">{dayName}</span>
+
         <span
-          className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
-            day.is_working ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400 bg-slate-200/50'
+          className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-xl transition-all ${
+            day.is_working
+              ? 'text-indigo-600 bg-indigo-50 border border-indigo-100/40'
+              : 'text-slate-400 bg-slate-200/60 border border-transparent'
           }`}
         >
           {day.is_working ? 'Работаю' : 'Выходной'}
         </span>
       </div>
 
-      {/* Настройки часов */}
+      {/* Настройки часов работы */}
       {day.is_working && (
-        <div className="space-y-3 pt-1 border-t border-slate-50">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center space-x-2 flex-1">
-              <span className="text-[10px] font-bold text-slate-400">С</span>
+        <div className="space-y-3 pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-between gap-2.5 w-full">
+            {/* Время начала */}
+            <div className="flex items-center space-x-1.5 flex-1 min-w-0">
+              <span className="text-[10px] font-bold text-slate-400 shrink-0">С</span>
               <input
                 type="time"
-                value={day.working_start}
+                value={day.working_start || ''}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   onUpdateDay({ working_start: e.target.value })
                 }
-                className="w-full p-2 rounded-lg border border-slate-200 text-xs text-center font-bold bg-slate-50 focus:border-indigo-500 focus:outline-none text-slate-700"
+                className="w-full min-w-17.5 p-2 rounded-xl border border-slate-200 text-xs text-center font-bold bg-slate-50 text-slate-800 focus:border-indigo-500 focus:bg-white focus:outline-none"
               />
             </div>
-            <div className="flex items-center space-x-2 flex-1">
-              <span className="text-[10px] font-bold text-slate-400">ДО</span>
+
+            {/* Время конца */}
+            <div className="flex items-center space-x-1.5 flex-1 min-w-0">
+              <span className="text-[10px] font-bold text-slate-400 shrink-0">ДО</span>
               <input
                 type="time"
-                value={day.working_end}
+                value={day.working_end || ''}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   onUpdateDay({ working_end: e.target.value })
                 }
-                className="w-full p-2 rounded-lg border border-slate-200 text-xs text-center font-bold bg-slate-50 focus:border-indigo-500 focus:outline-none text-slate-700"
+                className="w-full min-w-17.5 p-2 rounded-xl border border-slate-200 text-xs text-center font-bold bg-slate-50 text-slate-800 focus:border-indigo-500 focus:bg-white focus:outline-none"
               />
             </div>
+
+            {/* Добавить перерыв */}
             <button
               type="button"
               onClick={onAddBreak}
-              className="text-[10px] font-black text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-2 rounded-xl transition-colors shrink-0"
+              className="text-[10px] font-black text-indigo-600 bg-indigo-50/80 hover:bg-indigo-100 px-3 py-2.5 rounded-xl transition-colors shrink-0"
             >
               + Перерыв
             </button>

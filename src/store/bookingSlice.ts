@@ -24,7 +24,6 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
 
   setScreen: (screen) => set({ currentScreen: screen }),
 
-  // Получение записей конкретного мастера
   fetchAppointments: async () => {
     const masterId = get().currentMasterId;
     if (!masterId) return;
@@ -38,13 +37,19 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
         .order('time', { ascending: true });
 
       if (error) throw error;
-      if (data) set({ appointments: data as Appointment[] });
+
+      if (data) {
+        const formattedAppointments = data.map((app) => ({
+          ...app,
+          time: app.time && app.time.length === 8 ? app.time.substring(0, 5) : app.time,
+        }));
+        set({ appointments: formattedAppointments as Appointment[] });
+      }
     } catch (e) {
       console.error('Ошибка получения записей из БД:', e);
     }
   },
 
-  // Создание записи клиентом
   createAppointment: async (clientName) => {
     const { selectedService, selectedDate, selectedTime, currentMasterId } = get();
     if (!selectedService || !selectedDate || !selectedTime || !currentMasterId) return;

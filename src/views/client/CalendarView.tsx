@@ -38,15 +38,17 @@ export function CalendarView() {
       daySchedule,
       selectedService,
       appointments,
+      isMaster: false,
     });
   }, [selectedDate, selectedService, masterProfile, appointments]);
 
   const tgInstance = window.Telegram?.WebApp;
   const currentTgId = tgInstance?.initDataUnsafe?.user?.id;
-  const ownerTgId = masterProfile?.owner_tg_id;
+  const masterTelegramId = masterProfile?.telegram_id;
 
   const isPreviewMode =
-    !tgInstance || (currentTgId && ownerTgId && Number(currentTgId) === Number(ownerTgId));
+    !tgInstance ||
+    (currentTgId && masterTelegramId && Number(currentTgId) === Number(masterTelegramId));
 
   const handleSelectDay = (isoDate: string): void => {
     setDate(isoDate);
@@ -73,7 +75,6 @@ export function CalendarView() {
     }
   };
 
-  // Логика управления нативной кнопкой Telegram (MainButton)
   useEffect(() => {
     const tgInstance = window.Telegram?.WebApp;
 
@@ -114,10 +115,8 @@ export function CalendarView() {
 
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-6 min-h-screen bg-slate-50 text-slate-800 pb-24 relative select-none animate-fadeIn">
-      {/* БАННЕР РЕЖИМА ПРЕДПРОСМОТРА */}
       <PreviewModeBanner isPreviewMode={!!isPreviewMode} onExitPreview={handleExitPreview} />
 
-      {/* ШАПКА НАВИГАЦИИ */}
       <div className="flex items-center space-x-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
         <button
           onClick={handleGoBack}
@@ -133,7 +132,6 @@ export function CalendarView() {
         </div>
       </div>
 
-      {/* ГОРИЗОНТАЛЬНАЯ ЛЕНТА КАЛЕНДАРЯ */}
       <ClientCalendarRibbon
         scrollRef={scrollRef}
         selectedDate={selectedDate}
@@ -141,7 +139,6 @@ export function CalendarView() {
         onSelectDay={handleSelectDay}
       />
 
-      {/* ПК ИМИТАЦИЯ КНОПКИ ПОДТВЕРЖДЕНИЯ */}
       {!window.Telegram?.WebApp && selectedDate && selectedTime && (
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 animate-fadeIn">
           <button
@@ -165,7 +162,6 @@ export function CalendarView() {
         </div>
       )}
 
-      {/* ВЫНЕСЕННАЯ ШТОРКА ДОСТУПНОГО ВРЕМЕНИ */}
       <TimeSlotsSheet
         isOpen={timeSheetOpen}
         onClose={() => setTimeSheetOpen(false)}

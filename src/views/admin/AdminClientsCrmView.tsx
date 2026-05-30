@@ -35,8 +35,8 @@ export function AdminClientsCrmView() {
   });
 
   const handleToggleBlock = useCallback(
-    (name: string, isBlocked: boolean) => {
-      toggleBlockClient(name, isBlocked);
+    (phone: string, isBlocked: boolean) => {
+      toggleBlockClient(phone, isBlocked);
     },
     [toggleBlockClient],
   );
@@ -88,7 +88,7 @@ export function AdminClientsCrmView() {
             <ClientCrmCard
               key={`${client.client_name}_${client.client_phone}`}
               client={client}
-              onToggleBlock={handleToggleBlock}
+              onToggleBlock={() => handleToggleBlock(client.client_phone, client.is_blocked)}
             />
           ))
         )}

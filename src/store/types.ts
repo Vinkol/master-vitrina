@@ -37,8 +37,8 @@ export interface CrmSlice {
   crmClients: CrmClient[];
   hasMoreClients: boolean;
   fetchCrmClients: (search?: string, filter?: string, page?: number) => Promise<void>;
-  blockClient: (clientName: string) => Promise<void>;
-  unblockClient: (clientName: string) => Promise<void>;
+  blockClient: (clientPhone: string) => Promise<void>;
+  unblockClient: (clientPhone: string) => Promise<void>;
 }
 
 export interface MasterSlice {

@@ -50,14 +50,10 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
       startParam = globalTg.initDataUnsafe?.start_param || null;
     } else if (isDevelopment) {
       initData = MOCK_TG_INIT_DATA;
-      // Для теста мастера null. Для теста клиента ниже:
-      // startParam = 'some-master-uuid-123';
     }
 
-    // ПРОВЕРКА НА КЛИЕНТА
-    // Если есть параметр start_param — это клиент, пришедший по ссылке мастера!
     if (startParam) {
-      console.log('[AUTH]: Обнаружен клиент мастера:', startParam);
+      console.log('[AUTH]: Обнаружен client мастера:', startParam);
       set({
         appStatus: 'AUTHORIZED',
         currentRole: 'client',
@@ -76,10 +72,19 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Критическая ошибка: Переменные окружения для Supabase отсутствуют');
+      }
 
       const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: supabaseAnonKey,
+          Authorization: `Bearer ${supabaseAnonKey}`,
+        },
         body: JSON.stringify({ initData }),
       });
 
@@ -144,10 +149,19 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Критическая ошибка: Переменные окружения для Supabase отсутствуют');
+      }
 
       const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: supabaseAnonKey,
+          Authorization: `Bearer ${supabaseAnonKey}`,
+        },
         body: JSON.stringify({ initData, name, registerAsMaster: true }),
       });
 

@@ -35,8 +35,12 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
       typeof window !== 'undefined' &&
       (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
+    const globalTg = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
+
     if (tgInstance?.initData) {
       initData = tgInstance.initData;
+    } else if (globalTg && 'initData' in globalTg && globalTg.initData) {
+      initData = globalTg.initData;
     } else if (isDevelopment) {
       console.warn('[Zustand Auth]: Включен Mock-режим для ПК.');
       initData = MOCK_TG_INIT_DATA;
@@ -48,7 +52,8 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
     }
 
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://beynlmclrkttmektxzav.supabase.co';
+      const supabaseUrl =
+        import.meta.env.VITE_SUPABASE_URL || 'https://beynlmclrkttmektxzav.supabase.co';
       let data: AuthResponse;
 
       if (isDevelopment && initData === MOCK_TG_INIT_DATA) {
@@ -122,8 +127,12 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
 
     let initData: string | undefined = undefined;
 
+    const globalTg = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
+
     if (tgInstance?.initData) {
       initData = tgInstance.initData;
+    } else if (globalTg && 'initData' in globalTg && globalTg.initData) {
+      initData = globalTg.initData;
     } else if (isDevelopment) {
       initData = MOCK_TG_INIT_DATA;
     }
@@ -134,7 +143,8 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
     }
 
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://beynlmclrkttmektxzav.supabase.co';
+      const supabaseUrl =
+        import.meta.env.VITE_SUPABASE_URL || 'https://beynlmclrkttmektxzav.supabase.co';
       let data: AuthResponse;
 
       if (isDevelopment && initData === MOCK_TG_INIT_DATA) {

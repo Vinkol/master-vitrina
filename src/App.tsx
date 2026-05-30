@@ -5,6 +5,7 @@ import { ClientRouter } from './navigation/ClientRouter';
 import { AdminRouter } from './navigation/AdminRouter';
 import { TabBar } from './navigation/TabBar';
 import type { TelegramWebApp } from './types/telegram';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 const getTelegramWebApp = (): TelegramWebApp | null => {
   if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
@@ -53,6 +54,7 @@ export default function App() {
         {/* НАВИГАЦИЯ ТАБ БАРА: Рендерится исключительно в режиме администрирования мастера */}
         {currentRole === 'master' && isOwner && <TabBar />}
       </div>
+      <SpeedInsights />
     </AuthGuard>
   );
 }

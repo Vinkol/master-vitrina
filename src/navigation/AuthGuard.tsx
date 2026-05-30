@@ -1,3 +1,4 @@
+// src/navigation/AuthGuard.tsx
 import { useState } from 'react';
 import { useBookingStore } from '../store/useBookingStore';
 import type { TelegramWebApp } from '../types/telegram';
@@ -8,22 +9,29 @@ interface AuthGuardProps {
   tg: TelegramWebApp | null;
 }
 
-export function AuthGuard({ children, tg }: AuthGuardProps) {
+export function AuthGuard({ children }: AuthGuardProps) {
   const { isRegistered, registerMaster } = useBookingStore();
   const [newMasterName, setNewMasterName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Слой загрузки
   if (isRegistered === null) {
     return <Loader text="Поиск мастера в облаке..." />;
   }
 
-  // Слой регистрации
   if (isRegistered === false) {
-    const handleRegister = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       const trimmedName = newMasterName.trim();
-      if (!trimmedName) return;
-      registerMaster(trimmedName, tg ?? undefined);
+      if (!trimmedName || isSubmitting) return;
+
+      try {
+        setIsSubmitting(true);
+        await registerMaster(trimmedName, undefined);
+      } catch (error) {
+        console.error('Ошибка при сабмите формы регистрации:', error);
+      } finally {
+        setIsSubmitting(false);
+      }
     };
 
     return (
@@ -60,9 +68,14 @@ export function AuthGuard({ children, tg }: AuthGuardProps) {
 
           <button
             type="submit"
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-md shadow-indigo-100 text-sm active:scale-[0.99]"
+            disabled={isSubmitting}
+            className={`w-full text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-md text-sm active:scale-[0.99] ${
+              isSubmitting
+                ? 'bg-indigo-400 cursor-not-allowed shadow-none'
+                : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100'
+            }`}
           >
-            Создать профиль мастера →
+            {isSubmitting ? 'Создание профиля...' : 'Создать профиль мастера →'}
           </button>
         </form>
       </div>

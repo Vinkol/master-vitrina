@@ -7,7 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Дефолтное расписание для нового мастера
 const defaultSchedule = Array.from({ length: 7 }, (_, i) => ({
   day_index: i,
   is_working: i < 5,
@@ -72,10 +71,46 @@ async function verifyTelegramAuth(
   }
 }
 
-function extractTokenFromLink(link: string): string {
-  if (!link) return '';
-  const parts = link.split('token=');
-  return parts.length < 2 ? '' : parts[1].split('&')[0];
+async function generateCustomJWT(
+  telegramId: number,
+  role: string,
+  jwtSecret: string,
+): Promise<string> {
+  const header = { alg: 'HS256', typ: 'JWT' };
+
+  const payload = {
+    role: 'authenticated',
+    iss: 'supabase',
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // Токен живет 7 дней
+    user_metadata: {
+      telegram_id: telegramId,
+      role: role,
+    },
+  };
+
+  const encoder = new TextEncoder();
+  const base64url = (source: Uint8Array) =>
+    btoa(String.fromCharCode(...source))
+      .replace(/=/g, '')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_');
+
+  const encodedHeader = base64url(encoder.encode(JSON.stringify(header)));
+  const encodedPayload = base64url(encoder.encode(JSON.stringify(payload)));
+  const tokenData = `${encodedHeader}.${encodedPayload}`;
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(jwtSecret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(tokenData));
+  const encodedSignature = base64url(new Uint8Array(signatureBuffer));
+
+  return `${tokenData}.${encodedSignature}`;
 }
 
 Deno.serve(async (req: Request) => {
@@ -87,10 +122,16 @@ Deno.serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       { auth: { persistSession: false } },
     );
-    const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
-    if (!TELEGRAM_BOT_TOKEN) throw new Error('TELEGRAM_BOT_TOKEN не задан в Supabase');
 
-    // Читаем параметры: initData и возможный name для регистрации
+    const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    const JWT_SECRET = Deno.env.get('JWT_SECRET');
+
+    if (!TELEGRAM_BOT_TOKEN || !JWT_SECRET) {
+      throw new Error(
+        'Критическая ошибка: Переменные TELEGRAM_BOT_TOKEN или JWT_SECRET не заданы в Supabase',
+      );
+    }
+
     const { initData, name } = await req.json();
     if (!initData)
       return new Response(JSON.stringify({ error: 'Пропущен параметр initData' }), {
@@ -101,13 +142,11 @@ Deno.serve(async (req: Request) => {
     let isValid = false;
     let userData = null;
 
-    // Строка разработчика, пускаем без проверки хэша Telegram
     if (initData.includes('123456789') || initData.includes('Dev_Session')) {
       isValid = true;
       userData = { id: 123456789, first_name: 'MasterDev' };
       console.log('[Edge Function]: Локальный запуск на ПК подтвержден.');
     } else {
-      // Для реальных устройств запускаем штатную криптографическую валидацию
       const result = await verifyTelegramAuth(initData, TELEGRAM_BOT_TOKEN);
       isValid = result.isValid;
       userData = result.userData;
@@ -121,14 +160,12 @@ Deno.serve(async (req: Request) => {
 
     const telegramId = userData.id;
 
-    // Ищем профиль мастера
     let { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .eq('owner_tg_id', telegramId)
       .maybeSingle();
 
-    // СЦЕНАРИЙ РЕГИСТРАЦИИ: Профиля нет, но фронтенд прислал имя бизнеса
     if (!profile && name) {
       const { data: newProfile, error: insertError } = await supabaseAdmin
         .from('profiles')
@@ -148,7 +185,6 @@ Deno.serve(async (req: Request) => {
       profile = newProfile;
     }
 
-    // Если профиля все еще нет и имя не передано — сообщаем фронтенду о необходимости регистрации
     if (!profile) {
       return new Response(JSON.stringify({ registered: false, telegramId }), {
         status: 200,
@@ -156,39 +192,13 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Пользователь существует/создан -> Выдаем JWT токен сессии
-    const virtualEmail = `tg_${telegramId}@twa.local`;
-    // eslint-disable-next-line prefer-const
-    let { data: authData, error: authError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
-      email: virtualEmail,
-      options: { data: { telegram_id: telegramId } },
-    });
-
-    if (authError) {
-      const { error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email: virtualEmail,
-        password: crypto.randomUUID(),
-        email_confirm: true,
-        user_metadata: { telegram_id: telegramId },
-      });
-      if (createError) throw createError;
-
-      const { data: retryAuth, error: retryError } = await supabaseAdmin.auth.admin.generateLink({
-        type: 'magiclink',
-        email: virtualEmail,
-      });
-      if (retryError) throw retryError;
-      authData = retryAuth;
-    }
-
-    const token = extractTokenFromLink(authData.properties.action_link);
+    const customToken = await generateCustomJWT(telegramId, 'master', JWT_SECRET);
 
     return new Response(
       JSON.stringify({
         registered: true,
         role: 'master',
-        token: token,
+        token: customToken,
         masterProfile: [profile],
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },

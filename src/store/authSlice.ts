@@ -9,6 +9,7 @@ export interface AuthSliceState {
   appStatus: AppStatus;
   currentRole: UserRole | null;
   authToken: string | null;
+  isOwner: boolean;
   setAppStatus: (status: AppStatus) => void;
   initializeAuth: (tgInstance: TelegramWebApp | null) => Promise<void>;
   executeRegistrationInFunction: (name: string, tgInstance: TelegramWebApp | null) => Promise<void>;
@@ -21,6 +22,7 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
   appStatus: 'LOADING',
   currentRole: null,
   authToken: null,
+  isOwner: false,
 
   setAppStatus: (status) => set({ appStatus: status }),
 
@@ -36,7 +38,7 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
     if (tgInstance?.initData) {
       initData = tgInstance.initData;
     } else if (isDevelopment) {
-      console.warn('[Zustand Auth]: Telegram SDK не найден. Включен Mock-режим для ПК.');
+      console.warn('[Zustand Auth]: Включен Mock-режим для ПК.');
       initData = MOCK_TG_INIT_DATA;
     }
 
@@ -47,25 +49,39 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      if (!supabaseUrl) {
-        throw new Error(
-          'Критическая ошибка: Переменная VITE_SUPABASE_URL не задана в окружении приложения',
-        );
+      let data: AuthResponse;
+
+      if (isDevelopment && initData === MOCK_TG_INIT_DATA) {
+        data = {
+          registered: false,
+          telegramId: 123456789,
+        };
+      } else {
+        if (!supabaseUrl) {
+          throw new Error(
+            'Критическая ошибка: Переменная VITE_SUPABASE_URL не задана в окружении приложения',
+          );
+        }
+
+        const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Бэкенд отклонил авторизацию Telegram');
+        }
+
+        data = await response.json();
       }
-      const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData }),
-      });
-      if (!response.ok) {
-        throw new Error('Бэкенд отклонил авторизацию Telegram');
-      }
-      const data: AuthResponse = await response.json();
+
       if (data.registered === false) {
         set({
           appStatus: 'REGISTRATION',
           isRegistered: false,
           currentRole: 'master',
+          isOwner: true,
         });
       } else {
         const token = data.token;
@@ -86,6 +102,7 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
           authToken: token,
           masterProfile: profile,
           currentMasterId: targetMasterId,
+          isOwner: data.role === 'master',
         });
 
         await Promise.all([get().fetchServices(), get().fetchAppointments()]);
@@ -118,21 +135,42 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      if (!supabaseUrl) {
-        throw new Error('Критическая ошибка: Переменная VITE_SUPABASE_URL не задана в окружении');
+      let data: AuthResponse;
+
+      if (isDevelopment && initData === MOCK_TG_INIT_DATA) {
+        console.log('[Zustand Auth]: Локальная регистрация на ПК. Сетевой запрос пропущен.');
+        data = {
+          registered: true,
+          role: 'master',
+          token: 'mock_developer_jwt_token',
+          masterProfile: [
+            {
+              id: 'mock-uuid-developer-123',
+              owner_tg_id: 123456789,
+              name: name,
+              bio: 'Добро пожаловать в мою студию!',
+              avatar: '💅',
+              schedule: [],
+            },
+          ],
+        };
+      } else {
+        if (!supabaseUrl) {
+          throw new Error('Критическая ошибка: Переменная VITE_SUPABASE_URL не задана в окружении');
+        }
+
+        const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData, name }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Ошибка создания профиля на бэкенде');
+        }
+
+        data = await response.json();
       }
-
-      const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData, name }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Ошибка создания профиля на бэкенде');
-      }
-
-      const data: AuthResponse = await response.json();
 
       if (data.registered === true) {
         const token = data.token;
@@ -155,6 +193,7 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
           masterProfile: profile,
           currentMasterId: targetMasterId,
           currentScreen: 'admin-dashboard',
+          isOwner: true,
         });
 
         await Promise.all([get().fetchServices(), get().fetchAppointments()]);

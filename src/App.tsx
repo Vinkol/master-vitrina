@@ -15,7 +15,7 @@ const getTelegramWebApp = (): TelegramWebApp | null => {
 };
 
 export default function App() {
-  const { initializeAuth, currentRole, masterProfile } = useBookingStore();
+  const { initializeAuth, currentRole, isOwner } = useBookingStore();
   const tg = getTelegramWebApp();
 
   useEffect(() => {
@@ -29,29 +29,16 @@ export default function App() {
     initializeAuth(tg);
   }, [initializeAuth, tg]);
 
-  // Вычисляем права доступа
-  // Если мы в режиме разработки на ПК (нет tg), мы разрешаем админку для отладки
-  // Если мы на реальном телефоне в браузере, !tg НЕ должен делать пользователя владельцем
-  const isDevelopment =
-    typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-  const currentTgId = tg?.initDataUnsafe?.user?.id;
-  const ownerTgId = masterProfile?.owner_tg_id;
-
-  const isOwner =
-    (isDevelopment && !tg) ||
-    (currentTgId && ownerTgId && Number(currentTgId) === Number(ownerTgId));
-
   return (
     <AuthGuard tg={tg}>
       <div className="min-h-screen bg-slate-100 text-slate-800 pb-20 select-none">
-        {/* РОУТЕР КЛИЕНТА: Показывается обычным клиентам или мастеру, если включена роль клиента */}
+        {/* РОУТЕР КЛИЕНТА */}
         {currentRole === 'client' && <ClientRouter />}
 
-        {/* РОУТЕР АДМИНКИ: Доступен только если пользователь верифицирован как владелец профиля */}
+        {/* РОУТЕР АДМИНКИ */}
         {currentRole === 'master' && isOwner && <AdminRouter />}
 
-        {/* НАВИГАЦИЯ ТАБ БАРА: Рендерится исключительно в режиме администрирования мастера */}
+        {/* НАВИГАЦИЯ ТАБ БАРА */}
         {currentRole === 'master' && isOwner && <TabBar />}
       </div>
       <SpeedInsights />

@@ -58,6 +58,7 @@ export interface BookingSlice {
   fetchAppointments: () => Promise<void>;
   createAppointment: (clientName: string) => Promise<void>;
   currentMasterId: number | null;
+  isOwner: boolean;
   botUsername: string;
   botAppName: string;
   isRegistered: boolean | null;

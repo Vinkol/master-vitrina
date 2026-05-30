@@ -102,9 +102,10 @@ Deno.serve(async (req: Request) => {
     let userData = null;
 
     // Строка разработчика, пускаем без проверки хэша Telegram
-    if (initData.startsWith('query_id=AA')) {
+    if (initData.includes('123456789') || initData.includes('Dev_Session')) {
       isValid = true;
       userData = { id: 123456789, first_name: 'MasterDev' };
+      console.log('[Edge Function]: Локальный запуск на ПК подтвержден.');
     } else {
       // Для реальных устройств запускаем штатную криптографическую валидацию
       const result = await verifyTelegramAuth(initData, TELEGRAM_BOT_TOKEN);

@@ -15,7 +15,7 @@ export interface AuthSliceState {
 }
 
 const MOCK_TG_INIT_DATA =
-  'query_id=AA...&user=%7B%22id%22%3A123456789%2C%22first_name%22%3A%22MasterDev%22%7D...';
+  'query_id=AA_Dev_Session&user=%7B%22id%22%3A123456789%2C%22first_name%22%3A%22MasterDev%22%7D&hash=dev_mock_hash';
 
 export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState> = (set, get) => ({
   appStatus: 'LOADING',

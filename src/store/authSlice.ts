@@ -48,7 +48,7 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
     }
 
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://beynlmclrkttmektxzav.supabase.co';
       let data: AuthResponse;
 
       if (isDevelopment && initData === MOCK_TG_INIT_DATA) {
@@ -134,7 +134,7 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
     }
 
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://beynlmclrkttmektxzav.supabase.co';
       let data: AuthResponse;
 
       if (isDevelopment && initData === MOCK_TG_INIT_DATA) {

@@ -20,9 +20,13 @@ export interface TelegramUser {
   last_name?: string;
   username?: string;
   language_code?: string;
+  photo_url?: string;
 }
 
 export interface TelegramInstance {
+  initData: string;
+  ready: () => void;
+  expand: () => void;
   initDataUnsafe?: {
     user?: TelegramUser;
     start_param?: string;
@@ -43,10 +47,9 @@ export interface MasterSlice {
   fetchProfile: () => Promise<void>;
   updateProfileInDB: (updatedFields: Partial<MasterProfile>) => Promise<void>;
   fetchServices: () => Promise<void>;
-  addService: (service: Omit<Service, 'id' | 'master_tg_id'>) => Promise<void>;
+  addService: (service: Omit<Service, 'id'>) => Promise<void>;
   updateService: (id: string, updatedService: Partial<Service>) => Promise<void>;
   deleteService: (id: string) => Promise<void>;
-  registerMaster: (name: string, tgInstance: TelegramInstance | undefined) => Promise<void>;
 }
 
 export interface BookingSlice {
@@ -57,7 +60,7 @@ export interface BookingSlice {
   appointments: Appointment[];
   fetchAppointments: () => Promise<void>;
   createAppointment: (clientName: string) => Promise<void>;
-  currentMasterId: number | null;
+  currentMasterId: string | null;
   isOwner: boolean;
   botUsername: string;
   botAppName: string;
@@ -69,7 +72,7 @@ export interface BookingSlice {
   setDate: (date: string) => void;
   setTime: (slot: string) => void;
   resetBooking: () => void;
-  fetchMasterData: (tgInstance: TelegramInstance | undefined) => Promise<void>;
+  fetchMasterData: () => Promise<void>;
 }
 
 export type BookingState = CrmSlice & MasterSlice & BookingSlice & AuthSliceState;

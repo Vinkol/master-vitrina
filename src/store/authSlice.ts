@@ -1,9 +1,10 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import type { StateCreator } from 'zustand';
 import { supabase } from '../../supabaseClient';
 import type { BookingState } from './types';
-import type { AppStatus, UserRole, AuthResponse } from '../types/auth';
 import type { TelegramWebApp } from '../types/telegram';
+
+export type AppStatus = 'LOADING' | 'UNAUTHORIZED' | 'REGISTRATION' | 'AUTHORIZED';
+export type UserRole = 'client' | 'master';
 
 export interface AuthSliceState {
   appStatus: AppStatus;
@@ -16,7 +17,7 @@ export interface AuthSliceState {
 }
 
 const MOCK_TG_INIT_DATA =
-  'query_id=AA_Dev_Session&user=%7B%22id%22%3A123456789%2C%22first_name%22%3A%22MasterDev%22%7D&hash=dev_mock_hash';
+  'query_id=AA_Dev_Session&user=%7B%22id%22%3A123456789%2C%22first_name%22%3A%22MasterDev%22%2C%22username%22%3A%22dev_master%22%7D&hash=dev_mock_hash';
 
 export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState> = (set, get) => ({
   appStatus: 'LOADING',
@@ -27,10 +28,11 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
   setAppStatus: (status) => set({ appStatus: status }),
 
   initializeAuth: async (tgInstance) => {
-    console.log('[DEBUG AUTH]: Инициализация сессии...');
+    console.log('[AUTH]: Инициализация...');
     set({ appStatus: 'LOADING' });
 
     let initData: string | undefined = undefined;
+    let startParam: string | null = null;
 
     const isDevelopment =
       typeof window !== 'undefined' &&
@@ -40,87 +42,86 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
 
     if (tgInstance?.initData) {
       initData = tgInstance.initData;
+      startParam = tgInstance.initDataUnsafe?.start_param || null;
     } else if (globalTg && 'initData' in globalTg && globalTg.initData) {
       initData = globalTg.initData;
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      startParam = globalTg.initDataUnsafe?.start_param || null;
     } else if (isDevelopment) {
       initData = MOCK_TG_INIT_DATA;
+      // Для теста мастера null. Для теста клиента ниже:
+      // startParam = 'some-master-uuid-123';
+    }
+
+    // ПРОВЕРКА НА КЛИЕНТА
+    // Если есть параметр start_param — это клиент, пришедший по ссылке мастера!
+    if (startParam) {
+      console.log('[AUTH]: Обнаружен клиент мастера:', startParam);
+      set({
+        appStatus: 'AUTHORIZED',
+        currentRole: 'client',
+        isOwner: false,
+        currentMasterId: startParam,
+      });
+
+      await get().fetchMasterData();
+      return;
     }
 
     if (!initData) {
-      set({ appStatus: 'UNAUTHORIZED', isRegistered: false });
+      set({ appStatus: 'UNAUTHORIZED' });
       return;
     }
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      let data: AuthResponse;
 
-      if (isDevelopment && initData === MOCK_TG_INIT_DATA) {
-        data = {
-          registered: false,
-          telegramId: 123456789,
-        };
-      } else {
-        const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData }),
-        });
+      const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData }),
+      });
 
-        if (!response.ok) {
-          throw new Error('Бэкенд отклонил авторизацию Telegram');
-        }
-
-        data = await response.json();
+      if (!response.ok) {
+        throw new Error('Бэкенд отклонил авторизацию мастера');
       }
+
+      const data = await response.json();
 
       if (data.registered === false) {
         set({
           appStatus: 'REGISTRATION',
-          isRegistered: false,
           currentRole: 'master',
           isOwner: true,
         });
       } else {
-        const token = data.token;
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token || '',
+        });
 
-        if (token && typeof token === 'string' && token.startsWith('eyJ')) {
-          localStorage.setItem('twa_master_token', token);
-          supabase.realtime.setAuth(token);
-          // @ts-ignore
-          supabase.rest.headers['Authorization'] = `Bearer ${token}`;
-        }
-
-        const profile =
-          data.masterProfile && data.masterProfile.length > 0 ? data.masterProfile[0] : null;
-        const fallbackTgId = tgInstance?.initDataUnsafe?.user?.id || 123456789;
-        const targetMasterId = profile ? profile.owner_tg_id : fallbackTgId;
+        if (sessionError) throw sessionError;
 
         set({
           appStatus: 'AUTHORIZED',
-          isRegistered: true,
-          currentRole: data.role,
-          authToken: token,
-          masterProfile: profile,
-          currentMasterId: targetMasterId,
-          isOwner: data.role === 'master',
+          currentRole: 'master',
+          authToken: data.access_token,
+          isOwner: true,
+          currentMasterId: data.masterId,
         });
 
         await Promise.all([get().fetchServices(), get().fetchAppointments()]);
       }
     } catch (error) {
-      console.error('[DEBUG AUTH КРИТИЧЕСКИЙ СБОЙ]:', error);
-      set({ appStatus: 'UNAUTHORIZED', isRegistered: false });
+      console.error('[AUTH КРИТИЧЕСКИЙ СБОЙ МАСТЕРА]:', error);
+      set({ appStatus: 'UNAUTHORIZED' });
     }
   },
 
   executeRegistrationInFunction: async (name, tgInstance) => {
-    console.log('[DEBUG REGISTRATION]: Запуск создания профиля...');
+    console.log('[REGISTRATION]: Создание профиля мастера...', name);
     set({ appStatus: 'LOADING' });
-
-    const isDevelopment =
-      typeof window !== 'undefined' &&
-      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
     let initData: string | undefined = undefined;
     const globalTg = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
@@ -129,7 +130,10 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
       initData = tgInstance.initData;
     } else if (globalTg && 'initData' in globalTg && globalTg.initData) {
       initData = globalTg.initData;
-    } else if (isDevelopment) {
+    } else if (
+      typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ) {
       initData = MOCK_TG_INIT_DATA;
     }
 
@@ -140,68 +144,37 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthSliceState>
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      let data: AuthResponse;
 
-      if (isDevelopment && initData === MOCK_TG_INIT_DATA) {
-        data = {
-          registered: true,
-          role: 'master',
-          token: 'mock_developer_jwt_token_for_pc_debugging',
-          masterProfile: [
-            {
-              id: 'dev-generated-uuid-999',
-              owner_tg_id: 123456789,
-              name: name,
-              bio: 'Локальный отладочный профиль',
-              avatar: '⚙️',
-              schedule: [],
-            },
-          ],
-        };
-      } else {
-        const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData, name }),
-        });
+      const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData, name, registerAsMaster: true }),
+      });
 
-        if (!response.ok) {
-          throw new Error('Ошибка создания профиля на бэкенде');
-        }
-
-        data = await response.json();
+      if (!response.ok) {
+        throw new Error('Ошибка создания профиля на сервере');
       }
 
-      if (data.registered === true) {
-        const token = data.token;
+      const data = await response.json();
 
-        if (token && typeof token === 'string' && token.startsWith('eyJ')) {
-          localStorage.setItem('twa_master_token', token);
-          supabase.realtime.setAuth(token);
-          // @ts-ignore
-          supabase.rest.headers['Authorization'] = `Bearer ${token}`;
-        }
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token || '',
+      });
 
-        const profile =
-          data.masterProfile && data.masterProfile.length > 0 ? data.masterProfile[0] : null;
-        const fallbackTgId = tgInstance?.initDataUnsafe?.user?.id || 123456789;
-        const targetMasterId = profile ? profile.owner_tg_id : fallbackTgId;
+      if (sessionError) throw sessionError;
 
-        set({
-          appStatus: 'AUTHORIZED',
-          isRegistered: true,
-          currentRole: data.role,
-          authToken: token,
-          masterProfile: profile,
-          currentMasterId: targetMasterId,
-          currentScreen: 'admin-dashboard',
-          isOwner: true,
-        });
+      set({
+        appStatus: 'AUTHORIZED',
+        currentRole: 'master',
+        authToken: data.access_token,
+        currentMasterId: data.masterId,
+        isOwner: true,
+      });
 
-        await Promise.all([get().fetchServices(), get().fetchAppointments()]);
-      }
+      await Promise.all([get().fetchServices(), get().fetchAppointments()]);
     } catch (error) {
-      console.error('[DEBUG REGISTRATION КРИТИЧЕСКИЙ СБОЙ]:', error);
+      console.error('[REGISTRATION КРИТИЧЕСКИЙ СБОЙ]:', error);
       set({ appStatus: 'UNAUTHORIZED' });
     }
   },

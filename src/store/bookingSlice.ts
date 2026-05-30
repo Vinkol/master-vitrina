@@ -10,6 +10,7 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
   botUsername: 'mastervitrinabot',
   botAppName: 'app',
   isRegistered: null,
+  isOwner: false,
 
   selectedService: null,
   selectedDate: '',
@@ -23,14 +24,16 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
 
   setScreen: (screen) => set({ currentScreen: screen }),
 
+  // Получение записей конкретного мастера
   fetchAppointments: async () => {
-    const masterTgId = get().currentMasterId;
-    if (!masterTgId) return;
+    const masterId = get().currentMasterId;
+    if (!masterId) return;
+
     try {
       const { data, error } = await supabase
         .from('appointments')
         .select('*')
-        .eq('master_tg_id', masterTgId)
+        .eq('master_id', masterId)
         .order('date', { ascending: true })
         .order('time', { ascending: true });
 
@@ -41,6 +44,7 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
     }
   },
 
+  // Создание записи клиентом
   createAppointment: async (clientName) => {
     const { selectedService, selectedDate, selectedTime, currentMasterId } = get();
     if (!selectedService || !selectedDate || !selectedTime || !currentMasterId) return;
@@ -52,7 +56,7 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
         : 'Через ТГ по ссылке';
 
       const newAppointment = {
-        master_tg_id: currentMasterId,
+        master_id: currentMasterId,
         service_title: selectedService.title,
         date: selectedDate,
         time: selectedTime,
@@ -70,71 +74,15 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
     }
   },
 
-  fetchMasterData: async (tgInstance) => {
+  fetchMasterData: async () => {
+    const masterId = get().currentMasterId;
+    if (!masterId) return;
+
     try {
-      const currentTgUser = tgInstance?.initDataUnsafe?.user;
-      const startParam = tgInstance?.initDataUnsafe?.start_param;
-      let targetMasterId: number | undefined = undefined;
-      let isOwner = false;
-
-      if (currentTgUser?.id) {
-        if (startParam) {
-          targetMasterId = parseInt(startParam, 10) || undefined;
-          isOwner = targetMasterId === currentTgUser.id;
-        } else {
-          targetMasterId = currentTgUser.id;
-          isOwner = true;
-        }
-
-        const { data: checkProfile } = await supabase
-          .from('profiles')
-          .select('owner_tg_id')
-          .eq('owner_tg_id', targetMasterId ?? 0)
-          .maybeSingle();
-
-        if (isOwner && !checkProfile) {
-          set({
-            isRegistered: false,
-            currentRole: 'master',
-            currentScreen: 'admin-dashboard',
-            currentMasterId: targetMasterId,
-            masterProfile: null,
-          });
-          return;
-        }
-      } else {
-        const { data: fallbackList } = await supabase
-          .from('profiles')
-          .select('owner_tg_id')
-          .limit(1);
-
-        if (fallbackList && fallbackList.length > 0) {
-          targetMasterId = fallbackList[0].owner_tg_id;
-          isOwner = true;
-        } else {
-          targetMasterId = 123456789;
-          isOwner = true;
-          set({
-            isRegistered: false,
-            currentRole: 'master',
-            currentScreen: 'admin-dashboard',
-            currentMasterId: targetMasterId,
-            masterProfile: null,
-          });
-          return;
-        }
-      }
-
-      set({
-        currentMasterId: targetMasterId ?? 123456789,
-        currentRole: isOwner ? 'master' : 'client',
-        currentScreen: isOwner ? get().currentScreen : 'profile',
-        isRegistered: true,
-      });
-
+      set({ isRegistered: true });
       await Promise.all([get().fetchProfile(), get().fetchServices(), get().fetchAppointments()]);
     } catch (e) {
-      console.error('Ошибка мультимастерной инициализации:', e);
+      console.error('Ошибка при загрузке данных мастера для витрины:', e);
     }
   },
 

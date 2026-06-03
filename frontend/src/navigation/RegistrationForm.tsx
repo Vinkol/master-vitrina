@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useBookingStore } from '../store/useBookingStore';
 
 export const RegistrationForm: React.FC = () => {
-  const registerMaster = useBookingStore((state) => state.registerMaster);
+  const updateProfileInDB = useBookingStore((state) => state.updateProfileInDB);
+  const setScreen = useBookingStore((state) => state.setScreen);
   const isLoading = useBookingStore((state) => state.isLoading);
 
   // Локальный стейт формы
@@ -31,33 +32,45 @@ export const RegistrationForm: React.FC = () => {
       tg.MainButton.hide();
     }
 
-    // Обработчик клика по нативной кнопке
-    const handleMainButtonClick = async () => {
+    const handleMainButtonClick = () => {
       if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-      tg.MainButton.showProgress(); // Показываем лоадер внутри кнопки Telegram
+      tg.MainButton.showProgress();
 
-      const success = await registerMaster({ name: name.trim(), bio: bio.trim() });
+      void (async () => {
+        try {
+          await updateProfileInDB({
+            name: name.trim(),
+            bio: bio.trim(),
+          });
 
-      if (!success) {
-        tg.MainButton.hideProgress();
-        if (tg.showAlert) tg.showAlert('Не удалось зарегистрироваться. Попробуйте позже.');
-      }
+          tg.MainButton.hideProgress();
+          tg.MainButton.hide();
+
+          // Перенаправляем мастера в его главное меню управления (Админку)
+          setScreen('admin-dashboard');
+        } catch {
+          tg.MainButton.hideProgress();
+          if (tg.showAlert) tg.showAlert('Не удалось сохранить профиль. Попробуйте позже.');
+        }
+      })();
     };
 
     tg.MainButton.onClick(handleMainButtonClick);
 
-    // Чистим за собой обработчики при размонтировании компонента
+    // Чистим за собой обработчики при размонтировании компонента (теперь ссылка на функцию совпадает!)
     return () => {
       tg.MainButton.offClick(handleMainButtonClick);
       tg.MainButton.hide();
     };
-  }, [name, bio, isLoading, registerMaster, tg]);
+  }, [name, bio, isLoading, updateProfileInDB, setScreen, tg]);
 
   // Веб-фолбэк обработчик, если запустили вне Telegram (для тестов в браузере)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim().length < 2 || isLoading) return;
-    await registerMaster({ name: name.trim(), bio: bio.trim() });
+
+    await updateProfileInDB({ name: name.trim(), bio: bio.trim() });
+    setScreen('admin-dashboard');
   };
 
   return (

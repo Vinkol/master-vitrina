@@ -65,12 +65,15 @@ class ServiceResponse(ServiceCreate):
 
 # СХЕМЫ ДЛЯ ЗАПИСЕЙ КЛИЕНТОВ
 class ClientAppointmentCreate(BaseModel):
-    master_id: uuid.UUID
+    id: uuid.UUID
+    master_id: str
     service_title: str = Field(..., max_length=150)
     date: date
     time: time
     client_name: str = Field(..., max_length=255)
     client_phone: str = Field(..., max_length=50)
+    class Config:
+        from_attributes = True
 
 class ClientAppointmentResponse(ClientAppointmentCreate):
     id: uuid.UUID

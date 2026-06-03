@@ -4,7 +4,7 @@ from sqlalchemy.future import select
 from datetime import date, time, datetime, timedelta
 
 from src.database import get_db
-from src.models import Service, UserMaster, ClientAppointment
+from src.models import Service, UserMaster, ClientAppointment, ClientAppointmentResponse
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
 
@@ -18,6 +18,22 @@ def minutes_to_time_str(total_minutes: int) -> str:
     hours = total_minutes // 60
     minutes = total_minutes % 60
     return f"{hours:02d}:{minutes:02d}"
+
+@router.get("/master/{master_id}", response_model=list[ClientAppointmentResponse])
+async def get_master_appointments(
+    master_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Эндпоинт для мастера. Возвращает список всех записей клиентов 
+    к конкретному мастеру для его CRM-журнала.
+    """
+    result = await db.execute(
+        select(ClientAppointment)
+        .where(ClientAppointment.master_id == master_id)
+        .order_by(ClientAppointment.date.asc(), ClientAppointment.time.asc())
+    )
+    return result.scalars().all()
 
 @router.get("/slots")
 async def get_available_slots(

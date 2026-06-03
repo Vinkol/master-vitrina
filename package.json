@@ -1,47 +1,19 @@
 {
-  "name": "master-vitrina",
+  "name": "beauty-tutor-twa-root",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "tunnel": "cmd /c \"start cmd /k npm run dev && start cmd /k ssh -t -p 443 -R 0:127.0.0.1:5173 qr@pinggy.io\"",
-    "dev:tg": "concurrently \"npm run dev\" \"npm run tunnel\"",
-    "build": "tsc && vite build",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css,html}\" \"supabase/**/*.ts\"",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.106.1",
-    "@tailwindcss/postcss": "^4.3.0",
-    "@twa-dev/sdk": "^8.0.2",
-    "@vercel/speed-insights": "^2.0.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "zustand": "^5.0.13"
+    "front:init": "npm run --prefix frontend i",
+    "front:dev": "npm run --prefix frontend dev",
+    "front:build": "npm run --prefix frontend build",
+    
+    "back:init": "uv venv --python 3.12 backend/.venv && cd backend && uv add fastapi \"uvicorn[standard]\" pydantic-settings sqlalchemy asyncpg alembic pyjwt passlib",
+    "back:dev": "cd backend && (start http://localhost:8000/docs) && uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload",
+    "db:makemigrations": "cd backend && uv run alembic revision --autogenerate",
+    "db:migrate": "cd backend && uv run alembic upgrade head",
+    
+    "dev": "concurrently \"npm run front:dev\" \"npm run back:dev\""
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/node": "^24.12.3",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@types/telegram-web-app": "^9.6.0",
-    "@vitejs/plugin-react": "^6.0.1",
-    "autoprefixer": "^10.5.0",
-    "concurrently": "^9.2.1",
-    "eslint": "^10.3.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.5",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.6.0",
-    "postcss": "^8.5.15",
-    "prettier": "^3.8.3",
-    "tailwindcss": "^4.3.0",
-    "typescript": "~6.0.2",
-    "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
+    "concurrently": "^10.0.3"
   }
 }

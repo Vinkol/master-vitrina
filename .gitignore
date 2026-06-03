@@ -1,27 +1,96 @@
-# Logs
-logs
+# ==========================================
+# 🛠️ СИСТЕМНЫЕ ФАЙЛЫ И КЭШ РЕДАКТОРОВ
+# ==========================================
+.DS_Store
+.DS_Store?
+_MACOSX
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE (VS Code, WebStorm, PyCharm)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Логи и временные файлы
 *.log
+logs/
+*.log*
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# ==========================================
+# 🌐 ФРОНТЕНД (Node.js / React / Vite)
+# ==========================================
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.cache/
+frontend/.eslintcache
+frontend/stats.html
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# ==========================================
+# 🐍 БЭКЕНД (Python / FastAPI / Alembic)
+# ==========================================
+__pycache__/
+*/__pycache__/
+backend/__pycache__/
+backend/*/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+.venv/
+venv/
+backend/.venv/
+backend/venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.mypy_cache/
 
-commit.txt
+# ==========================================
+# 🗄️ БАЗЫ ДАННЫХ И КОНТЕЙНЕРЫ (Docker / PG)
+# ==========================================
+postgres_data/
+backend/postgres_data/
+.docker/
+
+# ==========================================
+# 🔑 СЕКРЕТЫ И ОКРУЖЕНИЕ (Environment / Tokens)
+# ==========================================
 .env
+.env.*
+!.env.example
+frontend/.env
+frontend/.env.*
+backend/.env
+backend/.env.*
+
+# Тестовые файлы
+commit.txt

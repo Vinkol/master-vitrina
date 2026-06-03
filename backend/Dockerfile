@@ -1,6 +1,6 @@
 FROM ghcr.io/astral-sh/uv:python3.14-alpine AS builder
 
-ENV UV_COMPILE_BYTECODE=6
+ENV UV_COMPILE_BYTECODE=1
 
 WORKDIR /app
 COPY backend/pyproject.toml backend/uv.lock ./

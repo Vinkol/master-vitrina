@@ -5,6 +5,7 @@ import { PreviewModeBanner } from '../../components/client/PreviewModeBanner';
 import { ClientCalendarRibbon } from '../../components/client/ClientCalendarRibbon';
 import { TimeSlotsSheet } from '../../components/client/TimeSlotsSheet';
 import { haptic } from '../../utils/haptic';
+import type { BookingState } from '../../store/types';
 
 export function CalendarView() {
   const {
@@ -18,8 +19,8 @@ export function CalendarView() {
     setRole,
   } = useBookingStore();
 
-  const masterProfile = useBookingStore((state) => state.masterProfile);
-  const appointments = useBookingStore((state) => state.appointments);
+  const masterProfile = useBookingStore((state: BookingState) => state.masterProfile);
+  const appointments = useBookingStore((state: BookingState) => state.appointments);
 
   const [timeSheetOpen, setTimeSheetOpen] = useState<boolean>(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -37,7 +38,7 @@ export function CalendarView() {
       selectedDate,
       daySchedule,
       selectedService,
-      appointments,
+      appointments: appointments,
       isMaster: false,
     });
   }, [selectedDate, selectedService, masterProfile, appointments]);
@@ -76,42 +77,64 @@ export function CalendarView() {
   };
 
   useEffect(() => {
-    const tgInstance = window.Telegram?.WebApp;
+    const tg = window.Telegram?.WebApp;
+    if (!tg) return;
 
-    if (tgInstance) {
-      if (selectedDate && selectedTime && selectedService) {
-        tgInstance.MainButton.text = `Записаться на ${selectedTime}`;
-        tgInstance.MainButton.show();
+    if (selectedDate && selectedTime && selectedService) {
+      tg.MainButton.text = `Записаться на ${selectedTime}`;
+      tg.MainButton.show();
 
-        const handleMainButtonClick = () => {
-          const clientName = tgInstance.initDataUnsafe?.user?.first_name || 'Дмитрий (ТГ)';
+      const handleMainButtonClick = () => {
+        const clientName = tg.initDataUnsafe?.user?.first_name || 'Дмитрий (ТГ)';
+        tg.MainButton.showProgress();
 
-          useBookingStore
-            .getState()
-            .createAppointment(clientName)
-            .then(() => {
-              haptic.notification('success');
-              tgInstance.showAlert(`Вы успешно записаны!`);
-              if (currentRole === 'master') {
-                setScreen('admin-placeholder-main');
-              } else {
-                setScreen('profile');
-              }
-            });
+        void (async () => {
+          try {
+            await useBookingStore.getState().createAppointment(clientName);
+            haptic.notification('success');
+            if (tg.showAlert) tg.showAlert(`Вы успешно записаны!`);
 
-          tgInstance.MainButton.hide();
-        };
+            if (currentRole === 'master') {
+              setScreen('admin-placeholder-main');
+            } else {
+              setScreen('profile');
+            }
+          } catch {
+            if (tg.showAlert) tg.showAlert('Произошла ошибка при создании записи');
+          } finally {
+            tg.MainButton.hideProgress();
+            tg.MainButton.hide();
+          }
+        })();
+      };
 
-        tgInstance.MainButton.onClick(handleMainButtonClick);
+      tg.MainButton.onClick(handleMainButtonClick);
 
-        return () => {
-          tgInstance.MainButton.offClick(handleMainButtonClick);
-        };
-      } else {
-        tgInstance.MainButton.hide();
-      }
+      return () => {
+        tg.MainButton.offClick(handleMainButtonClick);
+        tg.MainButton.hide();
+      };
+    } else {
+      tg.MainButton.hide();
     }
   }, [selectedDate, selectedTime, selectedService, setScreen, currentRole]);
+
+  // Синхронный обработчик для ПК
+  const handlePcSubmit = () => {
+    void (async () => {
+      try {
+        await useBookingStore.getState().createAppointment('Дмитрий (Браузер)');
+        haptic.notification('success');
+        alert('Тестовая запись успешно улетела в Supabase!');
+        if (currentRole === 'master') {
+          setRole('master');
+          setScreen('admin-placeholder-main');
+        }
+      } catch {
+        alert('Ошибка при отправке записи');
+      }
+    })();
+  };
 
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-6 min-h-screen bg-slate-50 text-slate-800 pb-24 relative select-none animate-fadeIn">
@@ -142,19 +165,7 @@ export function CalendarView() {
       {!window.Telegram?.WebApp && selectedDate && selectedTime && (
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 animate-fadeIn">
           <button
-            onClick={() => {
-              useBookingStore
-                .getState()
-                .createAppointment('Дмитрий (Браузер)')
-                .then(() => {
-                  haptic.notification('success');
-                  alert('Тестовая запись успешно улетела в Supabase!');
-                  if (currentRole === 'master') {
-                    setRole('master');
-                    setScreen('admin-placeholder-main');
-                  }
-                });
-            }}
+            onClick={handlePcSubmit}
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-sm text-sm"
           >
             [ПК] Подтвердить запись на {selectedTime}

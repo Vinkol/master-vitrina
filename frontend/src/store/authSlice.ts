@@ -93,7 +93,6 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (s
         isAuthenticated: true,
         isRegisteredMaster: true,
         currentMasterId: startParam && startParam !== 'reg' ? startParam : masterUuid,
-        isLoading: false,
       });
 
       void (async () => {
@@ -102,6 +101,7 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (s
         await store.fetchServices();
         await store.fetchAppointments();
       })();
+      set({ isLoading: false });
     } catch (err) {
       console.error('Критическая ошибка авторизации через FastAPI:', err);
       set({ isLoading: false, isAuthenticated: false, isRegisteredMaster: false });

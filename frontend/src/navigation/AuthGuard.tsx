@@ -27,6 +27,10 @@ export const AuthGuard: React.FC<AuthGuardProps> = () => {
     return <Loader text="Синхронизация с Telegram..." />;
   }
 
+  if (isAuthenticated && !masterProfile) {
+    return <Loader text="Загрузка профиля мастера..." />;
+  }
+
   // 2. Логика для КЛИЕНТА: если в ссылке есть start_param и он НЕ равен 'reg',
   // значит это клиент пришел на витрину к конкретному мастеру
   if (startParam && startParam !== 'reg') {

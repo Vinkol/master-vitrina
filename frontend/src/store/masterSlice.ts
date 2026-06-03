@@ -37,9 +37,14 @@ export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> 
         method: 'GET',
         headers: getAuthHeaders(token),
       });
-      const scheduleData = scheduleRes.ok
-        ? ((await scheduleRes.json()) as { schedule: unknown })
-        : { schedule: [] };
+      let rawSchedule: Record<string, unknown>[] = [];
+
+      if (scheduleRes.ok) {
+        const scheduleData = (await scheduleRes.json()) as { schedule: unknown };
+        if (Array.isArray(scheduleData.schedule)) {
+          rawSchedule = scheduleData.schedule as Record<string, unknown>[];
+        }
+      }
 
       const profile: MasterProfile = {
         id: masterId,
@@ -47,7 +52,7 @@ export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> 
         name: profileData.name,
         bio: profileData.bio || '',
         avatar: profileData.avatar || '',
-        schedule: scheduleData.schedule || [],
+        schedule: rawSchedule,
       } as unknown as MasterProfile;
 
       set({ masterProfile: profile });

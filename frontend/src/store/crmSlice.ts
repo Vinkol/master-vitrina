@@ -1,5 +1,4 @@
 import type { StateCreator } from 'zustand';
-import { supabase } from '../../supabaseClient';
 import type { BookingState, CrmSlice } from './types';
 
 const PAGE_SIZE = 20;

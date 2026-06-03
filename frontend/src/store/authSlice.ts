@@ -1,6 +1,5 @@
 import type { StateCreator } from 'zustand';
 import type { BookingState, AuthState, RegisterMasterPayload, SessionUser } from './types';
-import { supabase } from '../../supabaseClient';
 
 export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (set) => ({
   accessToken: null,

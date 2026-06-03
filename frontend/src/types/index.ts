@@ -40,6 +40,7 @@ export interface Appointment {
   client_name: string; // text
   master_id?: string; // uuid
   client_phone: string; // text
+  duration: number;
 }
 
 // ВСПОМОГАТЕЛЬНЫЕ И СИСТЕМНЫЕ ТИПЫ фронтенда

@@ -1,5 +1,4 @@
 import type { StateCreator } from 'zustand';
-import { supabase } from '../../supabaseClient';
 import type { BookingState, MasterSlice, Service, MasterProfile } from './types';
 
 export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> = (set, get) => ({

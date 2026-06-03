@@ -48,7 +48,6 @@ export function useManualBooking(selectedDate: string, onClose: () => void) {
         client_phone: formattedPhone || 'Телефон не указан',
       };
 
-      const { supabase } = await import('../../../supabaseClient');
       const { error } = await supabase.from('appointments').insert([newAppointment]);
       if (error) throw error;
 

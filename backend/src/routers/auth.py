@@ -99,7 +99,7 @@ async def auth_telegram(payload: AuthRequest, db: AsyncSession = Depends(get_db)
             name=full_name,
             avatar=avatar,
             bio=None,
-            schedule=None
+            schedule=[]
         )
         db.add(master)
         await db.commit()

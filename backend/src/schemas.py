@@ -17,7 +17,7 @@ class UserMasterBase(BaseModel):
     name: str = Field(..., max_length=255)
     bio: str | None = None
     avatar: str | None = None
-    schedule: list | None = None
+    schedule: list = []
 
 class MasterProfileResponse(BaseModel):
     id: uuid.UUID

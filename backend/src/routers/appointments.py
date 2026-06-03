@@ -3,8 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from datetime import date, time, datetime, timedelta
 
+from src.schemas import ClientAppointmentResponse
 from src.database import get_db
-from src.models import Service, UserMaster, ClientAppointment, ClientAppointmentResponse
+from src.models import Service, UserMaster, ClientAppointment
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
 

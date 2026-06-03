@@ -1,6 +1,12 @@
 import type { StateCreator } from 'zustand';
 import type { BookingState, BookingSlice, Appointment } from './types';
 
+const getAuthHeaders = (token: string | null) => ({
+  'Content-Type': 'application/json',
+  ...(token ? { Authorization: `Bearer ${token}` } : {}),
+});
+
+// ИСПРАВЛЕНО: Указали BookingState в качестве итогового типа, чтобы линтер видел методы всех соседних слайсов
 export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice> = (set, get) => ({
   currentRole: 'client',
   currentScreen: 'profile',
@@ -23,67 +29,98 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
 
   setScreen: (screen) => set({ currentScreen: screen }),
 
+  // Получение списка всех записей для журнала мастера (из нашей новой таблицы 'client')
   fetchAppointments: async () => {
     const masterId = get().currentMasterId;
     if (!masterId) return;
 
     try {
-      const { data, error } = await supabase
-        .from('appointments')
-        .select('*')
-        .eq('master_id', masterId)
-        .order('date', { ascending: true })
-        .order('time', { ascending: true });
+      const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
+      const token = get().accessToken;
 
-      if (error) throw error;
+      // Запрашиваем журнал записей через бэкенд. Так как в FastAPI мы этот эндпоинт
+      // совместили внутри роутера appointments, добавим GET-запрос для мастера
+      const response = await fetch(`${baseUrl}/api/v1/appointments/master/${masterId}`, {
+        method: 'GET',
+        headers: getAuthHeaders(token),
+      });
 
-      if (data) {
-        const formattedAppointments = data.map((app) => ({
+      if (!response.ok) throw new Error('Не удалось загрузить журнал записей');
+      const data = (await response.json()) as Record<string, unknown>[];
+
+      // Приводим время формата "14:00:00" из Postgres к красивому "14:00" для React
+      const formattedAppointments = data.map((app) => {
+        const timeStr = typeof app.time === 'string' ? app.time : '';
+        return {
           ...app,
-          time: app.time && app.time.length === 8 ? app.time.substring(0, 5) : app.time,
-        }));
-        set({ appointments: formattedAppointments as Appointment[] });
-      }
+          time: timeStr.length === 8 ? timeStr.substring(0, 5) : timeStr,
+        } as unknown as Appointment;
+      });
+
+      set({ appointments: formattedAppointments });
     } catch (e) {
-      console.error('Ошибка получения записей из БД:', e);
+      console.error('Ошибка получения записей через FastAPI:', e);
     }
   },
 
+  // Создание записи клиентом (Отправка POST на наш новый бэкенд)
   createAppointment: async (clientName) => {
     const { selectedService, selectedDate, selectedTime, currentMasterId } = get();
     if (!selectedService || !selectedDate || !selectedTime || !currentMasterId) return;
 
     try {
+      const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
       const tgInstance = window.Telegram?.WebApp;
+
+      // Вытаскиваем юзернейм клиента из Telegram
       const clientUsername = tgInstance?.initDataUnsafe?.user?.username
         ? `@${tgInstance.initDataUnsafe.user.username}`
         : 'Через ТГ по ссылке';
 
-      const newAppointment = {
+      // Наш бэкенд принимает строго схему ClientAppointmentCreate (в змеином_регистре)
+      const newAppointmentPayload = {
         master_id: currentMasterId,
         service_title: selectedService.title,
-        date: selectedDate,
+        date: selectedDate.split('T')[0], // Отсекаем ISO-хвост, оставляя чистую дату "2026-06-08"
         time: selectedTime,
         client_name: clientName,
-        client_phone: clientUsername,
+        client_phone: clientUsername, // Передаем юзернейм в качестве контактных данных
       };
 
-      const { error } = await supabase.from('appointments').insert([newAppointment]);
-      if (error) throw error;
+      const response = await fetch(`${baseUrl}/api/v1/appointments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newAppointmentPayload),
+      });
 
+      if (!response.ok) {
+        if (response.status === 409) {
+          if (tgInstance && typeof tgInstance.showAlert === 'function') {
+            tgInstance.showAlert(
+              '⚠️ Это окошко уже успели занять! Выберите, пожалуйста, другое время.',
+            );
+          }
+          return;
+        }
+        throw new Error('Бэкенд отклонил создание записи');
+      }
+
+      // Обновляем календарь и сбрасываем шаги бронирования
       await get().fetchAppointments();
       get().resetBooking();
     } catch (e) {
-      console.error('Ошибка создания записи в БД:', e);
+      console.error('Ошибка создания записи через FastAPI:', e);
     }
   },
 
+  // Загрузка первичных данных при открытии витрины мастера
   fetchMasterData: async () => {
     const masterId = get().currentMasterId;
     if (!masterId) return;
 
     try {
       set({ isRegistered: true });
+      // Одновременно запускаем скачивание профиля, прайс-листа и текущих занятых слотов
       await Promise.all([get().fetchProfile(), get().fetchServices(), get().fetchAppointments()]);
     } catch (e) {
       console.error('Ошибка при загрузке данных мастера для витрины:', e);

@@ -34,6 +34,13 @@ class ServiceCreate(BaseModel):
     price: int = Field(..., gt=0)      
     duration: int = Field(..., gt=0)
 
+class ServiceUpdate(BaseModel):
+    title: str | None = Field(None, max_length=150)
+    description: str | None = Field(None, max_length=500)
+    price: int | None = Field(None, gt=0)
+    duration: int | None = Field(None, gt=0)
+
+
 class ServiceResponse(ServiceCreate):
     id: uuid.UUID
     master_id: uuid.UUID

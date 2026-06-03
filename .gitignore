@@ -94,3 +94,5 @@ backend/.env.*
 
 # Тестовые файлы
 commit.txt
+doc.txt
+repomix-output.txt

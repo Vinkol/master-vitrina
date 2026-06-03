@@ -27,15 +27,9 @@ export interface UserProfile {
   business_name: string | null;
 }
 
-export interface UserMetadata {
-  tg_id: number;
-  role: Role;
-}
-
 export interface SessionUser {
   id: string;
-  email: string;
-  user_metadata: UserMetadata;
+  name: string;
 }
 
 export interface AuthState {
@@ -119,10 +113,6 @@ export interface BookingSlice {
   setTime: (slot: string) => void;
   resetBooking: () => void;
   fetchMasterData: () => Promise<void>;
-  initAuth: () => Promise<void>;
-  registerMaster: (profileData: { name: string; bio?: string }) => Promise<boolean>;
-  setTokens: (accessToken: string, refreshToken: string) => Promise<void>;
-  logout: () => void;
 }
 
 export type BookingState = CrmSlice & MasterSlice & BookingSlice & AuthState;

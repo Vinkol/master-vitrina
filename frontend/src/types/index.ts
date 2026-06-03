@@ -1,8 +1,7 @@
 // Таблица profiles
 export interface MasterProfile {
   id: string; // uuid (Primary Key)
-  telegram_id: number;
-  owner_tg_id: number; // int8 (Ваш главный ключ связи по TG)
+  telegram_id: number; // int8 (Ваш главный ключ связи по TG)
   name: string; // text
   bio: string; // text
   avatar: string; // text

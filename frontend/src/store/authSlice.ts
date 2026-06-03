@@ -14,7 +14,7 @@ interface JWTDecodedPayload {
   exp: number;
 }
 
-export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (set) => ({
+export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (set, get) => ({
   accessToken: null,
   user: null,
   isAuthenticated: false,
@@ -95,6 +95,13 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (s
         currentMasterId: startParam && startParam !== 'reg' ? startParam : masterUuid,
         isLoading: false,
       });
+
+      void (async () => {
+        const store = get();
+        await store.fetchProfile();
+        await store.fetchServices();
+        await store.fetchAppointments();
+      })();
     } catch (err) {
       console.error('Критическая ошибка авторизации через FastAPI:', err);
       set({ isLoading: false, isAuthenticated: false, isRegisteredMaster: false });

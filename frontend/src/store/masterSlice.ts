@@ -62,16 +62,17 @@ export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> 
       const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
       const token = get().accessToken;
 
-      if (updatedFields.schedule) {
-        await fetch(`${baseUrl}/api/v1/master/schedule`, {
+      if (updatedFields.schedule !== undefined) {
+        const response = await fetch(`${baseUrl}/api/v1/master/schedule`, {
           method: 'PUT',
           headers: getAuthHeaders(token),
           body: JSON.stringify(updatedFields.schedule),
         });
+        if (!response.ok) throw new Error('Бэкенд отклонил сохранение расписания');
       }
 
       if (updatedFields.name !== undefined || updatedFields.bio !== undefined) {
-        await fetch(`${baseUrl}/api/v1/master/profile`, {
+        const response = await fetch(`${baseUrl}/api/v1/master/profile`, {
           method: 'PATCH',
           headers: getAuthHeaders(token),
           body: JSON.stringify({
@@ -79,6 +80,7 @@ export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> 
             bio: updatedFields.bio,
           }),
         });
+        if (!response.ok) throw new Error('Бэкенд отклонил обновление данных профиля');
       }
 
       set((state) => {

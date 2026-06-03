@@ -9,7 +9,7 @@ router = APIRouter(prefix="/master/schedule", tags=["schedule"])
 
 @router.put("")
 async def save_master_schedule(
-    payload: list,
+    payload: list[dict],
     current_master: UserMaster = Depends(get_current_master),
     db: AsyncSession = Depends(get_db)
 ):

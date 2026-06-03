@@ -21,7 +21,6 @@ export interface UserProfile {
 // Таблица services
 export interface Service {
   id: string; // uuid (Primary Key)
-  master_tg_id: number; // int8 (Связь с profiles.owner_tg_id)
   title: string; // text
   description: string; // text
   price: number; // int8

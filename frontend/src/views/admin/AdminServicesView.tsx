@@ -4,11 +4,18 @@ import { useBookingStore } from '../../store/useBookingStore';
 import { ServiceCard } from '../../components/admin/ServiceCard';
 import { ServiceFormSheet } from '../../features/service-management/ServiceFormSheet';
 import type { Service } from '../../types';
+import type { BookingState } from '../../store/types';
 import { haptic } from '../../utils/haptic';
 import { PageHeader } from '../../components/common/PageHeader';
 
 export function AdminServicesView() {
-  const { services, addService, updateService, deleteService, setScreen } = useBookingStore();
+  // ИСПРАВЛЕНО: Явно типизируем вызовы методов стора
+  const services = useBookingStore((state: BookingState) => state.services);
+  const addService = useBookingStore((state: BookingState) => state.addService);
+  const updateService = useBookingStore((state: BookingState) => state.updateService);
+  const deleteService = useBookingStore((state: BookingState) => state.deleteService);
+  const setScreen = useBookingStore((state: BookingState) => state.setScreen);
+
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
 
@@ -49,13 +56,29 @@ export function AdminServicesView() {
       description: description.trim(),
     };
 
-    if (editingService) {
-      updateService(editingService.id, serviceData);
-    } else {
-      addService(serviceData);
-    }
+    void (async () => {
+      try {
+        if (editingService) {
+          await updateService(editingService.id, serviceData);
+        } else {
+          await addService(serviceData);
+        }
+        setIsFormOpen(false);
+      } catch {
+        console.error('Не удалось сохранить услугу на бэкенде');
+      }
+    })();
+  };
 
-    setIsFormOpen(false);
+  const handleDeleteService = (id: string) => {
+    haptic.impact('medium');
+    void (async () => {
+      try {
+        await deleteService(id);
+      } catch {
+        console.error('Не удалось удалить услугу через FastAPI');
+      }
+    })();
   };
 
   return (
@@ -82,7 +105,7 @@ export function AdminServicesView() {
               key={service.id}
               service={service}
               onEdit={handleOpenEdit}
-              onDelete={deleteService}
+              onDelete={handleDeleteService}
             />
           ))
         )}
@@ -98,7 +121,6 @@ export function AdminServicesView() {
         </button>
       </div>
 
-      {/* Исправлено: Вынесенная универсальная шторка формы */}
       <ServiceFormSheet
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}

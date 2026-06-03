@@ -37,9 +37,6 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
     try {
       const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
       const token = get().accessToken;
-
-      // Запрашиваем журнал записей через бэкенд. Так как в FastAPI мы этот эндпоинт
-      // совместили внутри роутера appointments, добавим GET-запрос для мастера
       const response = await fetch(`${baseUrl}/api/v1/appointments/master/${masterId}`, {
         method: 'GET',
         headers: getAuthHeaders(token),
@@ -71,20 +68,17 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
     try {
       const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
       const tgInstance = window.Telegram?.WebApp;
-
-      // Вытаскиваем юзернейм клиента из Telegram
       const clientUsername = tgInstance?.initDataUnsafe?.user?.username
         ? `@${tgInstance.initDataUnsafe.user.username}`
         : 'Через ТГ по ссылке';
 
-      // Наш бэкенд принимает строго схему ClientAppointmentCreate (в змеином_регистре)
       const newAppointmentPayload = {
         master_id: currentMasterId,
         service_title: selectedService.title,
-        date: selectedDate.split('T')[0], // Отсекаем ISO-хвост, оставляя чистую дату "2026-06-08"
+        date: selectedDate.split('T')[0],
         time: selectedTime,
         client_name: clientName,
-        client_phone: clientUsername, // Передаем юзернейм в качестве контактных данных
+        client_phone: clientUsername,
       };
 
       const response = await fetch(`${baseUrl}/api/v1/appointments`, {
@@ -105,7 +99,6 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
         throw new Error('Бэкенд отклонил создание записи');
       }
 
-      // Обновляем календарь и сбрасываем шаги бронирования
       await get().fetchAppointments();
       get().resetBooking();
     } catch (e) {
@@ -120,7 +113,6 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
 
     try {
       set({ isRegistered: true });
-      // Одновременно запускаем скачивание профиля, прайс-листа и текущих занятых слотов
       await Promise.all([get().fetchProfile(), get().fetchServices(), get().fetchAppointments()]);
     } catch (e) {
       console.error('Ошибка при загрузке данных мастера для витрины:', e);

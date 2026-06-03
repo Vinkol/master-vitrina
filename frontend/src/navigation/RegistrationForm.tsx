@@ -65,22 +65,28 @@ export const RegistrationForm: React.FC = () => {
   }, [name, bio, isLoading, updateProfileInDB, setScreen, tg]);
 
   // Веб-фолбэк обработчик, если запустили вне Telegram (для тестов в браузере)
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim().length < 2 || isLoading) return;
 
-    await updateProfileInDB({ name: name.trim(), bio: bio.trim() });
-    setScreen('admin-dashboard');
+    void (async () => {
+      try {
+        await updateProfileInDB({ name: name.trim(), bio: bio.trim() });
+        setScreen('admin-dashboard');
+      } catch {
+        if (tg?.showAlert) tg.showAlert('Не удалось сохранить профиль. Попробуйте позже.');
+      }
+    })();
   };
 
   return (
-    <div className="flex min-h-[100dvh] w-full flex-col justify-center items-center bg-slate-950 font-sans select-none antialiased text-slate-100 p-4">
+    <div className="flex min-h-dvh w-full flex-col justify-center items-center bg-slate-950 font-sans select-none antialiased text-slate-100 p-4">
       <div className="w-full max-w-md bg-slate-900/40 border border-slate-900/80 rounded-3xl p-5 sm:p-6 backdrop-blur-md shadow-2xl">
         {/* Шапка формы */}
         <div className="mb-6">
           <div className="flex items-center space-x-2">
             <span className="text-xl animate-pulse">✨</span>
-            <h1 className="text-xl font-black tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent uppercase">
+            <h1 className="text-xl font-black tracking-tight bg-linear-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent uppercase">
               Стать мастером
             </h1>
           </div>
@@ -149,7 +155,7 @@ export const RegistrationForm: React.FC = () => {
               <button
                 type="submit"
                 disabled={name.trim().length < 2 || isLoading}
-                className="w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3.5 text-xs font-black text-white uppercase tracking-wider shadow-lg shadow-indigo-600/20 transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-30"
+                className="w-full rounded-2xl bg-linear-to-r from-indigo-600 to-purple-600 py-3.5 text-xs font-black text-white uppercase tracking-wider shadow-lg shadow-indigo-600/20 transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-30"
               >
                 {isLoading ? 'Создание личного кабинета...' : 'Создать профиль мастера'}
               </button>

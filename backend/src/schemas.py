@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, time, datetime
+from datetime import date, time
 from pydantic import BaseModel, Field, ConfigDict
 
 # СХЕМЫ АВТОРИЗАЦИИ
@@ -18,6 +18,21 @@ class UserMasterBase(BaseModel):
     bio: str | None = None
     avatar: str | None = None
     schedule: list | None = None
+
+class MasterProfileResponse(BaseModel):
+    id: uuid.UUID
+    telegram_id: int
+    username: str | None
+    name: str
+    bio: str | None
+    avatar: str | None
+    
+    class Config:
+        from_attributes = True
+
+class MasterProfileUpdate(BaseModel):
+    name: str | None = Field(None, max_length=255)
+    bio: str | None = Field(None, max_length=1000)
 
 class UserMasterCreate(UserMasterBase):
     pass

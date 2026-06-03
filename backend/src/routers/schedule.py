@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
 from src.models import UserMaster
-from src.dependencies import get_current_master # Импортируем нашу проверку
+from src.dependencies import get_current_master
 
 router = APIRouter(prefix="/master/schedule", tags=["schedule"])
 

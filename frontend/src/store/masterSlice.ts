@@ -18,20 +18,36 @@ export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> 
     try {
       const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
       const token = get().accessToken;
-      const response = await fetch(`${baseUrl}/api/v1/master/schedule`, {
+
+      // СНАЧАЛА качаем текстовый профиль (Имя, био, аватарку)
+      const profileRes = await fetch(`${baseUrl}/api/v1/master/profile`, {
         method: 'GET',
         headers: getAuthHeaders(token),
       });
+      if (!profileRes.ok) throw new Error('Не удалось загрузить данные профиля');
+      const profileData = (await profileRes.json()) as {
+        name: string;
+        bio: string | null;
+        avatar: string | null;
+        telegram_id: number;
+      };
 
-      if (!response.ok) throw new Error('Не удалось загрузить профиль мастера');
-      const data = (await response.json()) as { schedule: Record<string, unknown>[] | null };
+      // ЗАТЕМ качаем его расписание из соседнего роутера
+      const scheduleRes = await fetch(`${baseUrl}/api/v1/master/schedule`, {
+        method: 'GET',
+        headers: getAuthHeaders(token),
+      });
+      const scheduleData = scheduleRes.ok
+        ? ((await scheduleRes.json()) as { schedule: unknown })
+        : { schedule: [] };
 
-      // Собираем объект профиля для фронтенда
       const profile: MasterProfile = {
         id: masterId,
-        telegram_id: 0, // Заглушка, если фронту не критично
-        name: 'Мастер',
-        schedule: data.schedule || [],
+        telegram_id: profileData.telegram_id,
+        name: profileData.name,
+        bio: profileData.bio || '',
+        avatar: profileData.avatar || '',
+        schedule: scheduleData.schedule || [],
       } as unknown as MasterProfile;
 
       set({ masterProfile: profile });
@@ -40,27 +56,44 @@ export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> 
     }
   },
 
-  // Обновление профиля мастера (Хук useAdminHours вызывает именно этот метод!)
+  // Обновление профиля мастера
   updateProfileInDB: async (updatedFields) => {
     try {
       const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
       const token = get().accessToken;
 
-      // Если фронтенд прислал расписание schedule, отправляем его на наш новый асинхронный эндпоинт
       if (updatedFields.schedule) {
-        const response = await fetch(`${baseUrl}/api/v1/master/schedule`, {
+        await fetch(`${baseUrl}/api/v1/master/schedule`, {
           method: 'PUT',
           headers: getAuthHeaders(token),
-          body: JSON.stringify(updatedFields.schedule), // Передаем чистый массив дней []
+          body: JSON.stringify(updatedFields.schedule),
         });
-
-        if (!response.ok) throw new Error('Бэкенд отклонил сохранение расписания');
       }
 
-      // Обновляем состояние в памяти Zustand, чтобы календарь на экране мгновенно перерисовался
-      set((state) => ({
-        masterProfile: state.masterProfile ? { ...state.masterProfile, ...updatedFields } : null,
-      }));
+      if (updatedFields.name !== undefined || updatedFields.bio !== undefined) {
+        await fetch(`${baseUrl}/api/v1/master/profile`, {
+          method: 'PATCH',
+          headers: getAuthHeaders(token),
+          body: JSON.stringify({
+            name: updatedFields.name,
+            bio: updatedFields.bio,
+          }),
+        });
+      }
+
+      set((state) => {
+        const currentProfile = state.masterProfile || {
+          id: get().currentMasterId || '',
+          telegram_id: 0,
+          name: 'Мастер',
+          bio: '',
+          avatar: '',
+          schedule: [],
+        };
+        return {
+          masterProfile: { ...currentProfile, ...updatedFields },
+        };
+      });
     } catch (err) {
       console.error('Ошибка обновления профиля через FastAPI:', err);
     }

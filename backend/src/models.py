@@ -1,57 +1,68 @@
-import enum
-from datetime import datetime
-from sqlalchemy import BigInteger, String, Integer, ForeignKey, DateTime, Numeric, Enum
+import uuid
+from datetime import date, time, datetime
+from sqlalchemy import BigInteger, String, ForeignKey, Date, Time, Integer, text
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database import Base
 
-class UserRole(str, enum.Enum):
-    CLIENT = "client"
-    MASTER = "master"
+class UserMaster(Base):
+    """Таблица user_master — профили мастеров"""
+    __tablename__ = "user_master"
 
-class AppointmentStatus(str, enum.Enum):
-    BOOKED = "booked"
-    CANCELLED = "cancelled"
-
-class User(Base):
-    __tablename__ = "users"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    # Привязка к auth.users.id в Supabase
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), 
+        primary_key=True, 
+        default=uuid.uuid4,
+        server_default=text("gen_random_uuid()")
+    )
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, index=True, nullable=False)
-    username: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    full_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.CLIENT, nullable=False)
-    avatar_base64: Mapped[str | None] = mapped_column(String, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    username: Mapped[str | None] = mapped_column(String, nullable=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    bio: Mapped[str | None] = mapped_column(String, nullable=True)
+    avatar: Mapped[str | None] = mapped_column(String, nullable=True)
+    schedule: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
+    # Связи (Relationships)
     services: Mapped[list["Service"]] = relationship("Service", back_populates="master", cascade="all, delete-orphan")
-    appointments_as_client: Mapped[list["Appointment"]] = relationship("Appointment", foreign_keys="[Appointment.client_id]", back_populates="client")
-    appointments_as_master: Mapped[list["Appointment"]] = relationship("Appointment", foreign_keys="[Appointment.master_id]", back_populates="master")
+    appointments: Mapped[list["ClientAppointment"]] = relationship("ClientAppointment", back_populates="master", cascade="all, delete-orphan")
+    blocked_clients: Mapped[list["BlockedClient"]] = relationship("BlockedClient", back_populates="master", cascade="all, delete-orphan")
 
 class Service(Base):
+    """Таблица services — услуги мастера"""
     __tablename__ = "services"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    master_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    title: Mapped[str] = mapped_column(String(150), nullable=False)
-    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
-    duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()"))
+    master_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user_master.id", ondelete="CASCADE"), nullable=False)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[str | None] = mapped_column(String, nullable=True)
+    price: Mapped[int] = mapped_column(BigInteger, nullable=False)  # int8 на схеме
+    duration: Mapped[int] = mapped_column(BigInteger, nullable=False) # int8 на схеме
 
-    master: Mapped["User"] = relationship("User", back_populates="services")
-    appointments: Mapped[list["Appointment"]] = relationship("Appointment", back_populates="service", cascade="all, delete-orphan")
+    master: Mapped["UserMaster"] = relationship("UserMaster", back_populates="services")
 
-class Appointment(Base):
-    __tablename__ = "appointments"
+class ClientAppointment(Base):
+    """Таблица client — журнал записей (заказов) от клиентов"""
+    __tablename__ = "client"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    client_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    master_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    service_id: Mapped[int] = mapped_column(ForeignKey("services.id", ondelete="CASCADE"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()"))
+    master_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user_master.id", ondelete="CASCADE"), nullable=False)
     
-    start_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    status: Mapped[AppointmentStatus] = mapped_column(Enum(AppointmentStatus), default=AppointmentStatus.BOOKED, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    service_title: Mapped[str] = mapped_column(String, nullable=False)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    time: Mapped[time] = mapped_column(Time, nullable=False)
+    client_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    client_phone: Mapped[str] = mapped_column(String(50), nullable=False)
 
-    client: Mapped["User"] = relationship("User", foreign_keys=[client_id], back_populates="appointments_as_client")
-    master: Mapped["User"] = relationship("User", foreign_keys=[master_id], back_populates="appointments_as_master")
-    service: Mapped["Service"] = relationship("Service", back_populates="appointments")
+    master: Mapped["UserMaster"] = relationship("UserMaster", back_populates="appointments")
+
+class BlockedClient(Base):
+    """Таблица blocked_clients — черный список клиентов"""
+    __tablename__ = "blocked_clients"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()"))
+    master_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user_master.id", ondelete="CASCADE"), nullable=False)
+    client_phone: Mapped[str] = mapped_column(String(50), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(Date, default=datetime.utcnow, server_default=text("now()"))
+
+    master: Mapped["UserMaster"] = relationship("UserMaster", back_populates="blocked_clients")

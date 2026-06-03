@@ -41,6 +41,7 @@ export interface AuthState {
   botUsername: string;
   botAppName: string;
   currentMasterId: string | null;
+  initAuth: () => Promise<void>;
 }
 
 export interface TelegramUser {

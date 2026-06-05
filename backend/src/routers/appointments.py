@@ -1,9 +1,11 @@
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from datetime import date, time, datetime, timedelta
+from datetime import date, time, datetime
 
-from src.schemas import ClientAppointmentResponse
+from src.schemas import ClientAppointmentResponse, ClientAppointmentCreate
 from src.database import get_db
 from src.models import Service, UserMaster, ClientAppointment
 
@@ -19,6 +21,50 @@ def minutes_to_time_str(total_minutes: int) -> str:
     hours = total_minutes // 60
     minutes = total_minutes % 60
     return f"{hours:02d}:{minutes:02d}"
+
+@router.post("", response_model=ClientAppointmentResponse, status_code=status.HTTP_201_CREATED)
+async def create_appointment(
+    payload: ClientAppointmentCreate,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Эндпоинт создания записи. Используется мастером для ручной записи 
+    или клиентом при бронировании онлайн.
+    """
+    service_result = await db.execute(
+        select(Service).where(
+            Service.master_id == payload.master_id,
+            Service.id == payload.service_id
+        )
+    )
+    service = service_result.scalar_one_or_none()
+    
+    if not service:
+        raise HTTPException(status_code=404, detail="Выбранная услуга не найдена")
+
+    try:
+        hours, minutes = map(int, payload.time.split(':'))
+        appointment_time = time(hours, minutes)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Некорректный формат времени. Ожидается 'HH:MM'"
+        )
+
+    new_app = ClientAppointment(
+        master_id=service.master_id,
+        service_id=service.id, 
+        service_title=service.title,
+        date=payload.date,                   
+        time=appointment_time,              
+        client_name=payload.client_name,
+        client_phone=payload.client_phone
+    )
+
+    db.add(new_app)
+    await db.commit()
+    await db.refresh(new_app)
+    return new_app
 
 @router.get("/master/{master_id}", response_model=list[ClientAppointmentResponse])
 async def get_master_appointments(
@@ -41,20 +87,26 @@ async def get_available_slots(
     master_id: str,
     target_date: date,
     duration_minutes: int,
-    is_master: bool = False,  # Фронтенд будет передавать, кто запрашивает: мастер или клиент
+    is_master: bool = False,  # Фронтенд передает, кто запрашивает: мастер или клиент
     db: AsyncSession = Depends(get_db)
 ):
     """
     Возвращает список доступных таймслотов с учётом перерывов, 
-    занятых записей и временных барьеров (как на фронтенде).
+    занятых записей и временных барьеров.
     """
+    # Валидация формата UUID для мастера (защита от падения PostgreSQL)
+    try:
+        master_uuid = uuid.UUID(master_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Некорректный UUID мастера")
+
     # 1. ЗАЩИТА ОТ ПРОШЛЫХ ДНЕЙ
     today = date.today()
     if target_date < today:
         return []
 
-    # 2. Получаем профиль мастера из облака Supabase
-    result = await db.execute(select(UserMaster).where(UserMaster.id == master_id))
+    # 2. Получаем профиль мастера
+    result = await db.execute(select(UserMaster).where(UserMaster.id == master_uuid))
     master = result.scalar_one_or_none()
     if not master or not master.schedule:
         return []
@@ -83,7 +135,7 @@ async def get_available_slots(
     # 5. Получаем уже существующие записи клиентов из таблицы client
     result = await db.execute(
         select(ClientAppointment).where(
-            ClientAppointment.master_id == master_id,
+            ClientAppointment.master_id == master_uuid,
             ClientAppointment.date == target_date
         )
     )
@@ -92,7 +144,7 @@ async def get_available_slots(
     available_slots = []
     slot_step_minutes = 30  # Шаг сетки как на фронте
 
-    # 6. Главный цикл генерации слотов (точь-в-точь по логике твоего фронта)
+    # 6. Главный цикл генерации слотов
     current = work_start
     while current + duration_minutes <= work_end:
         slot_start = current
@@ -117,29 +169,42 @@ async def get_available_slots(
             current += slot_step_minutes
             continue
 
-        # Проверка пересечения с другими клиентами (с учётом реальной длительности каждой услуги)
+        # Проверка пересечения с другими клиентами
         for app in existing_appointments:
-            # 1. Переводим время старта существующей записи в минуты
             app_start = time_to_minutes(app.time.strftime("%H:%M"))
             
-            # 2. Ищем в базе данных услугу по её названию, чтобы узнать её честную длительность
-            # На случай, если услугу удалили, ставим дефолт в 60 минут как подстраховку
-            service_result = await db.execute(
-                select(Service).where(
-                    Service.master_id == master_id,
-                    Service.title == app.service_title
+            # ГИБРИДНЫЙ ПОИСК ДЛИТЕЛЬНОСТИ УСЛУГИ
+            existing_service = None
+            
+            # А. Сначала пробуем найти услугу по точному service_id (если он записан в строке таблицы client)
+            if getattr(app, 'service_id', None):
+                service_result = await db.execute(
+                    select(Service).where(
+                        Service.master_id == master_uuid,
+                        Service.id == app.service_id
+                    )
                 )
-            )
-            existing_service = service_result.scalar_one_or_none()
+                existing_service = service_result.scalar_one_or_none()
+            
+            # Б. Если по ID не нашли или поле пустое — ищем по названию (для обратной совместимости со старыми записями)
+            if not existing_service and app.service_title:
+                service_result = await db.execute(
+                    select(Service).where(
+                        Service.master_id == master_uuid,
+                        Service.title == app.service_title  # Запрос строго бьется с твоим Service.title
+                    )
+                )
+                existing_service = service_result.scalar_one_or_none()
+            
+            # В. Если услугу вообще удалили из прайса, ставим дефолт в 60 минут подстраховки
             app_duration = existing_service.duration if existing_service else 60
             
             app_end = app_start + app_duration
 
-            # Формула пересечения интервалов: слот пересекается, если он начался до конца старой записи и закончился после её начала
+            # Формула пересечения интервалов
             if slot_start < app_end and slot_end > app_start:
                 is_interrupted = True
                 break
-
 
         # Если слот чистый — добавляем его в список доступных
         if not is_interrupted:

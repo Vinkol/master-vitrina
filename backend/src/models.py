@@ -47,7 +47,7 @@ class ClientAppointment(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()"))
     master_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user_master.id", ondelete="CASCADE"), nullable=False)
-    
+    service_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("services.id", ondelete="SET NULL"), nullable=True)
     service_title: Mapped[str] = mapped_column(String, nullable=False)
     date: Mapped[date] = mapped_column(Date, nullable=False)
     time: Mapped[time] = mapped_column(Time, nullable=False)

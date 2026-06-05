@@ -1,9 +1,9 @@
-import type { ChangeEvent } from 'react';
 import { useManualBookingModal } from './useManualBookingModal';
 import { ServiceDropdown } from '../../components/admin/ServiceDropdown';
 import { TimeSlotButton } from './TimeSlotButton';
 import { formatToUserDate } from '../../shared/lib/calendar/dateFormatter';
 import { MonthCalendarSheet } from '../../widgets/admin-calendar/MonthCalendarSheet';
+import type { CountryCode } from '../../shared/lib/phone/phoneUtils';
 
 interface ManualBookingModalProps {
   isOpen: boolean;
@@ -14,6 +14,21 @@ interface ManualBookingModalProps {
 export function ManualBookingModal({ isOpen, onClose, selectedDate }: ManualBookingModalProps) {
   const modal = useManualBookingModal(selectedDate, onClose);
 
+  const {
+    clientName,
+    handleNameChange,
+    phoneBody,
+    handlePhoneChange,
+    selectedCountry,
+    handleCountryChange,
+    currentConfig,
+    nameError,
+    phoneError,
+    isFormValid,
+    isSubmitting,
+    handleSave,
+  } = modal.booking;
+
   if (!isOpen) return null;
 
   return (
@@ -22,8 +37,7 @@ export function ManualBookingModal({ isOpen, onClose, selectedDate }: ManualBook
 
       <form
         onSubmit={(e) => {
-          e.preventDefault();
-          void modal.booking.handleSave(e);
+          void handleSave(e);
         }}
         className="bg-white w-full max-w-md rounded-t-3xl p-6 relative z-10 animate-slideUp shadow-2xl border-t border-slate-100 space-y-4 max-h-[90vh] overflow-y-auto pb-10"
       >
@@ -51,28 +65,49 @@ export function ManualBookingModal({ isOpen, onClose, selectedDate }: ManualBook
             type="text"
             required
             placeholder="Например: Анна (Инстаграм)"
-            value={modal.booking.clientName}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              modal.booking.setClientName(e.target.value)
-            }
-            className="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-600 text-sm bg-slate-50/50 font-medium text-slate-700"
+            value={clientName}
+            onChange={(e) => handleNameChange(e.target.value)}
+            className={`w-full p-3.5 rounded-xl border focus:outline-none text-sm bg-slate-50/50 font-bold ${nameError ? 'border-rose-400 focus:border-rose-500 text-rose-700' : 'border-slate-200 focus:border-indigo-600 text-slate-700'}`}
           />
+          {nameError && (
+            <p className="text-[10px] text-rose-500 font-bold mt-1 pl-1">⚠️ {nameError}</p>
+          )}
         </div>
 
         {/* Телефон клиента */}
         <div>
           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-            Телефон клиента
+            Номер телефона *
           </label>
-          <input
-            type="tel"
-            placeholder="+7 (999) 000-00-00"
-            value={modal.booking.clientPhone}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              modal.booking.setClientPhone(e.target.value)
-            }
-            className="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-600 text-sm bg-slate-50/50 font-medium text-slate-700"
-          />
+          <div className="flex space-x-2">
+            {/* СЕЛЕКТОР ФЛАГОВ СТРАН СНГ */}
+            <div className="relative shrink-0">
+              <select
+                value={selectedCountry}
+                onChange={(e) => handleCountryChange(e.target.value as CountryCode)}
+                className="appearance-none bg-slate-50/50 border border-slate-200 rounded-xl p-3.5 pr-8 text-sm font-bold text-slate-700 focus:outline-none focus:border-indigo-600 h-full"
+              >
+                <option value="RU">🇷🇺 +7</option>
+                <option value="BY">🇧🇾 +375</option>
+                <option value="UA">🇺🇦 +380</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400 text-[10px]">
+                ▼
+              </div>
+            </div>
+
+            {/* ИНПУТ ДЛЯ НОМЕРА */}
+            <input
+              type="text"
+              placeholder={currentConfig.placeholder}
+              value={phoneBody}
+              onChange={(e) => handlePhoneChange(e.target.value)}
+              className={`w-full p-3.5 rounded-xl border focus:outline-none text-sm bg-slate-50/50 font-bold ${phoneError ? 'border-rose-400 focus:border-rose-500 text-rose-700' : 'border-slate-200 focus:border-indigo-600 text-slate-700'}`}
+            />
+          </div>
+          {phoneError && (
+            <p className="text-[10px] text-rose-500 font-bold mt-1 pl-1">⚠️ {phoneError}</p>
+          )}
         </div>
 
         {/* Селектор услуг */}
@@ -116,14 +151,14 @@ export function ManualBookingModal({ isOpen, onClose, selectedDate }: ManualBook
           </button>
           <button
             type="submit"
-            disabled={modal.booking.isSubmitting || !modal.booking.selectedTime}
+            disabled={isSubmitting || !isFormValid}
             className={`w-2/3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all shadow-md text-sm active:scale-95 ${
-              modal.booking.isSubmitting || !modal.booking.selectedTime
-                ? 'opacity-50 cursor-not-allowed'
+              isSubmitting || !isFormValid
+                ? 'opacity-50 cursor-not-allowed bg-slate-200 text-slate-400 border-transparent shadow-none'
                 : ''
             }`}
           >
-            {modal.booking.isSubmitting ? 'Сохранение...' : 'Записать'}
+            {isSubmitting ? 'Сохранение...' : 'Записать'}
           </button>
         </div>
       </form>

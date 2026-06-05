@@ -20,7 +20,7 @@ export function MasterProfileCard({ profile, workingHoursLabel }: MasterProfileC
         )}
       </div>
 
-      <h2 className="text-xl font-black mt-3 text-slate-800">{profile.name || 'Бьюти-Мастер'}</h2>
+      <h2 className="text-xl font-black mt-3 text-slate-800">{profile.name || 'Мастер'}</h2>
 
       {profile.bio && (
         <p className="text-xs text-slate-400 mt-2 max-w-xs mx-auto leading-relaxed font-medium">

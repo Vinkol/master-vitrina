@@ -9,6 +9,7 @@ import { useClientsCrm } from './useClientsCrm';
 import { useBookingStore } from '../../store/useBookingStore';
 import { useIntersectionObserver } from '../../views/admin/useIntersectionObserver';
 import { haptic } from '../../shared/lib/haptic/haptic';
+import { ClientCrmSkeletonCard } from '../../components/admin/ClientCrmSkeletonCard';
 
 export function AdminClientsCrmView() {
   const setScreen = useBookingStore((state) => state.setScreen);
@@ -31,12 +32,14 @@ export function AdminClientsCrmView() {
     triggerRef: loadMoreTriggerRef,
     isLoading: isLoading,
     hasMore: hasMoreClients,
-    onLoadMore: loadMore,
+    onLoadMore: () => {
+      void loadMore();
+    },
   });
 
   const handleToggleBlock = useCallback(
     (phone: string, isBlocked: boolean) => {
-      toggleBlockClient(phone, isBlocked);
+      void toggleBlockClient(phone, isBlocked);
     },
     [toggleBlockClient],
   );
@@ -81,7 +84,14 @@ export function AdminClientsCrmView() {
 
       {/* СПИСОК КЛИЕНТОВ */}
       <div className="space-y-2.5">
-        {filteredClients.length === 0 && !isLoading ? (
+        {isLoading ? (
+          <>
+            <ClientCrmSkeletonCard />
+            <ClientCrmSkeletonCard />
+            <ClientCrmSkeletonCard />
+            <ClientCrmSkeletonCard />
+          </>
+        ) : filteredClients.length === 0 ? (
           <CrmEmptyState />
         ) : (
           filteredClients.map((client) => (
@@ -98,7 +108,7 @@ export function AdminClientsCrmView() {
           ref={loadMoreTriggerRef}
           className="w-full py-6 flex items-center justify-center min-h-13"
         >
-          <CrmSkeletonLoader isLoading={isLoading} />
+          {isLoading && filteredClients.length > 0 && <CrmSkeletonLoader isLoading={true} />}
         </div>
       </div>
     </div>

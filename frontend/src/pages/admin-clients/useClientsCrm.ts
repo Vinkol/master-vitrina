@@ -13,30 +13,32 @@ export function useClientsCrm() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<CrmFilter>('all');
   const [page, setPage] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const handleSearchChange = useCallback((query: string) => {
     setSearchQuery(query);
+    setIsLoading(true);
     setPage(0);
   }, []);
 
   const handleFilterChange = useCallback((filter: CrmFilter) => {
     setActiveFilter(filter);
+    setIsLoading(true);
     setPage(0);
   }, []);
 
   useEffect(() => {
+    const delay = searchQuery ? 300 : 0;
     const delayDebounce = setTimeout(async () => {
-      setIsLoading(true);
       try {
         await fetchCrmClients(searchQuery, activeFilter, 0);
       } finally {
         setIsLoading(false);
       }
-    }, 300);
+    }, delay);
 
     return () => clearTimeout(delayDebounce);
-  }, [searchQuery, activeFilter, fetchCrmClients]);
+  }, [searchQuery, activeFilter, fetchCrmClients, isLoading]);
 
   const loadMore = useCallback(async () => {
     if (isLoading || !hasMoreClients) return;

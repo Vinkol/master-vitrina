@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 
 interface UseIntersectionObserverProps {
   triggerRef: RefObject<HTMLDivElement | null>;
@@ -13,6 +13,16 @@ export function useIntersectionObserver({
   hasMore,
   onLoadMore,
 }: UseIntersectionObserverProps) {
+  const isLoadingRef = useRef(isLoading);
+  const hasMoreRef = useRef(hasMore);
+  const onLoadMoreRef = useRef(onLoadMore);
+
+  useEffect(() => {
+    isLoadingRef.current = isLoading;
+    hasMoreRef.current = hasMore;
+    onLoadMoreRef.current = onLoadMore;
+  }, [isLoading, hasMore, onLoadMore]);
+
   useEffect(() => {
     const trigger = triggerRef.current;
     if (!trigger) return;
@@ -20,8 +30,8 @@ export function useIntersectionObserver({
     const observer = new IntersectionObserver(
       (entries) => {
         const target = entries[0];
-        if (target.isIntersecting && !isLoading && hasMore) {
-          onLoadMore();
+        if (target.isIntersecting && !isLoadingRef.current && hasMoreRef.current) {
+          onLoadMoreRef.current();
         }
       },
       { root: null, rootMargin: '150px', threshold: 0 },
@@ -33,5 +43,5 @@ export function useIntersectionObserver({
       observer.unobserve(trigger);
       observer.disconnect();
     };
-  }, [triggerRef, isLoading, hasMore, onLoadMore]);
+  }, [triggerRef]);
 }

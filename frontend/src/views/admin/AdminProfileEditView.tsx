@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
-import { Loader } from '../../components/common/Loader';
-import { haptic } from '../../utils/haptic';
-import { PageHeader } from '../../components/common/PageHeader';
+import { Loader } from '../../shared/ui/loader/Loader';
+import { haptic } from '../../shared/lib/haptic/haptic';
+import { PageHeader } from '../../shared/ui/page-header/PageHeader';
 
 export function AdminProfileEditView() {
   const masterProfile = useBookingStore((state) => state.masterProfile);

@@ -1,7 +1,7 @@
 import { useAdminHours } from './useAdminHours';
-import { Loader } from '../../components/common/Loader';
 import { WorkDayConfigCard } from '../../components/admin/WorkDayConfigCard';
-import { PageHeader } from '../../components/common/PageHeader';
+import { Loader } from '../../shared/ui/loader/Loader';
+import { PageHeader } from '../../shared/ui/page-header/PageHeader';
 
 const DAYS_OF_WEEK = [
   'Понедельник',

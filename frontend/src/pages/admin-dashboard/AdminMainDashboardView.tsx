@@ -1,11 +1,11 @@
 import { useAdminDashboard } from './useAdminDashboard';
 import { DashboardHeader } from '../../components/admin/DashboardHeader';
-import { CalendarRibbon } from '../../components/admin/CalendarRibbon';
-import { AppointmentRow } from '../../components/admin/AppointmentRow';
 import { ManualBookingModal } from '../../features/manual-booking/ManualBookingModal';
-import { MonthCalendarSheet } from '../../components/admin/MonthCalendarSheet';
-import { formatToUserDate } from '../../utils/dateFormatter';
-import { haptic } from '../../utils/haptic';
+import { haptic } from '../../shared/lib/haptic/haptic';
+import { CalendarRibbon } from '../../widgets/admin-calendar/CalendarRibbon';
+import { formatToUserDate } from '../../shared/lib/calendar/dateFormatter';
+import { AppointmentRow } from '../../entities/appointment/AppointmentRow';
+import { MonthCalendarSheet } from '../../widgets/admin-calendar/MonthCalendarSheet';
 
 export function AdminMainDashboardView() {
   const dashboard = useAdminDashboard();

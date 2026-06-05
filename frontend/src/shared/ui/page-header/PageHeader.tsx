@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { haptic } from '../../utils/haptic';
+import { haptic } from '../../lib/haptic/haptic';
 
 interface PageHeaderProps {
   title: string;
@@ -8,7 +8,7 @@ interface PageHeaderProps {
   onSaveClick?: () => void;
   saveButtonText?: string;
   isSaving?: boolean;
-  rightAction?: ReactNode; // Слоты расширения (про запас, если захочется вставить иконку или счетчик в шапку)
+  rightAction?: ReactNode;
 }
 
 export function PageHeader({

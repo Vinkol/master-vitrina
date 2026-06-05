@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Service } from '../../types';
-import { haptic } from '../../utils/haptic';
+import { haptic } from '../../shared/lib/haptic/haptic';
 
 interface ServiceDropdownProps {
   services: Service[];

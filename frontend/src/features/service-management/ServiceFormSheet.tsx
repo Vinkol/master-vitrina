@@ -1,6 +1,6 @@
 import type { FormEvent, ChangeEvent } from 'react';
 import type { Service } from '../../types';
-import { haptic } from '../../utils/haptic';
+import { haptic } from '../../shared/lib/haptic/haptic';
 
 interface ServiceFormSheetProps {
   isOpen: boolean;

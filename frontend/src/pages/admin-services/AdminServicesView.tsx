@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
-import { ServiceCard } from '../../components/admin/ServiceCard';
 import { ServiceFormSheet } from '../../features/service-management/ServiceFormSheet';
 import type { Service } from '../../types';
 import type { BookingState } from '../../store/types';
-import { haptic } from '../../utils/haptic';
-import { PageHeader } from '../../components/common/PageHeader';
+import { haptic } from '../../shared/lib/haptic/haptic';
+import { PageHeader } from '../../shared/ui/page-header/PageHeader';
+import { ServiceCard } from '../../entities/service/ServiceCard';
 
 export function AdminServicesView() {
   // ИСПРАВЛЕНО: Явно типизируем вызовы методов стора

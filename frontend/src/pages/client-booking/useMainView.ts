@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
 import type { Service } from '../../types';
-import { haptic } from '../../utils/haptic';
+import { haptic } from '../../shared/lib/haptic/haptic';
 
 export function useMainView() {
   const services = useBookingStore((state) => state.services);

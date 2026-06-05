@@ -1,5 +1,5 @@
+import { haptic } from '../../shared/lib/haptic/haptic';
 import type { Service } from '../../types';
-import { haptic } from '../../utils/haptic';
 
 interface ServiceCardProps {
   service: Service;

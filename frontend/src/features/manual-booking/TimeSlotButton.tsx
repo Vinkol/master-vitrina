@@ -1,4 +1,4 @@
-import { haptic } from '../../utils/haptic';
+import { haptic } from '../../shared/lib/haptic/haptic';
 
 interface TimeSlotButtonProps {
   hour: string;

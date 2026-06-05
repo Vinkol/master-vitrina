@@ -2,10 +2,10 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
 import { generateAvailableSlots } from '../../features/slot-generation/slotGenerator';
 import { PreviewModeBanner } from '../../components/client/PreviewModeBanner';
-import { ClientCalendarRibbon } from '../../components/client/ClientCalendarRibbon';
 import { TimeSlotsSheet } from '../../components/client/TimeSlotsSheet';
-import { haptic } from '../../utils/haptic';
 import type { BookingState } from '../../store/types';
+import { haptic } from '../../shared/lib/haptic/haptic';
+import { ClientCalendarRibbon } from '../../widgets/client-calendar/ClientCalendarRibbon';
 
 export function CalendarView() {
   const {

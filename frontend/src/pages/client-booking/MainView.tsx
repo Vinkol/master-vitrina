@@ -1,8 +1,8 @@
 import { useMainView } from './useMainView';
-import { Loader } from '../../components/common/Loader';
 import { MasterProfileCard } from '../../components/client/MasterProfileCard';
-import { ServiceClientCard } from '../../components/client/ServiceClientCard';
 import { ServiceDetailSheet } from '../../components/client/ServiceDetailSheet';
+import { Loader } from '../../shared/ui/loader/Loader';
+import { ServiceClientCard } from '../../entities/service/ServiceClientCard';
 
 export function MainView() {
   const view = useMainView();

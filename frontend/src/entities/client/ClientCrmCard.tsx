@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { haptic } from '../../utils/haptic';
+import { haptic } from '../../shared/lib/haptic/haptic';
 
 // Заведем интерфейс на основе полей из кода
 export interface CrmClientData {

@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
-import { useBookingStore } from '../store/useBookingStore';
-import { RegistrationForm } from './RegistrationForm';
-import { ClientRouter } from './ClientRouter';
-import { AdminRouter } from './AdminRouter';
-import { Loader } from '../shared/ui/loader/Loader';
+import { useBookingStore } from '../../store/useBookingStore';
+import { Loader } from '../../shared/ui/loader/Loader';
+import { ClientRouter } from '../../navigation/ClientRouter';
+import { RegistrationForm } from '../../navigation/RegistrationForm';
+import { AdminRouter } from '../../navigation/AdminRouter';
 
 interface AuthGuardProps {
   children?: React.ReactNode;

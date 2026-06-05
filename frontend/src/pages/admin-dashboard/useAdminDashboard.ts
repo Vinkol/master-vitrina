@@ -1,8 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
-import { getNextNDays, getTodayIsoString } from '../../utils/dateHelpers';
-import { haptic } from '../../utils/haptic';
 import type { Appointment, CalendarDay } from '../../types';
+import { getNextNDays, getTodayIsoString } from '../../shared/lib/calendar/dateHelpers';
+import { haptic } from '../../shared/lib/haptic/haptic';
 
 export function useAdminDashboard() {
   const appointments = useBookingStore((state) => state.appointments);

@@ -1,8 +1,8 @@
 import { useClientCalendar } from './useClientCalendar';
-import { CalendarDayButton } from './CalendarDayButton';
-import { formatToUserDate } from '../../utils/dateFormatter';
 import type { Appointment } from '../../types';
 import type { RefObject } from 'react';
+import { formatToUserDate } from '../../shared/lib/calendar/dateFormatter';
+import { CalendarDayButton } from '../../components/client/CalendarDayButton';
 
 interface ClientCalendarRibbonProps {
   scrollRef: RefObject<HTMLDivElement | null>;

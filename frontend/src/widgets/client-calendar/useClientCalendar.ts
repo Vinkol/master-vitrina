@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type RefObject } from 'react';
-import { generateMonthGrid, type MonthGridResult } from '../../utils/calendarCore';
+import { generateMonthGrid, type MonthGridResult } from '../../shared/lib/calendar/calendarCore';
 
 interface UseClientCalendarOptions {
   scrollRef: RefObject<HTMLDivElement | null>;

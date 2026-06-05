@@ -1,9 +1,9 @@
 import type { ChangeEvent } from 'react';
 import { useManualBookingModal } from './useManualBookingModal';
 import { ServiceDropdown } from '../../components/admin/ServiceDropdown';
-import { MonthCalendarSheet } from '../../components/admin/MonthCalendarSheet';
 import { TimeSlotButton } from './TimeSlotButton';
-import { formatToUserDate } from '../../utils/dateFormatter';
+import { formatToUserDate } from '../../shared/lib/calendar/dateFormatter';
+import { MonthCalendarSheet } from '../../widgets/admin-calendar/MonthCalendarSheet';
 
 interface ManualBookingModalProps {
   isOpen: boolean;

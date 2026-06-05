@@ -1,7 +1,7 @@
 import type { ChangeEvent } from 'react';
 import type { DaySchedule, TimeInterval } from '../../types';
 import { BreakIntervalRow } from './BreakIntervalRow';
-import { haptic } from '../../utils/haptic';
+import { haptic } from '../../shared/lib/haptic/haptic';
 
 interface WorkDayConfigCardProps {
   day: DaySchedule;

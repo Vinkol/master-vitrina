@@ -1,14 +1,14 @@
 import { useRef, useCallback } from 'react';
-import { PageHeader } from '../../components/common/PageHeader';
 import { CrmFilterTabs } from '../../components/admin/CrmFilterTabs';
-import { ClientCrmCard } from '../../components/admin/ClientCrmCard';
 import { CrmEmptyState } from '../../components/admin/CrmEmptyState';
 import { CrmSkeletonLoader } from '../../components/admin/CrmSkeletonLoader';
+import { PageHeader } from '../../shared/ui/page-header/PageHeader';
+import { ClientCrmCard } from '../../entities/client/ClientCrmCard';
 
 import { useClientsCrm } from './useClientsCrm';
-import { useIntersectionObserver } from './useIntersectionObserver';
 import { useBookingStore } from '../../store/useBookingStore';
-import { haptic } from '../../utils/haptic';
+import { useIntersectionObserver } from '../../views/admin/useIntersectionObserver';
+import { haptic } from '../../shared/lib/haptic/haptic';
 
 export function AdminClientsCrmView() {
   const setScreen = useBookingStore((state) => state.setScreen);

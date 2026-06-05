@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
 import { useManualBooking } from './useManualBooking';
 import { generateAvailableSlots } from '../slot-generation/slotGenerator';
-import { haptic } from '../../utils/haptic';
+import { haptic } from '../../shared/lib/haptic/haptic';
 
 export function useManualBookingModal(initialDate: string, onClose: () => void) {
   const [currentDate, setCurrentDate] = useState<string>(initialDate);

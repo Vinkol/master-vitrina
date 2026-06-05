@@ -1,6 +1,6 @@
 import { memo } from 'react';
-import type { CrmFilter } from '../../views/admin/useClientsCrm';
-import { haptic } from '../../utils/haptic';
+import type { CrmFilter } from '../../pages/admin-clients/useClientsCrm';
+import { haptic } from '../../shared/lib/haptic/haptic';
 
 const FILTER_TABS: { id: CrmFilter; label: string; icon: string }[] = [
   { id: 'all', label: 'Все', icon: '👥' },

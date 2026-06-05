@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
-import { Loader } from '../../components/common/Loader';
 import { DashboardStats } from '../../components/admin/DashboardStats';
 import { MenuRowButton } from '../../components/admin/MenuRowButton';
-import { haptic } from '../../utils/haptic';
+import { Loader } from '../../shared/ui/loader/Loader';
+import { haptic } from '../../shared/lib/haptic/haptic';
 
 export function AdminDashboardView() {
   const masterProfile = useBookingStore((state) => state.masterProfile);

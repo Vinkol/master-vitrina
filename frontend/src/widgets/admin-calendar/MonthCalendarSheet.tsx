@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { generateMonthGrid, type MonthGridResult } from '../../utils/calendarCore';
 import type { Appointment } from '../../types';
-import { haptic } from '../../utils/haptic';
+import { generateMonthGrid, type MonthGridResult } from '../../shared/lib/calendar/calendarCore';
+import { haptic } from '../../shared/lib/haptic/haptic';
 
 interface MonthCalendarSheetProps {
   isOpen: boolean;

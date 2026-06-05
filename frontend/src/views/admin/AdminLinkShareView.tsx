@@ -1,6 +1,6 @@
-import { PageHeader } from '../../components/common/PageHeader';
+import { haptic } from '../../shared/lib/haptic/haptic';
+import { PageHeader } from '../../shared/ui/page-header/PageHeader';
 import { useBookingStore } from '../../store/useBookingStore';
-import { haptic } from '../../utils/haptic';
 
 export function AdminLinkShareView() {
   const currentMasterId = useBookingStore((state) => state.currentMasterId);
@@ -25,7 +25,7 @@ export function AdminLinkShareView() {
 
   const handleCopyLink = () => {
     haptic.impact('light');
-    navigator.clipboard.writeText(clientLink).then(() => {
+    void navigator.clipboard.writeText(clientLink).then(() => {
       if (window.Telegram?.WebApp?.showAlert) {
         window.Telegram.WebApp.showAlert('Ссылка скопирована в буфер обмена!');
       } else {

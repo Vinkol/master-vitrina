@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
-import { haptic } from '../../utils/haptic';
 import type { DaySchedule, TimeInterval } from '../../types';
+import { haptic } from '../../shared/lib/haptic/haptic';
 
 const defaultSchedule: DaySchedule[] = Array.from({ length: 7 }, (_, i) => ({
   day_index: i,

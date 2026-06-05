@@ -78,6 +78,7 @@ export interface CrmClient {
   visits_count: number;
   last_visit_date: string;
   is_blocked: boolean;
+  has_future_appointment: boolean;
 }
 
 // Системные интерфейсы Telegram SDK

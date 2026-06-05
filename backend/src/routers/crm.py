@@ -39,66 +39,97 @@ async def get_crm_clients(
     считает их визиты, фильтрует по категориям и проверяет ЧС.
     """
     offset_value = page * size
+    today = date.today()
 
-    # Получаем телефоны заблокированных клиентов для этого мастера
+    # Получаем заблокированных
     blocked_query = select(BlockedClient.client_phone).where(BlockedClient.master_id == master_id)
     blocked_result = await db.execute(blocked_query)
-    blocked_phones = {row[0].strip() for row in blocked_result.all()}
+    blocked_phones = {row.strip() for row in blocked_result.all()}
 
-    # Строим основной запрос агрегации по таблице записей 'client'
+    # запрос с разделением на ПРОШЛЫЕ и БУДУЩИЕ визиты
     query = (
-        select(
-            ClientAppointment.client_name,
-            ClientAppointment.client_phone,
-            func.count(ClientAppointment.id).label("visits_count"),
-            func.max(ClientAppointment.date).label("last_visit_date")
-        )
+        select(ClientAppointment)
         .where(ClientAppointment.master_id == master_id)
-        .group_by(ClientAppointment.client_phone, ClientAppointment.client_name)
+        .order_by(ClientAppointment.date.desc(), ClientAppointment.time.desc())
     )
-
-    # Поиск по имени или телефону
-    if search:
-        query = query.having(
-            or_(
-                ClientAppointment.client_name.ilike(f"%{search}%"),
-                ClientAppointment.client_phone.ilike(f"%{search}%")
-            )
-        )
-
+    
     result = await db.execute(query)
-    all_grouped_clients = result.all()
+    appointments = result.scalars().all()
 
-    # Формируем список объектов и проверяем статус блокировки
+    # Группируем клиентов вручную на Python
+    clients_dict = {}
+    for app in appointments:
+        key = (app.client_phone.strip(), app.client_name.strip())
+        
+        if key not in clients_dict:
+            clients_dict[key] = {
+                "client_name": app.client_name,
+                "client_phone": app.client_phone,
+                "visits_count": 0,
+                "past_dates": [],
+                "future_dates": []
+            }
+        
+        clients_dict[key]["visits_count"] += 1
+        
+        # Раскладываем даты на прошлые и предстоящие визиты
+        if app.date <= today:
+            clients_dict[key]["past_dates"].append(app.date)
+        else:
+            clients_dict[key]["future_dates"].append(app.date)
+
+    # Формируем массив объектов для фильтрации и сортировки
     mapped_clients = []
-    for row in all_grouped_clients:
-        phone_clean = row.client_phone.strip()
+    for key, info in clients_dict.items():
+        phone_clean = info["client_phone"].strip()
         is_blocked = phone_clean in blocked_phones
         
+        last_visit = max(info["past_dates"]) if info["past_dates"] else None
+        next_visit = min(info["future_dates"]) if info["future_dates"] else None
+        has_future = next_visit is not None
+
+        if search:
+            search_lower = search.lower()
+            if search_lower not in info["client_name"].lower() and search_lower not in phone_clean:
+                continue
+
         client_obj = {
             "master_id": master_id,
-            "client_name": row.client_name,
-            "client_phone": row.client_phone,
-            "visits_count": row.visits_count,
-            "last_visit_date": format_russian_date(row.last_visit_date),
-            "is_blocked": is_blocked
+            "client_name": info["client_name"],
+            "client_phone": info["client_phone"],
+            "visits_count": info["visits_count"],
+            "last_visit_date": last_visit,  
+            "next_visit_date": next_visit,  
+            "is_blocked": is_blocked,
+            "has_future_appointment": has_future
         }
         mapped_clients.append(client_obj)
 
-    # Фильтрация по табам (all, new, loyal, blocked)
+    # Фильтрация по 5 табам
     if filter == "blocked":
         mapped_clients = [c for c in mapped_clients if c["is_blocked"]]
+    elif filter == "loyal":
+        mapped_clients = [c for c in mapped_clients if c["visits_count"] >= 2 and not c["is_blocked"]]
     elif filter == "new":
         mapped_clients = [c for c in mapped_clients if c["visits_count"] == 1 and not c["is_blocked"]]
-    elif filter == "loyal":
-        mapped_clients = [c for c in mapped_clients if c["visits_count"] >= 3 and not c["is_blocked"]]
+    elif filter == "active":
+        mapped_clients = [c for c in mapped_clients if c["has_future_appointment"] and not c["is_blocked"]]
     elif filter != "all":
         mapped_clients = [c for c in mapped_clients if not c["is_blocked"]]
 
-    # Сортировка по количеству визитов
-    mapped_clients.sort(key=lambda x: x["visits_count"], reverse=True)
+    # СОРТИРОВКА ПО СВЕЖЕСТИ ПРОШЛОГО ВИЗИТА
+    mapped_clients.sort(
+        key=lambda x: x["last_visit_date"] if x["last_visit_date"] is not None else date.min, 
+        reverse=True
+    )
 
-    # 6. Применяем пагинацию к отфильтрованному массиву
+    # Текстовое форматирование дат на русском языке перед отправкой
+    for c in mapped_clients:
+        if c["last_visit_date"] is None and c["next_visit_date"] is not None:
+            c["last_visit_date"] = f"Записан на {format_russian_date(c['next_visit_date'])}"
+        else:
+            c["last_visit_date"] = format_russian_date(c["last_visit_date"])
+
     return mapped_clients[offset_value : offset_value + size]
 
 

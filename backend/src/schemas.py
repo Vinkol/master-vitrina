@@ -94,6 +94,7 @@ class CRMClientResponse(BaseModel):
     visits_count: int
     last_visit_date: str | None = None
     is_blocked: bool = False
+    has_future_appointment: bool = False
 
 class ClientBlockPayload(BaseModel):
     master_id: uuid.UUID

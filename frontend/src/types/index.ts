@@ -72,12 +72,11 @@ export interface BlockedClient {
 
 // Тип клиента
 export interface CrmClient {
-  master_tg_id: number;
+  master_id: string;
   client_name: string;
   client_phone: string;
   visits_count: number;
   last_visit_date: string;
-  has_future_appointment: boolean;
   is_blocked: boolean;
 }
 

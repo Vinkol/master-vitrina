@@ -1,5 +1,4 @@
 import uuid
-from datetime import date, time
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, and_
@@ -62,6 +61,7 @@ async def get_crm_clients(
         is_blocked = phone_clean in blocked_phones
         
         client_obj = {
+            "master_id": master_id,
             "client_name": row.client_name,
             "client_phone": row.client_phone,
             "visits_count": row.visits_count,

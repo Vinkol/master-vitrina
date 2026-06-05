@@ -88,6 +88,7 @@ class ClientAppointmentResponse(BaseModel):
 
 # СХЕМЫ ДЛЯ ЧЕРНОГО СПИСКА
 class CRMClientResponse(BaseModel):
+    master_id: uuid.UUID
     client_name: str
     client_phone: str
     visits_count: int

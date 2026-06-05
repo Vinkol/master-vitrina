@@ -58,7 +58,7 @@ export function PageHeader({
               isSaving ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            {isSaving ? 'Сохранение...' : saveButtonText}
+            {isSaving ? 'Сохранение..' : saveButtonText}
           </button>
         )}
         {!onSaveClick && rightAction && rightAction}

@@ -16,6 +16,7 @@ export function useAdminHours() {
   const updateProfileInDB = useBookingStore((state) => state.updateProfileInDB);
   const setScreen = useBookingStore((state) => state.setScreen);
 
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const [schedule, setSchedule] = useState<DaySchedule[]>(() => {
     const fromDB = masterProfile?.schedule;
 
@@ -76,13 +77,21 @@ export function useAdminHours() {
 
   const handleSave = async () => {
     haptic.impact('medium');
-    await updateProfileInDB({ schedule });
-    setScreen('admin-dashboard');
+    setIsSaving(true);
+    try {
+      await updateProfileInDB({ schedule });
+      setScreen('admin-dashboard');
+    } catch (e) {
+      console.error('Ошибка сохранения графика:', e);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return {
     masterProfile,
     schedule,
+    isSaving,
     setScreen,
     updateDay,
     addBreak,

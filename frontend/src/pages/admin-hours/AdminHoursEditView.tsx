@@ -30,6 +30,7 @@ export function AdminHoursEditView() {
         onSaveClick={() => {
           void hours.handleSave();
         }}
+        isSaving={hours.isSaving}
       />
 
       {/* СПИСОК ДНЕЙ НЕДЕЛИ */}
@@ -50,8 +51,9 @@ export function AdminHoursEditView() {
       {/* ФУТЕР-ИНФОБЛОК */}
       <div className="p-4 bg-indigo-50/40 rounded-2xl border border-indigo-100/30 text-left">
         <p className="text-[11px] text-indigo-900/80 font-semibold leading-relaxed">
-          ⏰ На основе этих часов система автоматически генерирует доступные тайм-слоты для ваших
-          клиентов на экране онлайн-записи.
+          ⏰ Данные сохраняются только после нажатия кнопки «Сохранить». На основе этих часов
+          система автоматически генерирует доступные тайм-слоты для ваших клиентов на экране
+          онлайн-записи.
         </p>
       </div>
     </div>

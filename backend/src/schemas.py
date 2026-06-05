@@ -87,13 +87,15 @@ class ClientAppointmentResponse(BaseModel):
 
 
 # СХЕМЫ ДЛЯ ЧЕРНОГО СПИСКА
-class BlockedClientCreate(BaseModel):
-    client_phone: str = Field(..., max_length=50)
+class CRMClientResponse(BaseModel):
+    client_name: str
+    client_phone: str
+    visits_count: int
+    last_visit_date: date | None = None
+    is_blocked: bool = False
 
-class BlockedClientResponse(BaseModel):
-    id: uuid.UUID
+class ClientBlockPayload(BaseModel):
     master_id: uuid.UUID
     client_phone: str
-    created_at: date
     
     model_config = ConfigDict(from_attributes=True)

@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config import settings
-from src.routers import auth, services, appointments, schedule, master
+from src.routers import auth, services, appointments, schedule, master, crm
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -35,6 +35,7 @@ app.include_router(services.router, prefix="/api/v1")
 app.include_router(appointments.router, prefix="/api/v1")
 app.include_router(schedule.router, prefix="/api/v1")
 app.include_router(master.router, prefix="/api/v1")
+app.include_router(crm.router, prefix="/api/v1")
 
 @app.get("/healthcheck", tags=["System Control"])
 async def health_check():

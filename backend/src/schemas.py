@@ -92,7 +92,7 @@ class CRMClientResponse(BaseModel):
     client_name: str
     client_phone: str
     visits_count: int
-    last_visit_date: date | None = None
+    last_visit_date: str | None = None
     is_blocked: bool = False
 
 class ClientBlockPayload(BaseModel):

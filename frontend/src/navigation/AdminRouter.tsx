@@ -1,13 +1,13 @@
 import { useBookingStore } from '../store/useBookingStore';
 import { AdminLinkShareView } from '../views/admin/AdminLinkShareView';
 import { AdminProfileEditView } from '../views/admin/AdminProfileEditView';
-// import { AdminClientsCrmView } from '../views/admin/AdminClientsCrmView';
 import { TabBar } from './TabBar';
-import { AdminPlaceholderView } from '../components/admin/AdminPlaceholderView';
+// import { AdminPlaceholderView } from '../components/admin/AdminPlaceholderView';
 import { AdminDashboardView } from '../pages/admin-dashboard/AdminDashboardView';
 import { AdminServicesView } from '../pages/admin-services/AdminServicesView';
 import { AdminHoursEditView } from '../pages/admin-hours/AdminHoursEditView';
 import { AdminMainDashboardView } from '../pages/admin-dashboard/AdminMainDashboardView';
+import { AdminClientsCrmView } from '../pages/admin-clients/AdminClientsCrmView';
 
 export function AdminRouter() {
   const currentScreen = useBookingStore((state) => state.currentScreen);
@@ -26,8 +26,8 @@ export function AdminRouter() {
       case 'admin-placeholder-main':
         return <AdminMainDashboardView />;
       case 'admin-placeholder-clients':
-        return <AdminPlaceholderView title="Клиенты" icon="👥" />;
-      // return <AdminClientsCrmView />;
+        // return <AdminPlaceholderView title="Клиенты" icon="👥" />;
+        return <AdminClientsCrmView />;
       default:
         return <AdminMainDashboardView />;
     }

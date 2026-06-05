@@ -1,4 +1,5 @@
 import uuid
+from datetime import date, time, datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, and_
@@ -8,6 +9,21 @@ from src.models import ClientAppointment, BlockedClient
 from src.schemas import CRMClientResponse, ClientBlockPayload
 
 router = APIRouter(prefix="/master", tags=["crm"])
+
+def format_russian_date(d: date | None) -> str | None:
+    """Превращает объект date в красивую строку на русском языке"""
+    if not d:
+        return None
+    today = date.today()
+    if d == today:
+        return "Сегодня"
+    if d == today - timedelta(days=1):
+        return "Вчера"       
+    months = [
+        "января", "февраля", "марта", "апреля", "мая", "июня",
+        "июля", "августа", "сентября", "октября", "ноября", "декабря"
+    ]
+    return f"{d.day:02d} {months[d.month - 1]} {d.year}"
 
 @router.get("/{master_id}/crm-clients", response_model=list[CRMClientResponse])
 async def get_crm_clients(
@@ -27,7 +43,6 @@ async def get_crm_clients(
     # Получаем телефоны заблокированных клиентов для этого мастера
     blocked_query = select(BlockedClient.client_phone).where(BlockedClient.master_id == master_id)
     blocked_result = await db.execute(blocked_query)
-    # Извлекаем строки из кортежей SQLAlchemy результата
     blocked_phones = {row[0].strip() for row in blocked_result.all()}
 
     # Строим основной запрос агрегации по таблице записей 'client'
@@ -65,7 +80,7 @@ async def get_crm_clients(
             "client_name": row.client_name,
             "client_phone": row.client_phone,
             "visits_count": row.visits_count,
-            "last_visit_date": row.last_visit_date,
+            "last_visit_date": format_russian_date(row.last_visit_date),
             "is_blocked": is_blocked
         }
         mapped_clients.append(client_obj)

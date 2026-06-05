@@ -13,7 +13,7 @@ export const createCrmSlice: StateCreator<BookingState, [], [], CrmSlice> = (set
     if (!masterId) return;
 
     try {
-      const response = await api.get(`/master/${masterId}/crm-clients`, {
+      const response = await api.get(`/api/v1/master/${masterId}/crm-clients`, {
         params: {
           search: search.trim() || undefined,
           filter,
@@ -30,6 +30,7 @@ export const createCrmSlice: StateCreator<BookingState, [], [], CrmSlice> = (set
       });
     } catch (e) {
       console.error('Ошибка серверной CRM-пагинации на FastAPI:', e);
+      set({ hasMoreClients: false });
     }
   },
 
@@ -38,7 +39,7 @@ export const createCrmSlice: StateCreator<BookingState, [], [], CrmSlice> = (set
     if (!masterId) return;
 
     try {
-      await api.post('/master/clients/block', {
+      await api.post('/api/v1/master/clients/block', {
         master_id: masterId,
         client_phone: clientPhone.trim(),
       });
@@ -54,7 +55,7 @@ export const createCrmSlice: StateCreator<BookingState, [], [], CrmSlice> = (set
     if (!masterId) return;
 
     try {
-      await api.post('/master/clients/unblock', {
+      await api.post('/api/v1/master/clients/unblock', {
         master_id: masterId,
         client_phone: clientPhone.trim(),
       });

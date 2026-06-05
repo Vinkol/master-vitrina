@@ -7,6 +7,7 @@ interface TimeSlotsSheetProps {
   availableSlots: string[];
   selectedTime: string;
   onSelectTime: (slot: string) => void;
+  isLoading: boolean;
 }
 
 export function TimeSlotsSheet({
@@ -16,6 +17,7 @@ export function TimeSlotsSheet({
   availableSlots,
   selectedTime,
   onSelectTime,
+  isLoading,
 }: TimeSlotsSheetProps) {
   if (!isOpen) return null;
 
@@ -37,7 +39,14 @@ export function TimeSlotsSheet({
         </h4>
 
         <div className="grid grid-cols-3 gap-2.5 mb-6">
-          {availableSlots.length === 0 ? (
+          {isLoading ? (
+            Array.from({ length: 6 }).map((_, index) => (
+              <div
+                key={`slot_skeleton_${index}`}
+                className="py-3 px-2 h-11 bg-slate-100 border border-slate-200/40 rounded-xl animate-pulse"
+              />
+            ))
+          ) : availableSlots.length === 0 ? (
             <p className="col-span-3 text-center text-xs font-bold text-slate-400 py-6">
               Все окошки на этот день уже заняты 🔒
             </p>

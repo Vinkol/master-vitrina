@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
 import type { Service } from '../../types';
 import { haptic } from '../../shared/lib/haptic/haptic';
+import { api } from '../../shared/api/api';
 
 export function useManualBooking(selectedDate: string, onClose: () => void) {
   const { services, currentMasterId, fetchAppointments, fetchCrmClients } = useBookingStore();
+
   const [isOpen, setIsOpen] = useState(false);
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
@@ -39,17 +41,16 @@ export function useManualBooking(selectedDate: string, onClose: () => void) {
         ? '+' + cleanPhone.replace(/\D/g, '')
         : cleanPhone.replace(/\D/g, '');
 
-      const newAppointment = {
+      const appointmentPayload = {
         master_id: currentMasterId,
-        service_title: selectedService.title,
+        service_id: selectedService.id,
         date: selectedDate,
         time: selectedTime,
         client_name: clientName.trim(),
-        client_phone: formattedPhone || 'Телефон не указан',
+        client_phone: formattedPhone || null,
       };
 
-      const { error } = await supabase.from('appointments').insert([newAppointment]);
-      if (error) throw error;
+      await api.post('/api/v1/appointments', appointmentPayload);
 
       await Promise.all([fetchAppointments(), fetchCrmClients()]);
 
@@ -61,7 +62,7 @@ export function useManualBooking(selectedDate: string, onClose: () => void) {
     } catch (err) {
       console.error('Ошибка ручного добавления записи:', err);
       if (typeof window !== 'undefined' && window.Telegram?.WebApp?.showAlert) {
-        window.Telegram.WebApp.showAlert('Не удалось сохранить запись. Попробуйте снова.');
+        window.Telegram.WebApp.showAlert('Не удалось сохранить запись на сервере.');
       }
     } finally {
       setIsSubmitting(false);

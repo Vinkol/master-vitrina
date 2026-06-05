@@ -21,8 +21,9 @@ export function ManualBookingModal({ isOpen, onClose, selectedDate }: ManualBook
       <div className="absolute inset-0" onClick={modal.booking.handleClose} />
 
       <form
-        onSubmit={() => {
-          void modal.booking.handleSave;
+        onSubmit={(e) => {
+          e.preventDefault();
+          void modal.booking.handleSave(e);
         }}
         className="bg-white w-full max-w-md rounded-t-3xl p-6 relative z-10 animate-slideUp shadow-2xl border-t border-slate-100 space-y-4 max-h-[90vh] overflow-y-auto pb-10"
       >
@@ -36,7 +37,7 @@ export function ManualBookingModal({ isOpen, onClose, selectedDate }: ManualBook
             onClick={modal.handleOpenCalendar}
             className="text-[10px] text-indigo-600 font-extrabold bg-indigo-50 hover:bg-indigo-100/80 px-2.5 py-1 rounded-md inline-flex items-center space-x-1 mt-1.5 active:scale-95 transition-all cursor-pointer border border-indigo-100/40"
           >
-            <span>📅 Дата сессии: {formatToUserDate(modal.currentDate)}</span>
+            <span>📅 Дата: {formatToUserDate(modal.currentDate)}</span>
             <span className="text-[8px] text-indigo-400">▼</span>
           </button>
         </div>

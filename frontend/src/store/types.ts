@@ -9,9 +9,8 @@ export type Screen =
   | 'admin-hours-edit'
   | 'admin-link-share'
   | 'admin-placeholder-main'
+  | 'booking-confirm'
   | 'admin-placeholder-clients';
-
-export type Role = 'master' | 'client';
 
 export interface RegisterMasterPayload {
   name: string;
@@ -23,7 +22,6 @@ export interface UserProfile {
   telegram_id: number | null;
   username: string | null;
   full_name: string | null;
-  role: Role;
   business_name: string | null;
 }
 
@@ -63,17 +61,6 @@ export interface TelegramInstance {
   };
 }
 
-// export interface AuthSliceState {
-//   isAuthenticated: boolean;
-//   isLoading: boolean;
-//   profile: UserProfile | null;
-//   isTelegramEnv: boolean;
-//   error: string | null;
-//   initializeAuth: () => Promise<void>;
-//   loginWithWebLink: () => Promise<string | null>;
-//   logout: () => Promise<void>;
-// }
-
 export interface CrmSlice {
   crmClients: CrmClient[];
   hasMoreClients: boolean;
@@ -94,13 +81,11 @@ export interface MasterSlice {
 }
 
 export interface BookingSlice {
-  currentRole: Role;
   currentScreen: Screen;
-  setRole: (role: Role) => void;
   setScreen: (screen: Screen) => void;
   appointments: Appointment[];
   fetchAppointments: () => Promise<void>;
-  createAppointment: (clientName: string) => Promise<void>;
+  createAppointment: (clientName: string, clientPhone: string) => Promise<void>;
   currentMasterId: string | null;
   isOwner: boolean;
   botUsername: string;
@@ -114,6 +99,7 @@ export interface BookingSlice {
   setTime: (slot: string) => void;
   resetBooking: () => void;
   fetchMasterData: () => Promise<void>;
+  goToConfirm: () => void;
 }
 
 export type BookingState = CrmSlice & MasterSlice & BookingSlice & AuthState;

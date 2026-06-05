@@ -9,7 +9,6 @@ export function AdminDashboardView() {
   const masterProfile = useBookingStore((state) => state.masterProfile);
   const appointments = useBookingStore((state) => state.appointments);
   const setScreen = useBookingStore((state) => state.setScreen);
-  const setRole = useBookingStore((state) => state.setRole);
   const workingDaysCount = useMemo(() => {
     return masterProfile?.schedule?.filter((d) => d.is_working).length || 0;
   }, [masterProfile?.schedule]);
@@ -21,12 +20,6 @@ export function AdminDashboardView() {
   const handleNavigate = (screenName: Parameters<typeof setScreen>[0]) => {
     haptic.impact('light');
     setScreen(screenName);
-  };
-
-  const handleViewAsClient = () => {
-    haptic.impact('medium');
-    setScreen('profile');
-    setRole('client');
   };
 
   const activeAppointmentsCount = appointments?.length || 0;
@@ -111,17 +104,6 @@ export function AdminDashboardView() {
             </span>
           }
         />
-      </div>
-
-      {/* КНОПКА: ПРОСМОТР ГЛАЗАМИ КЛИЕНТА */}
-      <div className="pt-2">
-        <button
-          onClick={handleViewAsClient}
-          className="w-full bg-linear-to-r from-indigo-50 to-indigo-100/60 hover:from-indigo-100 hover:to-indigo-150 text-indigo-600 font-black text-xs py-3.5 px-4 rounded-2xl border border-indigo-100 shadow-xs transition-all active:scale-98 flex items-center justify-center space-x-2"
-        >
-          <span>👀</span>
-          <span>Посмотреть глазами клиента</span>
-        </button>
       </div>
     </div>
   );

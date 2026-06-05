@@ -33,6 +33,7 @@ class MasterProfileResponse(BaseModel):
 class MasterProfileUpdate(BaseModel):
     name: str | None = Field(None, max_length=255)
     bio: str | None = Field(None, max_length=1000)
+    avatar: str | None = None
 
 class UserMasterCreate(UserMasterBase):
     pass

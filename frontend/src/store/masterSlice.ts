@@ -76,13 +76,18 @@ export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> 
         if (!response.ok) throw new Error('Бэкенд отклонил сохранение расписания');
       }
 
-      if (updatedFields.name !== undefined || updatedFields.bio !== undefined) {
+      if (
+        updatedFields.name !== undefined ||
+        updatedFields.bio !== undefined ||
+        updatedFields.avatar !== undefined
+      ) {
         const response = await fetch(`${baseUrl}/api/v1/master/profile`, {
           method: 'PATCH',
           headers: getAuthHeaders(token),
           body: JSON.stringify({
             name: updatedFields.name,
             bio: updatedFields.bio,
+            avatar: updatedFields.avatar,
           }),
         });
         if (!response.ok) throw new Error('Бэкенд отклонил обновление данных профиля');

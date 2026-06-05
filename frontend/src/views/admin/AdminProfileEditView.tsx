@@ -48,10 +48,12 @@ export function AdminProfileEditView() {
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-4 bg-slate-50 min-h-screen text-slate-800 pb-24 select-none">
       <PageHeader
-        title="Данные витрины"
+        title="Данные профиля"
         subtitle="Настройка внешнего вида"
         onBackClick={() => setScreen('admin-dashboard')}
-        onSaveClick={handleSave}
+        onSaveClick={() => {
+          void handleSave();
+        }}
         isSaving={isSaving}
       />
 
@@ -63,11 +65,24 @@ export function AdminProfileEditView() {
 
           <div className="relative group">
             <div className="w-24 h-24 bg-slate-100 border-4 border-white shadow-md rounded-full flex items-center justify-center overflow-hidden">
-              {/* ИСПРАВЛЕНО: Рендерим картинку из локального стейта аватарки для мгновенного превью */}
               {avatar?.startsWith('data:image') ? (
                 <img src={avatar} className="w-full h-full object-cover" alt="Avatar" />
               ) : (
-                <span className="text-3xl">{avatar || '💅'}</span>
+                <div className="w-full h-full bg-slate-200 flex items-center justify-center">
+                  <svg
+                    className="w-12 h-12 text-slate-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                </div>
               )}
             </div>
 

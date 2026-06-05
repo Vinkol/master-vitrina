@@ -25,7 +25,7 @@ async def update_master_profile(
 ):
     """
     Эндпоинт частичного редактирования текстового профиля мастера.
-    Обновляет только переданные поля (name и/или bio).
+    Обновляет только переданные поля (name и/или bio и/или avatar).
     """
     update_data = payload.model_dump(exclude_unset=True)
     

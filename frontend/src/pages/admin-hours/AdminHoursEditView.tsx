@@ -27,7 +27,9 @@ export function AdminHoursEditView() {
         title="График работы"
         subtitle="Настройка слотов"
         onBackClick={() => hours.setScreen('admin-dashboard')}
-        onSaveClick={hours.handleSave}
+        onSaveClick={() => {
+          void hours.handleSave();
+        }}
       />
 
       {/* СПИСОК ДНЕЙ НЕДЕЛИ */}

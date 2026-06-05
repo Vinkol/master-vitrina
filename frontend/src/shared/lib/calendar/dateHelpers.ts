@@ -1,4 +1,4 @@
-import type { CalendarDay } from '../types';
+import type { CalendarDay } from '../../../types';
 
 export function getNextNDays(count = 45): CalendarDay[] {
   const days: CalendarDay[] = [];

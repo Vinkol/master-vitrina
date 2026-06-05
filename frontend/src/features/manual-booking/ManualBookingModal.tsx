@@ -21,7 +21,9 @@ export function ManualBookingModal({ isOpen, onClose, selectedDate }: ManualBook
       <div className="absolute inset-0" onClick={modal.booking.handleClose} />
 
       <form
-        onSubmit={modal.booking.handleSave}
+        onSubmit={() => {
+          void modal.booking.handleSave;
+        }}
         className="bg-white w-full max-w-md rounded-t-3xl p-6 relative z-10 animate-slideUp shadow-2xl border-t border-slate-100 space-y-4 max-h-[90vh] overflow-y-auto pb-10"
       >
         <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-1" />

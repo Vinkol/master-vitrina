@@ -17,7 +17,7 @@ export function useAdminHours() {
   const setScreen = useBookingStore((state) => state.setScreen);
 
   const [schedule, setSchedule] = useState<DaySchedule[]>(() => {
-    const fromDB = masterProfile?.schedule as DaySchedule[] | undefined;
+    const fromDB = masterProfile?.schedule;
 
     if (!fromDB || !Array.isArray(fromDB) || fromDB.length === 0) {
       return defaultSchedule;

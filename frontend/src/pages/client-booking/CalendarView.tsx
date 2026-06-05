@@ -1,11 +1,9 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
-import { generateAvailableSlots } from '../../features/slot-generation/slotGenerator';
-import { PreviewModeBanner } from '../../components/client/PreviewModeBanner';
 import { TimeSlotsSheet } from '../../components/client/TimeSlotsSheet';
-import type { BookingState } from '../../store/types';
 import { haptic } from '../../shared/lib/haptic/haptic';
 import { ClientCalendarRibbon } from '../../widgets/client-calendar/ClientCalendarRibbon';
+import { api } from '../../shared/api/api';
 
 export function CalendarView() {
   const {
@@ -15,41 +13,47 @@ export function CalendarView() {
     setTime,
     selectedDate,
     selectedTime,
-    currentRole,
-    setRole,
+    appointments,
+    currentMasterId,
+    goToConfirm,
   } = useBookingStore();
 
-  const masterProfile = useBookingStore((state: BookingState) => state.masterProfile);
-  const appointments = useBookingStore((state: BookingState) => state.appointments);
-
   const [timeSheetOpen, setTimeSheetOpen] = useState<boolean>(false);
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [isSlotsLoading, setIsSlotsLoading] = useState<boolean>(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const availableSlots = useMemo<string[]>(() => {
-    if (!masterProfile?.schedule || !selectedService || !selectedDate) return [];
+  // ЗАПРОС СЛОТОВ FASTAPI БЭКЕНДА
+  useEffect(() => {
+    if (!currentMasterId || !selectedDate || !selectedService) return;
 
-    const jsDay = new Date(selectedDate).getDay();
-    const dbDayIndex = jsDay === 0 ? 6 : jsDay - 1;
+    const fetchSlots = async () => {
+      setIsSlotsLoading(true);
+      try {
+        const response = await api.get('/api/v1/appointments/slots', {
+          params: {
+            master_id: currentMasterId,
+            target_date: selectedDate,
+            duration_minutes: selectedService.duration,
+            is_master: false,
+          },
+        });
+        setAvailableSlots((response.data as string[]) || []);
+      } catch (err) {
+        console.error('Ошибка загрузки слотов с бэкенда:', err);
+        setAvailableSlots([]);
+      } finally {
+        setIsSlotsLoading(false);
+      }
+    };
 
-    const daySchedule = masterProfile.schedule.find((d) => d.day_index === dbDayIndex);
-    if (!daySchedule) return [];
+    void fetchSlots();
+  }, [selectedDate, selectedService, currentMasterId]);
 
-    return generateAvailableSlots({
-      selectedDate,
-      daySchedule,
-      selectedService,
-      appointments: appointments,
-      isMaster: false,
-    });
-  }, [selectedDate, selectedService, masterProfile, appointments]);
-
-  const tgInstance = window.Telegram?.WebApp;
-  const currentTgId = tgInstance?.initDataUnsafe?.user?.id;
-  const masterTelegramId = masterProfile?.telegram_id;
-
-  const isPreviewMode =
-    !tgInstance ||
-    (currentTgId && masterTelegramId && Number(currentTgId) === Number(masterTelegramId));
+  const handleGoBack = (): void => {
+    haptic.impact('light');
+    setScreen('profile');
+  };
 
   const handleSelectDay = (isoDate: string): void => {
     setDate(isoDate);
@@ -61,19 +65,9 @@ export function CalendarView() {
     setTimeSheetOpen(false);
   };
 
-  const handleExitPreview = (): void => {
-    setScreen('admin-dashboard');
-    setRole('master');
-  };
-
-  const handleGoBack = (): void => {
-    haptic.impact('light');
-    if (currentRole === 'master') {
-      setRole('master');
-      setScreen('admin-dashboard');
-    } else {
-      setScreen('profile');
-    }
+  const handlePcNextStep = (): void => {
+    haptic.impact('medium');
+    goToConfirm();
   };
 
   useEffect(() => {
@@ -81,31 +75,12 @@ export function CalendarView() {
     if (!tg) return;
 
     if (selectedDate && selectedTime && selectedService) {
-      tg.MainButton.text = `Записаться на ${selectedTime}`;
+      tg.MainButton.text = 'Подтвердить';
       tg.MainButton.show();
 
       const handleMainButtonClick = () => {
-        const clientName = tg.initDataUnsafe?.user?.first_name || 'Дмитрий (ТГ)';
-        tg.MainButton.showProgress();
-
-        void (async () => {
-          try {
-            await useBookingStore.getState().createAppointment(clientName);
-            haptic.notification('success');
-            if (tg.showAlert) tg.showAlert(`Вы успешно записаны!`);
-
-            if (currentRole === 'master') {
-              setScreen('admin-placeholder-main');
-            } else {
-              setScreen('profile');
-            }
-          } catch {
-            if (tg.showAlert) tg.showAlert('Произошла ошибка при создании записи');
-          } finally {
-            tg.MainButton.hideProgress();
-            tg.MainButton.hide();
-          }
-        })();
+        haptic.impact('medium');
+        goToConfirm();
       };
 
       tg.MainButton.onClick(handleMainButtonClick);
@@ -117,29 +92,11 @@ export function CalendarView() {
     } else {
       tg.MainButton.hide();
     }
-  }, [selectedDate, selectedTime, selectedService, setScreen, currentRole]);
-
-  // Синхронный обработчик для ПК
-  const handlePcSubmit = () => {
-    void (async () => {
-      try {
-        await useBookingStore.getState().createAppointment('Дмитрий (Браузер)');
-        haptic.notification('success');
-        alert('Тестовая запись успешно улетела в Supabase!');
-        if (currentRole === 'master') {
-          setRole('master');
-          setScreen('admin-placeholder-main');
-        }
-      } catch {
-        alert('Ошибка при отправке записи');
-      }
-    })();
-  };
+  }, [selectedDate, selectedTime, selectedService, goToConfirm]);
 
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-6 min-h-screen bg-slate-50 text-slate-800 pb-24 relative select-none animate-fadeIn">
-      <PreviewModeBanner isPreviewMode={!!isPreviewMode} onExitPreview={handleExitPreview} />
-
+      {/* ХЕДЕР С КНОПКОЙ НАЗАД */}
       <div className="flex items-center space-x-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
         <button
           onClick={handleGoBack}
@@ -155,6 +112,7 @@ export function CalendarView() {
         </div>
       </div>
 
+      {/* ЛЕНТА КАЛЕНДАРЯ */}
       <ClientCalendarRibbon
         scrollRef={scrollRef}
         selectedDate={selectedDate}
@@ -162,17 +120,19 @@ export function CalendarView() {
         onSelectDay={handleSelectDay}
       />
 
-      {!window.Telegram?.WebApp && selectedDate && selectedTime && (
+      {/* КНОПКА ДЛЯ ТЕСТОВ НА ПК */}
+      {!window.Telegram?.WebApp?.initData && selectedDate && selectedTime && (
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 animate-fadeIn">
           <button
-            onClick={handlePcSubmit}
+            onClick={handlePcNextStep}
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-sm text-sm"
           >
-            [ПК] Подтвердить запись на {selectedTime}
+            Подтвердить время {selectedTime} →
           </button>
         </div>
       )}
 
+      {/* ШТОРКА ВЫБОРА СЛОТОВ ВРЕМЕНИ */}
       <TimeSlotsSheet
         isOpen={timeSheetOpen}
         onClose={() => setTimeSheetOpen(false)}
@@ -180,6 +140,7 @@ export function CalendarView() {
         availableSlots={availableSlots}
         selectedTime={selectedTime}
         onSelectTime={handleSelectTime}
+        isLoading={isSlotsLoading}
       />
     </div>
   );

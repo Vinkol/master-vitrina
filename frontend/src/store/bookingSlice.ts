@@ -6,12 +6,20 @@ const getAuthHeaders = (token: string | null) => ({
   ...(token ? { Authorization: `Bearer ${token}` } : {}),
 });
 
-// ИСПРАВЛЕНО: Указали BookingState в качестве итогового типа, чтобы линтер видел методы всех соседних слайсов
+const tgInstance = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
+const tgStartParam = tgInstance?.initDataUnsafe?.start_param;
+
+const urlParams =
+  typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+const browserStartParam = urlParams ? urlParams.get('startapp') : null;
+
+const finalMasterId = tgStartParam || browserStartParam;
+
 export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice> = (set, get) => ({
-  currentRole: 'client',
-  currentScreen: 'profile',
+  // Если зашли по ссылке — стартуем с витрины ('profile'), иначе — заглушка админки
+  currentScreen: finalMasterId ? 'profile' : 'admin-placeholder-main',
   appointments: [],
-  currentMasterId: null,
+  currentMasterId: finalMasterId || null,
   botUsername: 'mastervitrinabot',
   botAppName: 'app',
   isRegistered: null,
@@ -21,15 +29,15 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
   selectedDate: '',
   selectedTime: '',
 
-  setRole: (role) =>
-    set({
-      currentRole: role,
-      currentScreen: role === 'master' ? 'admin-placeholder-main' : 'profile',
-    }),
+  setScreen: (screen) => {
+    // Если это клиент, жестко блокируем любые попытки переключить экран на админку
+    if (finalMasterId && screen.startsWith('admin-')) {
+      return;
+    }
+    set({ currentScreen: screen });
+  },
 
-  setScreen: (screen) => set({ currentScreen: screen }),
-
-  // Получение списка всех записей для журнала мастера (из нашей новой таблицы 'client')
+  // Получение списка всех записей для журнала мастера
   fetchAppointments: async () => {
     const masterId = get().currentMasterId;
     if (!masterId) return;
@@ -44,8 +52,6 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
 
       if (!response.ok) throw new Error('Не удалось загрузить журнал записей');
       const data = (await response.json()) as Record<string, unknown>[];
-
-      // Приводим время формата "14:00:00" из Postgres к красивому "14:00" для React
       const formattedAppointments = data.map((app) => {
         const timeStr = typeof app.time === 'string' ? app.time : '';
         return {
@@ -60,25 +66,22 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
     }
   },
 
-  // Создание записи клиентом (Отправка POST на наш новый бэкенд)
-  createAppointment: async (clientName) => {
+  // Создание записи клиентом
+  createAppointment: async (clientName, clientPhone) => {
     const { selectedService, selectedDate, selectedTime, currentMasterId } = get();
     if (!selectedService || !selectedDate || !selectedTime || !currentMasterId) return;
 
     try {
       const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
       const tgInstance = window.Telegram?.WebApp;
-      const clientUsername = tgInstance?.initDataUnsafe?.user?.username
-        ? `@${tgInstance.initDataUnsafe.user.username}`
-        : 'Через ТГ по ссылке';
 
       const newAppointmentPayload = {
         master_id: currentMasterId,
-        service_title: selectedService.title,
+        service_id: selectedService.id,
         date: selectedDate.split('T')[0],
         time: selectedTime,
-        client_name: clientName,
-        client_phone: clientUsername,
+        client_name: clientName.trim(),
+        client_phone: clientPhone.trim(),
       };
 
       const response = await fetch(`${baseUrl}/api/v1/appointments`, {
@@ -100,9 +103,11 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
       }
 
       await get().fetchAppointments();
+
       get().resetBooking();
     } catch (e) {
       console.error('Ошибка создания записи через FastAPI:', e);
+      throw e;
     }
   },
 
@@ -120,6 +125,7 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
   },
 
   selectService: (service) => set({ selectedService: service, currentScreen: 'calendar' }),
+  goToConfirm: () => set({ currentScreen: 'booking-confirm' }),
   setDate: (date) => set({ selectedDate: date }),
   setTime: (slot) => set({ selectedTime: slot }),
   resetBooking: () =>

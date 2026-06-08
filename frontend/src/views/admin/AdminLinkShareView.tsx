@@ -14,10 +14,15 @@ export function AdminLinkShareView() {
     haptic.impact('medium');
     const shareMessage = `Привет! По этой ссылке можно посмотреть мои услуги и записаться онлайн в пару кликов:`;
 
-    const tgShareUrl = `https://t.me/${encodeURIComponent(clientLink)}&text=${encodeURIComponent(shareMessage)}`;
+    const tgShareUrl = `https://t.me/${encodeURIComponent(shareMessage)}`;
 
     if (window.Telegram?.WebApp?.openTelegramLink) {
-      window.Telegram.WebApp.openTelegramLink(tgShareUrl);
+      try {
+        window.Telegram.WebApp.openTelegramLink(tgShareUrl);
+      } catch (err) {
+        console.error('Нативный шеринг не сработал, открываем через вкладку:', err);
+        window.open(tgShareUrl, '_blank');
+      }
     } else {
       window.open(tgShareUrl, '_blank');
     }

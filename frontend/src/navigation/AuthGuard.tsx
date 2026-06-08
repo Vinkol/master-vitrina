@@ -23,18 +23,22 @@ export const AuthGuard: React.FC<AuthGuardProps> = () => {
     typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
   const browserStartParam = urlParams ? urlParams.get('startapp') : null;
 
-  const effectiveMasterId = tgStartParam || browserStartParam;
+  const referralId = tgStartParam || browserStartParam;
 
   useEffect(() => {
     void initAuth();
   }, [initAuth]);
 
-  if (effectiveMasterId && effectiveMasterId !== 'reg') {
-    return <ClientRouter />;
-  }
-
   if (isLoading) {
     return <Loader text="Синхронизация с Telegram..." />;
+  }
+
+  const isOwnLink = masterProfile && masterProfile.id === referralId;
+  if (referralId && !isOwnLink) {
+    if (useBookingStore.getState().currentMasterId !== referralId) {
+      useBookingStore.setState({ currentMasterId: referralId, currentScreen: 'profile' });
+    }
+    return <ClientRouter />;
   }
 
   if (isAuthenticated && !masterProfile && isRegisteredMaster) {

@@ -71,8 +71,13 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (s
       if (!response.ok) throw new Error('Ошибка авторизации на бэкенде');
       const data = (await response.json()) as FastAPIAuthResponse;
       const tokenPayload = JSON.parse(atob(data.access_token.split('.')[1])) as JWTDecodedPayload;
-      const startParam = tg?.initDataUnsafe?.start_param;
-
+      const tgStartParam = tg?.initDataUnsafe?.start_param;
+      const urlParams =
+        typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const browserStartParam = urlParams
+        ? urlParams.get('startapp') || urlParams.get('tgWebAppStartParam')
+        : null;
+      const startParam = tgStartParam || browserStartParam;
       set({
         accessToken: data.access_token,
         isAuthenticated: true,

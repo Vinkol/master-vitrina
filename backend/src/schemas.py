@@ -12,7 +12,7 @@ class TokenResponse(BaseModel):
 
 # СХЕМЫ ДЛЯ МАСТЕРА
 class UserMasterBase(BaseModel):
-    telegram_id: int
+    telegram_id: int | None = None
     username: str | None = None
     name: str = Field(..., max_length=255)
     bio: str | None = None

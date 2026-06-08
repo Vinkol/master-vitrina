@@ -2,29 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { useBookingStore } from '../store/useBookingStore';
 
 export const RegistrationForm: React.FC = () => {
-  const updateProfileInDB = useBookingStore((state) => state.updateProfileInDB);
+  const registerMaster = useBookingStore((state) => state.registerMaster);
   const setScreen = useBookingStore((state) => state.setScreen);
   const isLoading = useBookingStore((state) => state.isLoading);
-
-  // Локальный стейт формы
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
-  // Автоопределение таймзоны пользователя (например, 'Europe/Moscow', 'Asia/Tashkent')
   const [timezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
 
   const tg = window.Telegram?.WebApp;
 
-  // Интеграция с нативной кнопкой Telegram MainButton
   useEffect(() => {
     if (!tg) return;
 
-    // Настраиваем кнопку под дизайн формы
     tg.MainButton.setText('СОЗДАТЬ ПРОФИЛЬ МАСТЕРА');
     tg.MainButton.setParams({
       text_color: '#ffffff',
     });
 
-    // Показываем кнопку только если введено имя
     if (name.trim().length >= 2 && !isLoading) {
       tg.MainButton.show();
       tg.MainButton.enable();
@@ -38,7 +32,7 @@ export const RegistrationForm: React.FC = () => {
 
       void (async () => {
         try {
-          await updateProfileInDB({
+          const success = await registerMaster({
             name: name.trim(),
             bio: bio.trim(),
           });
@@ -46,8 +40,11 @@ export const RegistrationForm: React.FC = () => {
           tg.MainButton.hideProgress();
           tg.MainButton.hide();
 
-          // Перенаправляем мастера в его главное меню управления (Админку)
-          setScreen('admin-dashboard');
+          if (success) {
+            setScreen('admin-dashboard');
+          } else {
+            if (tg.showAlert) tg.showAlert('Не удалось сохранить профиль. Попробуйте позже.');
+          }
         } catch {
           tg.MainButton.hideProgress();
           if (tg.showAlert) tg.showAlert('Не удалось сохранить профиль. Попробуйте позже.');
@@ -57,22 +54,24 @@ export const RegistrationForm: React.FC = () => {
 
     tg.MainButton.onClick(handleMainButtonClick);
 
-    // Чистим за собой обработчики при размонтировании компонента (теперь ссылка на функцию совпадает!)
     return () => {
       tg.MainButton.offClick(handleMainButtonClick);
       tg.MainButton.hide();
     };
-  }, [name, bio, isLoading, updateProfileInDB, setScreen, tg]);
+  }, [name, bio, isLoading, registerMaster, setScreen, tg]);
 
-  // Веб-фолбэк обработчик, если запустили вне Telegram (для тестов в браузере)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim().length < 2 || isLoading) return;
 
     void (async () => {
       try {
-        await updateProfileInDB({ name: name.trim(), bio: bio.trim() });
-        setScreen('admin-dashboard');
+        const success = await registerMaster({ name: name.trim(), bio: bio.trim() });
+        if (success) {
+          setScreen('admin-dashboard');
+        } else {
+          if (tg?.showAlert) tg.showAlert('Не удалось сохранить профиль. Попробуйте позже.');
+        }
       } catch {
         if (tg?.showAlert) tg.showAlert('Не удалось сохранить профиль. Попробуйте позже.');
       }
@@ -149,7 +148,7 @@ export const RegistrationForm: React.FC = () => {
             </span>
           </div>
 
-          {/* Кнопка дебага (центрирована снизу внутри карточки) */}
+          {/* Кнопка дебага */}
           {!tg && (
             <div className="pt-2">
               <button

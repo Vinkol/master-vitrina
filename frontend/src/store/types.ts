@@ -40,6 +40,11 @@ export interface AuthState {
   botAppName: string;
   currentMasterId: string | null;
   initAuth: () => Promise<void>;
+  registerMaster: (profileFields: {
+    name: string;
+    bio?: string;
+    avatar?: string;
+  }) => Promise<boolean>;
 }
 
 export interface TelegramUser {

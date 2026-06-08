@@ -1,13 +1,11 @@
 import type { StateCreator } from 'zustand';
-import type { BookingState, AuthState, SessionUser } from './types';
+import type { BookingState, AuthState, MasterProfile } from './types';
 
-// Описываем интерфейс ответа от нашего FastAPI бэкенда
 interface FastAPIAuthResponse {
   access_token: string;
   token_type: string;
 }
 
-// Описываем структуру внутренностей JWT токена
 interface JWTDecodedPayload {
   sub: string;
   telegram_id: number;
@@ -71,68 +69,102 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (s
       }
 
       if (!response.ok) throw new Error('Ошибка авторизации на бэкенде');
-
-      // Явно указываем тип ответа сервера вместо any
       const data = (await response.json()) as FastAPIAuthResponse;
-
-      // Декодируем JWT-токен и типизируем его payload
       const tokenPayload = JSON.parse(atob(data.access_token.split('.')[1])) as JWTDecodedPayload;
-      const masterUuid = tokenPayload.sub;
-
       const startParam = tg?.initDataUnsafe?.start_param;
-
-      // Создаем строго типизированный объект пользователя
-      const sessionUser: SessionUser = {
-        id: masterUuid,
-        name: 'Мастер',
-      };
 
       set({
         accessToken: data.access_token,
-        user: sessionUser,
         isAuthenticated: true,
-        isRegisteredMaster: true,
-        currentMasterId: startParam && startParam !== 'reg' ? startParam : masterUuid,
       });
 
-      void (async () => {
+      try {
+        const profileResponse = await fetch(`${baseUrl}/api/v1/master/profile`, {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${data.access_token}` },
+        });
+
+        if (profileResponse.status === 404) {
+          set({
+            isRegisteredMaster: false,
+            masterProfile: null,
+            user: { id: `tg_${tokenPayload.telegram_id}`, name: 'Новый Мастер' },
+            currentMasterId: startParam && startParam !== 'reg' ? startParam : null,
+            isLoading: false,
+          });
+          return;
+        }
+
+        if (!profileResponse.ok) throw new Error('Не удалось загрузить профиль мастера');
+
+        const masterProfileData = (await profileResponse.json()) as MasterProfile;
+
+        set({
+          isRegisteredMaster: true,
+          masterProfile: masterProfileData,
+          user: { id: masterProfileData.id, name: masterProfileData.name },
+          currentMasterId: startParam && startParam !== 'reg' ? startParam : masterProfileData.id,
+        });
+
         const store = get();
-        await store.fetchProfile();
-        await store.fetchServices();
-        await store.fetchAppointments();
-      })();
+        await Promise.all([store.fetchServices(), store.fetchAppointments()]);
+      } catch (profileErr) {
+        console.error('Ошибка при проверке профиля мастера:', profileErr);
+        set({ isRegisteredMaster: false, masterProfile: null });
+      }
+
       set({ isLoading: false });
     } catch (err) {
       console.error('Критическая ошибка авторизации через FastAPI:', err);
-      set({ isLoading: false, isAuthenticated: false, isRegisteredMaster: false });
+      set({
+        isLoading: false,
+        isAuthenticated: false,
+        isRegisteredMaster: false,
+        masterProfile: null,
+      });
     }
   },
 
-  registerMaster: async () => {
+  registerMaster: async (profileFields: { name: string; bio?: string; avatar?: string }) => {
     set({ isLoading: true });
     try {
       const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
-      const tg = window.Telegram?.WebApp;
-      const initData = tg?.initData || 'test';
+      const token = get().accessToken;
 
-      const response = await fetch(`${baseUrl}/api/v1/auth/telegram`, {
+      if (!token) throw new Error('Отсутствует токен авторизации');
+
+      const response = await fetch(`${baseUrl}/api/v1/master/register`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ init_data: initData }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: profileFields.name,
+          bio: profileFields.bio || '',
+          avatar: profileFields.avatar || null,
+          schedule: [],
+        }),
       });
 
-      if (!response.ok) throw new Error('Не удалось выполнить авторегистрацию');
-      const data = (await response.json()) as FastAPIAuthResponse;
+      if (!response.ok) throw new Error('Не удалось создать профиль мастера в БД');
+
+      const newMasterData = (await response.json()) as MasterProfile;
 
       set({
-        accessToken: data.access_token,
-        isAuthenticated: true,
         isRegisteredMaster: true,
+        masterProfile: newMasterData,
+        user: { id: newMasterData.id, name: newMasterData.name },
+        currentMasterId: newMasterData.id,
         isLoading: false,
       });
+
+      const store = get();
+      await Promise.all([store.fetchServices(), store.fetchAppointments()]);
+
       return true;
     } catch (err) {
-      console.error(err);
+      console.error('Ошибка регистрации мастера:', err);
       set({ isLoading: false });
       return false;
     }
@@ -149,6 +181,7 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (s
       isAuthenticated: false,
       isRegisteredMaster: false,
       currentMasterId: null,
+      masterProfile: null,
     });
   },
 });

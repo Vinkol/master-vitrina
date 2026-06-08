@@ -54,16 +54,15 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
         expire = datetime.utcnow() + timedelta(days=settings.ACCESS_TOKEN_EXPIRE_DAYS)
     
     to_encode.update({"exp": expire})
-    # Кодируем строку с UUID мастера
     return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
 @router.post("/telegram", response_model=TokenResponse)
-async def auth_telegram(payload: AuthRequest, db: AsyncSession = Depends(get_db)):
+async def auth_telegram(payload: AuthRequest):
+
     """
-    Эндпоинт авторизации. Проверяет данные Telegram, 
-    регистрирует мастера (если новый) и выдает JWT.
+    Эндпоинт авторизации. Проверяет подпись Telegram и выдает JWT.
     """
-    # 1. Валидация данных через токен бота из нашего защищенного .env
+
     tg_user = verify_telegram_init_data(payload.init_data, settings.TELEGRAM_BOT_TOKEN)
     
     # СТРОГО ДЛЯ ТЕСТОВ: Если init_data равен "test", пускаем тестового юзера
@@ -80,36 +79,15 @@ async def auth_telegram(payload: AuthRequest, db: AsyncSession = Depends(get_db)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверные данные авторизации Telegram"
-        )
-        
-    tg_id = tg_user["id"]
-    username = tg_user.get("username")
-    full_name = f"{tg_user.get('first_name', '')} {tg_user.get('last_name', '')}".strip() or "Мастер"
-    avatar = tg_user.get("photo_url")
+        )      
 
-    # 2. Ищем мастера в базе данных по его telegram_id
-    result = await db.execute(select(UserMaster).where(UserMaster.telegram_id == tg_id))
-    master = result.scalar_one_or_none()
-
-    # 3. Если такого мастера нет — регистрируем его (Авторегистрация)
-    if not master:
-        master = UserMaster(
-            telegram_id=tg_id,
-            username=username,
-            name=full_name,
-            avatar=avatar,
-            bio=None,
-            schedule=[]
-        )
-        db.add(master)
-        await db.commit()
-        await db.refresh(master)
-
-    # 4. Генерируем JWT токен. Внутрь payload зашиваем строку UUID мастера!
     token_data = {
-        "sub": str(master.id),
-        "telegram_id": master.telegram_id
+        "sub": str(tg_user["id"]),
+        "telegram_id": tg_user["id"],
+        "username": tg_user.get("username"),
+        "avatar": tg_user.get("photo_url")
     }
+
     access_token = create_access_token(data=token_data)
 
     return TokenResponse(

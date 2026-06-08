@@ -14,6 +14,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = () => {
   const isLoading = useBookingStore((state) => state.isLoading);
   const isAuthenticated = useBookingStore((state) => state.isAuthenticated);
   const masterProfile = useBookingStore((state) => state.masterProfile);
+  const isRegisteredMaster = useBookingStore((state) => state.isRegisteredMaster);
 
   const tg = window.Telegram?.WebApp;
   const tgStartParam = tg?.initDataUnsafe?.start_param;
@@ -36,12 +37,14 @@ export const AuthGuard: React.FC<AuthGuardProps> = () => {
     return <Loader text="Синхронизация с Telegram..." />;
   }
 
-  if (isAuthenticated && !masterProfile) {
+  if (isAuthenticated && !masterProfile && isRegisteredMaster) {
     return <Loader text="Загрузка профиля мастера..." />;
   }
 
   const hasNoProfile = !masterProfile || !masterProfile.name || masterProfile.name === 'Мастер';
-  if (isAuthenticated && hasNoProfile) {
+  const needsRegistration = !isRegisteredMaster || hasNoProfile;
+
+  if (isAuthenticated && needsRegistration) {
     return <RegistrationForm />;
   }
 

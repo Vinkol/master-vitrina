@@ -17,13 +17,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = () => {
   const isRegisteredMaster = useBookingStore((state) => state.isRegisteredMaster);
 
   const tg = window.Telegram?.WebApp;
-  const tgStartParam = tg?.initDataUnsafe?.start_param;
-
-  const urlParams =
-    typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-  const browserStartParam = urlParams ? urlParams.get('startapp') : null;
-
-  const referralId = tgStartParam || browserStartParam;
+  const referralId = tg?.initDataUnsafe?.start_param;
 
   useEffect(() => {
     void initAuth();
@@ -35,24 +29,21 @@ export const AuthGuard: React.FC<AuthGuardProps> = () => {
 
   const isOwnLink = masterProfile && masterProfile.id === referralId;
   if (referralId && !isOwnLink) {
-    if (useBookingStore.getState().currentMasterId !== referralId) {
-      useBookingStore.setState({ currentMasterId: referralId, currentScreen: 'profile' });
-    }
     return <ClientRouter />;
   }
 
-  if (isAuthenticated && !masterProfile && isRegisteredMaster) {
-    return <Loader text="Загрузка профиля мастера..." />;
-  }
-
-  const hasNoProfile = !masterProfile || !masterProfile.name || masterProfile.name === 'Мастер';
-  const needsRegistration = !isRegisteredMaster || hasNoProfile;
-
-  if (isAuthenticated && needsRegistration) {
-    return <RegistrationForm />;
-  }
-
   if (isAuthenticated) {
+    if (isRegisteredMaster && !masterProfile) {
+      return <Loader text="Загрузка профиля мастера..." />;
+    }
+
+    const hasNoProfile = !masterProfile || !masterProfile.name || masterProfile.name === 'Мастер';
+    const needsRegistration = !isRegisteredMaster || hasNoProfile;
+
+    if (needsRegistration) {
+      return <RegistrationForm />;
+    }
+
     return <AdminRouter />;
   }
 

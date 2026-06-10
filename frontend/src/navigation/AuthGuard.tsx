@@ -28,7 +28,8 @@ export const AuthGuard: React.FC = () => {
     return <Loader text="Синхронизация с Telegram..." />;
   }
 
-  if (referralId) {
+  const isOwnLink = masterProfile && masterProfile.id === referralId;
+  if (referralId && !isOwnLink) {
     return <ClientRouter />;
   }
 
@@ -38,7 +39,9 @@ export const AuthGuard: React.FC = () => {
     }
 
     const hasNoProfile = !masterProfile || !masterProfile.name || masterProfile.name === 'Мастер';
-    if (!isRegisteredMaster || hasNoProfile) {
+    const needsRegistration = !isRegisteredMaster || hasNoProfile;
+
+    if (needsRegistration) {
       return <RegistrationForm />;
     }
 

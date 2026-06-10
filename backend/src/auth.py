@@ -4,7 +4,7 @@ import json
 from urllib.parse import parse_qs
 from datetime import datetime, timedelta
 import jwt
-from fastapi import HTTPException, status, Depends, Header
+from fastapi import HTTPException, Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from src.config import settings
@@ -37,24 +37,26 @@ def create_access_token(user_id: int, telegram_id: int, role: str) -> str:
     expire = datetime.utcnow() + timedelta(days=settings.ACCESS_TOKEN_EXPIRE_DAYS)
     return jwt.encode({"sub": str(user_id), "telegram_id": telegram_id, "role": role, "exp": expire}, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
-async def get_current_user(authorization: str = Header(None), db: AsyncSession = Depends(get_db)) -> User:
+async def get_current_token_payload(authorization: str = Header(None)) -> dict:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid token header")
     
     token = authorization.split(" ")[1]
     try:
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
-        user_id: int = int(payload.get("sub"))
+        return payload
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Token expired or invalid")
-    
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalar_one_or_none()
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found")
-    return user
 
-async def require_master_role(current_user: User = Depends(get_current_user)) -> User:
-    if current_user.role != UserRole.MASTER:
+async def require_master_role(payload: dict = Depends(get_current_token_payload), db: AsyncSession = Depends(get_db)):
+    if payload.get("role") != "MASTER":
         raise HTTPException(status_code=403, detail="Master role required")
-    return current_user
+    
+    user_id = payload.get("sub")
+    from src.models import UserMaster
+    
+    result = await db.execute(select(UserMaster).where(UserMaster.id == user_id))
+    master = result.scalar_one_or_none()
+    if not master:
+        raise HTTPException(status_code=401, detail="Master account not found")
+    return master

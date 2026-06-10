@@ -1,6 +1,6 @@
 import uuid
 from datetime import date, time, datetime
-from sqlalchemy import BigInteger, String, ForeignKey, Date, Time, Integer, text
+from sqlalchemy import BigInteger, String, ForeignKey, Date, Time, text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database import Base
@@ -9,7 +9,6 @@ class UserMaster(Base):
     """Таблица user_master — профили мастеров"""
     __tablename__ = "user_master"
 
-    # Привязка к auth.users.id в Supabase
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), 
         primary_key=True, 

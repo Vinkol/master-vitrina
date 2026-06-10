@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from src.database import get_db
-from src.models import UserMaster
+from src.models import UserMaster, Service
 from src.schemas import MasterProfileUpdate, MasterProfileResponse, UserMasterCreate, UserMasterResponse
 from src.dependencies import get_current_master, get_current_telegram_id
 
@@ -87,3 +87,25 @@ async def update_master_profile(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail=f"Ошибка обновления профиля в базе данных: {str(e)}"
         )
+
+
+@router.get("/public/master/{master_id}")
+async def get_public_profile(master_id: str, db: AsyncSession = Depends(get_db)):
+    """Отдает данные мастера (имя, био, аватар, расписание) любому клиенту"""
+    from src.models import UserMaster
+    result = await db.execute(select(UserMaster).where(UserMaster.id == master_id))
+    master = result.scalar_one_or_none()
+    if not master:
+        raise HTTPException(status_code=404, detail="Master not found")
+    return {
+        "name": master.name,
+        "bio": master.bio,
+        "avatar": master.avatar,
+        "schedule": master.schedule
+    }
+
+@router.get("/public/master/{master_id}/services")
+async def get_public_services(master_id: str, db: AsyncSession = Depends(get_db)):
+    """Отдает прайс-лист конкретного мастера для витрины записи"""
+    result = await db.execute(select(Service).where(Service.master_id == master_id))
+    return result.scalars().all()

@@ -4,6 +4,7 @@ import { RegistrationForm } from './RegistrationForm';
 import { ClientRouter } from './ClientRouter';
 import { AdminRouter } from './AdminRouter';
 import { Loader } from '../shared/ui/loader/Loader';
+import { getStartParam } from '../shared/lib/getStartParam';
 
 export const AuthGuard: React.FC = () => {
   const initAuth = useBookingStore((state) => state.initAuth);
@@ -12,13 +13,7 @@ export const AuthGuard: React.FC = () => {
   const masterProfile = useBookingStore((state) => state.masterProfile);
   const isRegisteredMaster = useBookingStore((state) => state.isRegisteredMaster);
 
-  const tg = window.Telegram?.WebApp;
-  const tgStartParam = tg?.initDataUnsafe?.start_param;
-
-  const urlParams =
-    typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-  const browserStartParam = urlParams ? urlParams.get('startapp') : null;
-  const referralId = tgStartParam || browserStartParam;
+  const referralId = getStartParam();
 
   useEffect(() => {
     void initAuth();
@@ -28,8 +23,7 @@ export const AuthGuard: React.FC = () => {
     return <Loader text="Синхронизация с Telegram..." />;
   }
 
-  const isOwnLink = masterProfile && masterProfile.id === referralId;
-  if (referralId && !isOwnLink) {
+  if (referralId) {
     return <ClientRouter />;
   }
 

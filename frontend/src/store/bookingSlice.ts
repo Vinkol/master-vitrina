@@ -1,19 +1,13 @@
 import type { StateCreator } from 'zustand';
 import type { BookingState, BookingSlice, Appointment, MasterProfile, Service } from './types';
+import { getStartParam } from '../shared/lib/getStartParam';
 
 const getAuthHeaders = (token: string | null) => ({
   'Content-Type': 'application/json',
   ...(token ? { Authorization: `Bearer ${token}` } : {}),
 });
 
-const tgInstance = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
-const tgStartParam = tgInstance?.initDataUnsafe?.start_param;
-
-const urlParams =
-  typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-const browserStartParam = urlParams ? urlParams.get('startapp') : null;
-
-const finalMasterId = tgStartParam || browserStartParam;
+const finalMasterId = getStartParam();
 
 export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice> = (set, get) => ({
   currentScreen: finalMasterId ? 'profile' : 'admin-placeholder-main',

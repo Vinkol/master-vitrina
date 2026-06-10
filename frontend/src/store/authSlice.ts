@@ -1,5 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { BookingState, AuthState, MasterProfile } from './types';
+import { getStartParam } from '../shared/lib/getStartParam';
 
 interface FastAPIAuthResponse {
   access_token: string;
@@ -24,18 +25,9 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (s
 
   initAuth: async () => {
     set({ isLoading: true });
-
     const tg = window.Telegram?.WebApp;
     tg?.ready();
-
-    const tgStartParam = tg?.initDataUnsafe?.start_param;
-    const urlParams =
-      typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-    const browserStartParam = urlParams
-      ? urlParams.get('startapp') || urlParams.get('tgWebAppStartParam')
-      : null;
-    const startParam = tgStartParam || browserStartParam || null;
-
+    const startParam = getStartParam();
     let initData = tg?.initData || '';
     if (!initData && window.location.hash) {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));

@@ -14,7 +14,7 @@ export function AdminLinkShareView() {
     haptic.impact('medium');
     const shareMessage = `Привет! По этой ссылке можно посмотреть мои услуги и записаться онлайн в пару кликов:`;
 
-    const tgShareUrl = `https://t.me/${encodeURIComponent(shareMessage)}`;
+    const tgShareUrl = `https://t.me/share/url?url=${encodeURIComponent(clientLink)}&text=${encodeURIComponent(shareMessage)}`;
 
     if (window.Telegram?.WebApp?.openTelegramLink) {
       try {

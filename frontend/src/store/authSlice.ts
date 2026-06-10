@@ -26,18 +26,21 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (s
     set({ isLoading: true });
 
     const tg = window.Telegram?.WebApp;
+    tg?.ready();
 
-    if (tg && typeof tg.ready === 'function') {
-      tg.ready();
-    }
+    const tgStartParam = tg?.initDataUnsafe?.start_param;
+    const urlParams =
+      typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const browserStartParam = urlParams
+      ? urlParams.get('startapp') || urlParams.get('tgWebAppStartParam')
+      : null;
+    const startParam = tgStartParam || browserStartParam || null;
 
     let initData = tg?.initData || '';
-
     if (!initData && window.location.hash) {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       initData = hashParams.get('tgWebAppData') || '';
     }
-
     if (!initData && import.meta.env.DEV) {
       initData = 'test';
     }
@@ -71,51 +74,60 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (s
       if (!response.ok) throw new Error('Ошибка авторизации на бэкенде');
       const data = (await response.json()) as FastAPIAuthResponse;
       const tokenPayload = JSON.parse(atob(data.access_token.split('.')[1])) as JWTDecodedPayload;
-      const tgStartParam = tg?.initDataUnsafe?.start_param;
-      const urlParams =
-        typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-      const browserStartParam = urlParams
-        ? urlParams.get('startapp') || urlParams.get('tgWebAppStartParam')
-        : null;
-      const startParam = tgStartParam || browserStartParam;
+
       set({
         accessToken: data.access_token,
         isAuthenticated: true,
       });
 
-      try {
-        const profileResponse = await fetch(`${baseUrl}/api/v1/master/profile`, {
-          method: 'GET',
-          headers: { Authorization: `Bearer ${data.access_token}` },
-        });
+      const store = get();
 
-        if (profileResponse.status === 404) {
-          set({
-            isRegisteredMaster: false,
-            masterProfile: null,
-            user: { id: `tg_${tokenPayload.telegram_id}`, name: 'Новый Мастер' },
-            currentMasterId: startParam && startParam !== 'reg' ? startParam : null,
-            isLoading: false,
-          });
-          return;
-        }
-
-        if (!profileResponse.ok) throw new Error('Не удалось загрузить профиль мастера');
-
-        const masterProfileData = (await profileResponse.json()) as MasterProfile;
+      if (startParam && startParam !== 'reg') {
+        console.log('Приложение запущено по ссылке клиента для мастера:', startParam);
 
         set({
-          isRegisteredMaster: true,
-          masterProfile: masterProfileData,
-          user: { id: masterProfileData.id, name: masterProfileData.name },
-          currentMasterId: startParam && startParam !== 'reg' ? startParam : masterProfileData.id,
+          currentMasterId: startParam,
+          isRegisteredMaster: false,
         });
+        await store.fetchMasterData();
+        store.setScreen('profile');
+      } else {
+        console.log('Приложение запущено в режиме мастера (админка)');
 
-        const store = get();
-        await Promise.all([store.fetchServices(), store.fetchAppointments()]);
-      } catch (profileErr) {
-        console.error('Ошибка при проверке профиля мастера:', profileErr);
-        set({ isRegisteredMaster: false, masterProfile: null });
+        try {
+          const profileResponse = await fetch(`${baseUrl}/api/v1/master/profile`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${data.access_token}` },
+          });
+
+          if (profileResponse.status === 404) {
+            set({
+              isRegisteredMaster: false,
+              masterProfile: null,
+              user: { id: `tg_${tokenPayload.telegram_id}`, name: 'Новый Мастер' },
+              currentMasterId: null,
+              isLoading: false,
+            });
+            return;
+          }
+
+          if (!profileResponse.ok) throw new Error('Не удалось загрузить профиль мастера');
+
+          const masterProfileData = (await profileResponse.json()) as MasterProfile;
+
+          set({
+            isRegisteredMaster: true,
+            masterProfile: masterProfileData,
+            user: { id: masterProfileData.id, name: masterProfileData.name },
+            currentMasterId: masterProfileData.id,
+          });
+
+          await Promise.all([store.fetchServices(), store.fetchAppointments()]);
+          store.setScreen('admin-dashboard');
+        } catch (profileErr) {
+          console.error('Ошибка при проверке профиля мастера:', profileErr);
+          set({ isRegisteredMaster: false, masterProfile: null });
+        }
       }
 
       set({ isLoading: false });
@@ -166,6 +178,7 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (s
 
       const store = get();
       await Promise.all([store.fetchServices(), store.fetchAppointments()]);
+      store.setScreen('admin-dashboard');
 
       return true;
     } catch (err) {

@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand';
-import type { BookingState, BookingSlice, Appointment } from './types';
+import type { BookingState, BookingSlice, Appointment, MasterProfile, Service } from './types';
 
 const getAuthHeaders = (token: string | null) => ({
   'Content-Type': 'application/json',
@@ -16,7 +16,6 @@ const browserStartParam = urlParams ? urlParams.get('startapp') : null;
 const finalMasterId = tgStartParam || browserStartParam;
 
 export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice> = (set, get) => ({
-  // Если зашли по ссылке — стартуем с витрины ('profile'), иначе — заглушка админки
   currentScreen: finalMasterId ? 'profile' : 'admin-placeholder-main',
   appointments: [],
   currentMasterId: finalMasterId || null,
@@ -30,14 +29,12 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
   selectedTime: '',
 
   setScreen: (screen) => {
-    // Если это клиент, жестко блокируем любые попытки переключить экран на админку
     if (finalMasterId && screen.startsWith('admin-')) {
       return;
     }
     set({ currentScreen: screen });
   },
 
-  // Получение списка всех записей для журнала мастера
   fetchAppointments: async () => {
     const masterId = get().currentMasterId;
     if (!masterId) return;
@@ -66,7 +63,6 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
     }
   },
 
-  // Создание записи клиентом
   createAppointment: async (clientName, clientPhone) => {
     const { selectedService, selectedDate, selectedTime, currentMasterId } = get();
     if (!selectedService || !selectedDate || !selectedTime || !currentMasterId) return;
@@ -111,14 +107,33 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
     }
   },
 
-  // Загрузка первичных данных при открытии витрины мастера
   fetchMasterData: async () => {
     const masterId = get().currentMasterId;
     if (!masterId) return;
 
     try {
       set({ isRegistered: true });
-      await Promise.all([get().fetchProfile(), get().fetchServices(), get().fetchAppointments()]);
+      const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
+      if (!get().isRegisteredMaster) {
+        console.log('Загрузка данных мастера через ПУБЛИЧНЫЕ эндпоинты для клиента...');
+        const [profileRes, servicesRes] = await Promise.all([
+          fetch(`${baseUrl}/api/v1/master/public/master/${masterId}`, { method: 'GET' }),
+          fetch(`${baseUrl}/api/v1/master/public/master/${masterId}/services`, { method: 'GET' }),
+          get().fetchAppointments(),
+        ]);
+
+        if (!profileRes.ok) throw new Error('Не удалось загрузить публичный профиль мастера');
+        if (!servicesRes.ok) throw new Error('Не удалось загрузить публичные услуги мастера');
+
+        const masterProfileData = (await profileRes.json()) as MasterProfile;
+        const servicesData = (await servicesRes.json()) as Service[];
+        set({
+          masterProfile: masterProfileData,
+          services: servicesData,
+        });
+      } else {
+        await Promise.all([get().fetchProfile(), get().fetchServices(), get().fetchAppointments()]);
+      }
     } catch (e) {
       console.error('Ошибка при загрузке данных мастера для витрины:', e);
     }

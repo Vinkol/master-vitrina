@@ -119,12 +119,10 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
         const [profileRes, servicesRes] = await Promise.all([
           fetch(`${baseUrl}/api/v1/master/public/master/${masterId}`, { method: 'GET' }),
           fetch(`${baseUrl}/api/v1/master/public/master/${masterId}/services`, { method: 'GET' }),
-          get().fetchAppointments(),
         ]);
 
         if (!profileRes.ok) throw new Error('Не удалось загрузить публичный профиль мастера');
         if (!servicesRes.ok) throw new Error('Не удалось загрузить публичные услуги мастера');
-
         const masterProfileData = (await profileRes.json()) as MasterProfile;
         const servicesData = (await servicesRes.json()) as Service[];
         set({

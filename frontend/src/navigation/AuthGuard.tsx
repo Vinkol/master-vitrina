@@ -5,11 +5,7 @@ import { ClientRouter } from './ClientRouter';
 import { AdminRouter } from './AdminRouter';
 import { Loader } from '../shared/ui/loader/Loader';
 
-interface AuthGuardProps {
-  children?: React.ReactNode;
-}
-
-export const AuthGuard: React.FC<AuthGuardProps> = () => {
+export const AuthGuard: React.FC = () => {
   const initAuth = useBookingStore((state) => state.initAuth);
   const isLoading = useBookingStore((state) => state.isLoading);
   const isAuthenticated = useBookingStore((state) => state.isAuthenticated);
@@ -17,7 +13,12 @@ export const AuthGuard: React.FC<AuthGuardProps> = () => {
   const isRegisteredMaster = useBookingStore((state) => state.isRegisteredMaster);
 
   const tg = window.Telegram?.WebApp;
-  const referralId = tg?.initDataUnsafe?.start_param;
+  const tgStartParam = tg?.initDataUnsafe?.start_param;
+
+  const urlParams =
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const browserStartParam = urlParams ? urlParams.get('startapp') : null;
+  const referralId = tgStartParam || browserStartParam;
 
   useEffect(() => {
     void initAuth();
@@ -27,8 +28,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = () => {
     return <Loader text="Синхронизация с Telegram..." />;
   }
 
-  const isOwnLink = masterProfile && masterProfile.id === referralId;
-  if (referralId && !isOwnLink) {
+  if (referralId) {
     return <ClientRouter />;
   }
 
@@ -38,9 +38,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = () => {
     }
 
     const hasNoProfile = !masterProfile || !masterProfile.name || masterProfile.name === 'Мастер';
-    const needsRegistration = !isRegisteredMaster || hasNoProfile;
-
-    if (needsRegistration) {
+    if (!isRegisteredMaster || hasNoProfile) {
       return <RegistrationForm />;
     }
 

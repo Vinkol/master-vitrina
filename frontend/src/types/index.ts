@@ -50,6 +50,7 @@ export interface TimeInterval {
 }
 
 export interface DaySchedule {
+  day_name: string;
   start_time: string;
   end_time: string;
   day_index: number;

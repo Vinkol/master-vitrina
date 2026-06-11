@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
 import { TimeSlotsSheet } from '../../components/client/TimeSlotsSheet';
 import { haptic } from '../../shared/lib/haptic/haptic';
@@ -23,9 +23,16 @@ export function CalendarView() {
   const [isSlotsLoading, setIsSlotsLoading] = useState<boolean>(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // ЗАПРОС СЛОТОВ FASTAPI БЭКЕНДА
+  const handleConfirm = useCallback(() => {
+    haptic.impact('medium');
+    goToConfirm();
+  }, [goToConfirm]);
+
+  // 📡 ЗАПРОС СЛОТОВ FASTAPI БЭКЕНДА
   useEffect(() => {
-    if (!currentMasterId || !selectedDate || !selectedService) return;
+    if (!currentMasterId || !selectedDate || !selectedService?.duration) return;
+
+    const abortController = new AbortController();
 
     const fetchSlots = async () => {
       setIsSlotsLoading(true);
@@ -37,9 +44,11 @@ export function CalendarView() {
             duration_minutes: selectedService.duration,
             is_master: false,
           },
+          signal: abortController.signal,
         });
         setAvailableSlots((response.data as string[]) || []);
       } catch (err) {
+        if (err instanceof Error && err.name === 'CanceledError') return;
         console.error('Ошибка загрузки слотов с бэкенда:', err);
         setAvailableSlots([]);
       } finally {
@@ -48,7 +57,9 @@ export function CalendarView() {
     };
 
     void fetchSlots();
-  }, [selectedDate, selectedService, currentMasterId]);
+
+    return () => abortController.abort();
+  }, [selectedDate, selectedService?.duration, currentMasterId]);
 
   const handleGoBack = (): void => {
     haptic.impact('light');
@@ -56,6 +67,7 @@ export function CalendarView() {
   };
 
   const handleSelectDay = (isoDate: string): void => {
+    setTime('');
     setDate(isoDate);
     setTimeSheetOpen(true);
   };
@@ -66,8 +78,7 @@ export function CalendarView() {
   };
 
   const handlePcNextStep = (): void => {
-    haptic.impact('medium');
-    goToConfirm();
+    handleConfirm();
   };
 
   useEffect(() => {
@@ -77,22 +88,16 @@ export function CalendarView() {
     if (selectedDate && selectedTime && selectedService) {
       tg.MainButton.text = 'Подтвердить';
       tg.MainButton.show();
-
-      const handleMainButtonClick = () => {
-        haptic.impact('medium');
-        goToConfirm();
-      };
-
-      tg.MainButton.onClick(handleMainButtonClick);
+      tg.MainButton.onClick(handleConfirm);
 
       return () => {
-        tg.MainButton.offClick(handleMainButtonClick);
+        tg.MainButton.offClick(handleConfirm);
         tg.MainButton.hide();
       };
     } else {
       tg.MainButton.hide();
     }
-  }, [selectedDate, selectedTime, selectedService, goToConfirm]);
+  }, [selectedDate, selectedTime, selectedService, handleConfirm]);
 
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-6 min-h-screen bg-slate-50 text-slate-800 pb-24 relative select-none animate-fadeIn">

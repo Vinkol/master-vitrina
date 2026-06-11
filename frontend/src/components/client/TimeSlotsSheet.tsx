@@ -10,6 +10,26 @@ interface TimeSlotsSheetProps {
   isLoading: boolean;
 }
 
+function formatRussianDate(isoString: string): string {
+  if (!isoString) return '';
+  try {
+    const pureDateStr = isoString.split('T')[0];
+    const [year, month, day] = pureDateStr.split('-').map(Number);
+
+    const dateObj = new Date(year, month - 1, day);
+
+    return dateObj
+      .toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+      .replace(' г.', '');
+  } catch {
+    return isoString.split('T')[0];
+  }
+}
+
 export function TimeSlotsSheet({
   isOpen,
   onClose,
@@ -35,7 +55,7 @@ export function TimeSlotsSheet({
         <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-5" />
 
         <h4 className="text-sm font-black text-slate-900 mb-4">
-          Свободные окошки на {selectedDate}
+          Свободные окошки на {formatRussianDate(selectedDate)}
         </h4>
 
         <div className="grid grid-cols-3 gap-2.5 mb-6">

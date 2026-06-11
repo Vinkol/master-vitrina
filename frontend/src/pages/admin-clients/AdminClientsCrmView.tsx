@@ -84,7 +84,7 @@ export function AdminClientsCrmView() {
 
       {/* СПИСОК КЛИЕНТОВ */}
       <div className="space-y-2.5">
-        {isLoading ? (
+        {isLoading && filteredClients.length === 0 ? (
           <>
             <ClientCrmSkeletonCard />
             <ClientCrmSkeletonCard />

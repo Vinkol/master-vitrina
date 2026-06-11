@@ -7,8 +7,8 @@ export function useClientsCrm() {
   const crmClients = useBookingStore((state) => state.crmClients);
   const hasMoreClients = useBookingStore((state) => state.hasMoreClients);
   const fetchCrmClients = useBookingStore((state) => state.fetchCrmClients);
-  const blockClient = useBookingStore((state) => state.blockClient);
-  const unblockClient = useBookingStore((state) => state.unblockClient);
+  const toggleBlock = useBookingStore((state) => state.blockClient);
+  const toggleUnblock = useBookingStore((state) => state.unblockClient);
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<CrmFilter>('all');
@@ -37,8 +37,10 @@ export function useClientsCrm() {
       }
     }, delay);
 
-    return () => clearTimeout(delayDebounce);
-  }, [searchQuery, activeFilter, fetchCrmClients, isLoading]);
+    return () => {
+      clearTimeout(delayDebounce);
+    };
+  }, [searchQuery, activeFilter, fetchCrmClients]);
 
   const loadMore = useCallback(async () => {
     if (isLoading || !hasMoreClients) return;
@@ -59,15 +61,15 @@ export function useClientsCrm() {
       setIsLoading(true);
       try {
         if (currentlyBlocked) {
-          await unblockClient(clientPhone);
+          await toggleUnblock(clientPhone);
         } else {
-          await blockClient(clientPhone);
+          await toggleBlock(clientPhone);
         }
       } finally {
         setIsLoading(false);
       }
     },
-    [blockClient, unblockClient],
+    [toggleBlock, toggleUnblock],
   );
 
   return {

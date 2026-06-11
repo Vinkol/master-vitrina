@@ -1,3 +1,4 @@
+import type { CrmFilter } from '../pages/admin-clients/useClientsCrm';
 import type { Service, MasterProfile, DaySchedule, Appointment, CrmClient } from '../types';
 
 export type Screen =
@@ -69,9 +70,12 @@ export interface TelegramInstance {
 export interface CrmSlice {
   crmClients: CrmClient[];
   hasMoreClients: boolean;
-  fetchCrmClients: (search?: string, filter?: string, page?: number) => Promise<void>;
+  fetchCrmClients: (search?: string, filter?: CrmFilter, page?: number) => Promise<void>;
   blockClient: (clientPhone: string) => Promise<void>;
   unblockClient: (clientPhone: string) => Promise<void>;
+  crmSearchQuery: string;
+  crmActiveFilter: CrmFilter;
+  crmCurrentPage: number;
 }
 
 export interface MasterSlice {

@@ -10,6 +10,7 @@ interface GeneratorOptions {
 }
 
 function timeToMinutes(timeStr: string): number {
+  if (!timeStr) return 0;
   const [hours, minutes] = timeStr.split(':').map(Number);
   return hours * 60 + minutes;
 }
@@ -30,7 +31,6 @@ export function generateAvailableSlots({
 }: GeneratorOptions): string[] {
   if (!daySchedule.is_working) return [];
 
-  // Получаем текущую дату и время
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
@@ -42,22 +42,28 @@ export function generateAvailableSlots({
   // ЗАЩИТА ОТ ПРОШЛЫХ ДНЕЙ
   if (targetDate < todayStr) return [];
 
-  const availableSlots: string[] = [];
-  const workStart = timeToMinutes(daySchedule.working_start);
-  const workEnd = timeToMinutes(daySchedule.working_end);
+  const startTimeStr = daySchedule.start_time || daySchedule.working_start;
+  const endTimeStr = daySchedule.end_time || daySchedule.working_end;
+
+  if (!startTimeStr || !endTimeStr) return [];
+
+  const workStart = timeToMinutes(startTimeStr);
+  const workEnd = timeToMinutes(endTimeStr);
   const serviceDuration = selectedService.duration;
 
-  // барьер времени
   let timeBarrierMinutes = 0;
   if (targetDate === todayStr) {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    // Мастеру +2 часа , клиенту +6 часов
     const bufferMinutes = isMaster ? 120 : 360;
     timeBarrierMinutes = currentMinutes + bufferMinutes;
   }
 
+  // Фильтруем записи строго на выбранный день
   const dayAppointments = appointments.filter((app) => app.date.split('T')[0] === targetDate);
 
+  const availableSlots: string[] = [];
+
+  // Главный цикл генерации слотов
   for (let current = workStart; current + serviceDuration <= workEnd; current += slotStepMinutes) {
     const slotStart = current;
     const slotEnd = current + serviceDuration;
@@ -69,25 +75,34 @@ export function generateAvailableSlots({
 
     let isInterrupted = false;
 
-    if (daySchedule.breaks && daySchedule.breaks.length > 0) {
-      for (const brk of daySchedule.breaks) {
-        const breakStart = timeToMinutes(brk.start);
-        const breakEnd = timeToMinutes(brk.end);
+    // Проверка пересечения с перерывами мастера
+    let breaksList = daySchedule.breaks || [];
+    if (breaksList.length === 0 && daySchedule.break_start && daySchedule.break_end) {
+      breaksList = [
+        { id: 'temp-break', start: daySchedule.break_start, end: daySchedule.break_end },
+      ];
+    }
 
-        if (slotStart < breakEnd && slotEnd > breakStart) {
-          isInterrupted = true;
-          break;
-        }
+    for (const brk of breaksList) {
+      if (!brk.start || !brk.end) continue;
+      const breakStart = timeToMinutes(brk.start);
+      const breakEnd = timeToMinutes(brk.end);
+
+      if (slotStart < breakEnd && slotEnd > breakStart) {
+        isInterrupted = true;
+        break;
       }
     }
 
     if (isInterrupted) continue;
 
+    // Проверка пересечения с другими клиентами
     for (const app of dayAppointments) {
       const appStart = timeToMinutes(app.time);
-      const appDuration = 60;
+      const appDuration = app.service_duration || 60;
       const appEnd = appStart + appDuration;
 
+      // Формула пересечения интервалов
       if (slotStart < appEnd && slotEnd > appStart) {
         isInterrupted = true;
         break;

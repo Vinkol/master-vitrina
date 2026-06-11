@@ -30,6 +30,7 @@ export interface Service {
 
 // Таблица appointments
 export interface Appointment {
+  service_duration: number;
   id: string; // uuid (Primary Key)
   master_tg_id: number; // int8 (Связь с profiles.owner_tg_id)
   service_title: string; // text
@@ -49,10 +50,14 @@ export interface TimeInterval {
 }
 
 export interface DaySchedule {
+  start_time: string;
+  end_time: string;
   day_index: number;
   is_working: boolean;
   working_start: string;
   working_end: string;
+  break_start: string;
+  break_end: string;
   breaks: TimeInterval[];
 }
 

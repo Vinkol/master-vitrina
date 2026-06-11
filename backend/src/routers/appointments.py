@@ -1,9 +1,8 @@
 import uuid
-
+from datetime import date, time, datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from datetime import date, time, datetime
+from sqlalchemy import select, and_
 
 from src.schemas import ClientAppointmentResponse, ClientAppointmentCreate
 from src.database import get_db
@@ -27,14 +26,10 @@ async def create_appointment(
     payload: ClientAppointmentCreate,
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    Эндпоинт создания записи. Используется мастером для ручной записи 
-    или клиентом при бронировании онлайн.
-    """
+    """Эндпоинт создания записи с валидацией услуги"""
     service_result = await db.execute(
         select(Service).where(
-            Service.master_id == payload.master_id,
-            Service.id == payload.service_id
+            and_(Service.master_id == payload.master_id, Service.id == payload.service_id)
         )
     )
     service = service_result.scalar_one_or_none()
@@ -63,18 +58,14 @@ async def create_appointment(
 
     db.add(new_app)
     await db.commit()
-    await db.refresh(new_app)
     return new_app
 
 @router.get("/master/{master_id}", response_model=list[ClientAppointmentResponse])
 async def get_master_appointments(
-    master_id: str,
+    master_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    Эндпоинт для мастера. Возвращает список всех записей клиентов 
-    к конкретному мастеру для его CRM-журнала.
-    """
+    """Возвращает список всех записей клиентов к мастеру"""
     result = await db.execute(
         select(ClientAppointment)
         .where(ClientAppointment.master_id == master_id)
@@ -87,126 +78,109 @@ async def get_available_slots(
     master_id: str,
     target_date: date,
     duration_minutes: int,
-    is_master: bool = False,  # Фронтенд передает, кто запрашивает: мастер или клиент
+    is_master: bool = False,
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Возвращает список доступных таймслотов с учётом перерывов, 
-    занятых записей и временных барьеров.
+    Генератор таймслотов.
     """
-    # Валидация формата UUID для мастера (защита от падения PostgreSQL)
     try:
         master_uuid = uuid.UUID(master_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Некорректный UUID мастера")
 
-    # 1. ЗАЩИТА ОТ ПРОШЛЫХ ДНЕЙ
     today = date.today()
     if target_date < today:
         return []
 
-    # 2. Получаем профиль мастера
+    # Получаем профиль мастера
     result = await db.execute(select(UserMaster).where(UserMaster.id == master_uuid))
     master = result.scalar_one_or_none()
     if not master or not master.schedule:
         return []
 
-    # 3. Проверяем день недели (0 - Понедельник ... 6 - Воскресенье)
     day_index = target_date.weekday()
-    day_config = next((d for d in master.schedule if d.get("day_index") == day_index), None)
+    day_config = next((d for d in master.schedule if d.get("day_id") == day_index), None)
     
     if not day_config or not day_config.get("is_working"):
         return []
 
-    # Переводим рабочие часы в минуты
-    work_start = time_to_minutes(day_config["working_start"])
-    work_end = time_to_minutes(day_config["working_end"])
-    breaks = day_config.get("breaks", [])
+    # Защита от старых/новых ключей в JSONB
+    start_str = day_config.get("start_time") or day_config.get("working_start")
+    end_str = day_config.get("end_time") or day_config.get("working_end")
+    if not start_str or not end_str:
+        return []
 
-    # 4. ВРЕМЕННОЙ БАРЬЕР (Если день сегодняшний, вычисляем буфер)
+    work_start = time_to_minutes(start_str)
+    work_end = time_to_minutes(end_str)
+
     time_barrier_minutes = 0
     if target_date == today:
         now = datetime.now()
         current_minutes = now.hour * 60 + now.minute
-        # Мастеру +2 часа (120 мин), клиенту +6 часов (360 мин)
         buffer_minutes = 120 if is_master else 360
         time_barrier_minutes = current_minutes + buffer_minutes
 
-    # 5. Получаем уже существующие записи клиентов из таблицы client
-    result = await db.execute(
+    # Получаем ВСЕ записи мастера на этот день
+    app_result = await db.execute(
         select(ClientAppointment).where(
-            ClientAppointment.master_id == master_uuid,
-            ClientAppointment.date == target_date
+            and_(ClientAppointment.master_id == master_uuid, ClientAppointment.date == target_date)
         )
     )
-    existing_appointments = result.scalars().all()
+    existing_appointments = app_result.scalars().all()
 
+    # Извлекаем ВСЕ услуги мастера ОДНИМ запросом для кэширования длительности
+    service_result = await db.execute(select(Service).where(Service.master_id == master_uuid))
+    services_list = service_result.scalars().all()
+    
+    # Создаем два быстрых словаря для мгновенного поиска в памяти O(1)
+    services_by_id = {s.id: s.duration for s in services_list}
+    services_by_title = {s.title.strip().lower(): s.duration for s in services_list}
+
+    # Подготавливаем интервалы занятого времени в памяти
+    busy_intervals = []
+    for app in existing_appointments:
+        app_start = time_to_minutes(app.time.strftime("%H:%M"))
+        
+        # Ищем длительность в кэше памяти без запросов к СУБД!
+        app_duration = 60
+        if app.service_id and app.service_id in services_by_id:
+            app_duration = services_by_id[app.service_id]
+        elif app.service_title:
+            title_clean = app.service_title.strip().lower()
+            if title_clean in services_by_title:
+                app_duration = services_by_title[title_clean]
+                
+        busy_intervals.append((app_start, app_start + app_duration))
+
+    breaks = day_config.get("breaks") or []
+    if not breaks and day_config.get("break_start") and day_config.get("break_end"):
+        breaks = [{"start": day_config["break_start"], "end": day_config["break_end"]}]
+
+    for brk in breaks:
+        if brk.get("start") and brk.get("end"):
+            busy_intervals.append((time_to_minutes(brk["start"]), time_to_minutes(brk["end"])))
+
+    # Главный цикл генерации слотов (теперь работает чисто в RAM)
     available_slots = []
-    slot_step_minutes = 30  # Шаг сетки как на фронте
-
-    # 6. Главный цикл генерации слотов
+    slot_step_minutes = 30
     current = work_start
+
     while current + duration_minutes <= work_end:
         slot_start = current
         slot_end = current + duration_minutes
 
-        # ЗАЩИТА ОТ ПРОШЕДШЕГО ВРЕМЕНИ И БУФЕРОВ
         if target_date == today and slot_start < time_barrier_minutes:
             current += slot_step_minutes
             continue
 
         is_interrupted = False
-
-        # Проверка пересечения с перерывами мастера
-        for brk in breaks:
-            break_start = time_to_minutes(brk["start"])
-            break_end = time_to_minutes(brk["end"])
-            if slot_start < break_end and slot_end > break_start:
+        # Проверяем пересечения по массиву интервалов в памяти
+        for b_start, b_end in busy_intervals:
+            if slot_start < b_end and slot_end > b_start:
                 is_interrupted = True
                 break
 
-        if is_interrupted:
-            current += slot_step_minutes
-            continue
-
-        # Проверка пересечения с другими клиентами
-        for app in existing_appointments:
-            app_start = time_to_minutes(app.time.strftime("%H:%M"))
-            
-            # ГИБРИДНЫЙ ПОИСК ДЛИТЕЛЬНОСТИ УСЛУГИ
-            existing_service = None
-            
-            # А. Сначала пробуем найти услугу по точному service_id (если он записан в строке таблицы client)
-            if getattr(app, 'service_id', None):
-                service_result = await db.execute(
-                    select(Service).where(
-                        Service.master_id == master_uuid,
-                        Service.id == app.service_id
-                    )
-                )
-                existing_service = service_result.scalar_one_or_none()
-            
-            # Б. Если по ID не нашли или поле пустое — ищем по названию (для обратной совместимости со старыми записями)
-            if not existing_service and app.service_title:
-                service_result = await db.execute(
-                    select(Service).where(
-                        Service.master_id == master_uuid,
-                        Service.title == app.service_title  # Запрос строго бьется с твоим Service.title
-                    )
-                )
-                existing_service = service_result.scalar_one_or_none()
-            
-            # В. Если услугу вообще удалили из прайса, ставим дефолт в 60 минут подстраховки
-            app_duration = existing_service.duration if existing_service else 60
-            
-            app_end = app_start + app_duration
-
-            # Формула пересечения интервалов
-            if slot_start < app_end and slot_end > app_start:
-                is_interrupted = True
-                break
-
-        # Если слот чистый — добавляем его в список доступных
         if not is_interrupted:
             available_slots.append(minutes_to_time_str(slot_start))
 

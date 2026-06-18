@@ -22,6 +22,16 @@ export function AdminDashboardView() {
     setScreen(screenName);
   };
 
+  const handleOpenSupport = () => {
+    const supportUrl = 'https://t.me/DKVinkol';
+
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.openTelegramLink) {
+      window.Telegram.WebApp.openTelegramLink(supportUrl);
+    } else {
+      window.open(supportUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   const activeAppointmentsCount = appointments?.length || 0;
 
   return (
@@ -41,31 +51,27 @@ export function AdminDashboardView() {
           title="Данные профиля"
           subtitle={`${masterProfile.name || 'Имя не указано'} • ${masterProfile.bio || 'Без БИО'}`}
           icon={
-            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center overflow-hidden border border-slate-100">
-              {masterProfile.avatar?.startsWith('data:image') ? (
-                <img
-                  src={masterProfile.avatar}
-                  className="w-full h-full object-cover"
-                  alt="Avatar"
+            masterProfile.avatar?.startsWith('data:image') ? (
+              <img
+                src={masterProfile.avatar}
+                className="w-6 h-6 rounded-md object-cover scale-[1.3]"
+                alt="Avatar"
+              />
+            ) : (
+              <svg
+                className="w-6 h-6 text-indigo-600 group-hover:text-indigo-700 transition-colors"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                 />
-              ) : (
-                <div className="w-full h-full bg-slate-200 flex items-center justify-center">
-                  <svg
-                    className="w-12 h-12 text-slate-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                </div>
-              )}
-            </div>
+              </svg>
+            )
           }
         />
 
@@ -74,11 +80,7 @@ export function AdminDashboardView() {
           onClick={() => handleNavigate('admin-link-share')}
           title="Ссылка для записи"
           subtitle="Поделиться витриной в соцсетях"
-          icon={
-            <span className="text-xl bg-emerald-50 p-2.5 rounded-xl group-hover:bg-emerald-100 transition-colors">
-              🔗
-            </span>
-          }
+          icon="🔗"
         />
 
         {/* Прайс-лист услуг */}
@@ -86,11 +88,7 @@ export function AdminDashboardView() {
           onClick={() => handleNavigate('admin-services')}
           title="Настройка услуг"
           subtitle="Добавление, удаление и цены"
-          icon={
-            <span className="text-xl bg-amber-50 p-2.5 rounded-xl group-hover:bg-amber-100 transition-colors">
-              📋
-            </span>
-          }
+          icon="📋"
         />
 
         {/* Расписание рабочего времени */}
@@ -98,11 +96,14 @@ export function AdminDashboardView() {
           onClick={() => handleNavigate('admin-hours-edit')}
           title="Рабочее время"
           subtitle={`Рабочих дней на этой неделе: ${workingDaysCount} из 7`}
-          icon={
-            <span className="text-xl bg-sky-50 p-2.5 rounded-xl group-hover:bg-sky-100 transition-colors">
-              ⏰
-            </span>
-          }
+          icon="⏰"
+        />
+
+        <MenuRowButton
+          onClick={handleOpenSupport}
+          icon="💬"
+          title="Прямая поддержка"
+          subtitle="Что-то сломалось или есть идея? Напишите мне лично"
         />
       </div>
     </div>

@@ -1,0 +1,8 @@
+{
+  "src/**/*.{ts,tsx,js,jsx,json,css}": [
+    "prettier --write"
+  ],
+  "src/**/*.test.{ts,tsx}": [
+    "vitest run --isomorphic"
+  ]
+}

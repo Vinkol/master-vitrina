@@ -29,7 +29,7 @@ export function MasterProfileCard({ profile, workingHoursLabel }: MasterProfileC
       )}
 
       <div className="mt-4 pt-3 border-t border-slate-50 flex justify-center items-center space-x-2 text-[11px] text-slate-400 font-bold uppercase tracking-wide">
-        <span>🕒 Время работы:</span>
+        <span>🕒 Время работы сегодня:</span>
         <span
           className={`px-2.5 py-0.5 rounded-md normal-case font-extrabold transition-all ${
             isWeekend

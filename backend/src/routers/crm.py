@@ -73,7 +73,7 @@ async def get_crm_clients(
     if filter == "blocked":
         stmt = stmt.having(BlockedClient.id.isnot(None))
     elif filter == "loyal":
-        stmt = stmt.having(and_(func.count(ClientAppointment.id) >= 2, BlockedClient.id.is_() if filter == "blocked" else BlockedClient.id.is_(None)))
+        stmt = stmt.having(and_(func.count(ClientAppointment.id) >= 3, BlockedClient.id.is_() if filter == "blocked" else BlockedClient.id.is_(None)))
     elif filter == "new":
         stmt = stmt.having(and_(func.count(ClientAppointment.id) == 1, BlockedClient.id.is_(None)))
     elif filter == "active":

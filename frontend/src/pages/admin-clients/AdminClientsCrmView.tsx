@@ -4,6 +4,7 @@ import { CrmEmptyState } from '../../components/admin/CrmEmptyState';
 import { CrmSkeletonLoader } from '../../components/admin/CrmSkeletonLoader';
 import { PageHeader } from '../../shared/ui/page-header/PageHeader';
 import { ClientCrmCard } from '../../entities/client/ClientCrmCard';
+import { Search, X } from 'lucide-react';
 
 import { useClientsCrm } from './useClientsCrm';
 import { useBookingStore } from '../../store/useBookingStore';
@@ -60,7 +61,10 @@ export function AdminClientsCrmView() {
 
       {/* ПОИСК */}
       <div className="relative bg-white rounded-2xl border border-slate-100 shadow-xs p-1 flex items-center">
-        <span className="pl-3 text-slate-400 text-sm">🔍</span>
+        <Search
+          className="ml-3 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors shrink-0"
+          strokeWidth={2}
+        />
         <input
           type="text"
           placeholder="Поиск по имени или телефону..."
@@ -74,7 +78,7 @@ export function AdminClientsCrmView() {
             onClick={handleClearSearch}
             className="pr-3 text-slate-300 hover:text-slate-500 font-bold text-xs"
           >
-            ✕
+            <X className="w-3.5 h-3.5 animate-fadeIn" strokeWidth={2.5} />
           </button>
         )}
       </div>

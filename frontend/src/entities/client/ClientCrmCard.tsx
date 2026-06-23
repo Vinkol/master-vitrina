@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { haptic } from '../../shared/lib/haptic/haptic';
 import type { CrmClient } from '../../types';
+import { Unlock, Ban } from 'lucide-react';
 
 interface ClientCrmCardProps {
   client: CrmClient;
@@ -74,14 +75,18 @@ export const ClientCrmCard = memo(function ClientCrmCard({
         <button
           type="button"
           onClick={handleToggleBlock}
-          className={`p-2 rounded-xl border transition-all text-xs active:scale-95 ${
+          className={`p-2.5 rounded-xl border transition-all text-xs active:scale-95 flex items-center justify-center shrink-0 cursor-pointer ${
             client.is_blocked
-              ? 'bg-rose-50 border-rose-100 text-rose-500 font-bold'
+              ? 'bg-rose-50 border-rose-100 text-rose-600 font-bold shadow-xs'
               : 'bg-slate-50 border-transparent text-slate-400 hover:text-rose-500 hover:bg-rose-50 hover:border-rose-100'
           }`}
           title={client.is_blocked ? 'Разблокировать' : 'В черный список'}
         >
-          {client.is_blocked ? '🔓' : '🚫'}
+          {client.is_blocked ? (
+            <Unlock className="w-4 h-4 text-rose-500 animate-pulse" strokeWidth={2.2} />
+          ) : (
+            <Ban className="w-4 h-4" strokeWidth={2} />
+          )}
         </button>
       </div>
     </div>

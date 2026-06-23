@@ -13,7 +13,8 @@ export function AdminPlaceholderView({ title, icon }: AdminPlaceholderViewProps)
         Раздел «{title}» в разработке
       </h3>
       <p className="text-xs text-slate-400 max-w-60 mt-1 leading-relaxed">
-        Мы уже пишем код для этой фичи. Она появится в ближайшем обновлении вашей витрины!
+        Раздел на реконструкции. Настраиваем интеграцию, функция будет доступна в следующем
+        обновлении.
       </p>
     </div>
   );

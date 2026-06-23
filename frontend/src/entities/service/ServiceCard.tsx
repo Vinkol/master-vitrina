@@ -1,5 +1,6 @@
 import { haptic } from '../../shared/lib/haptic/haptic';
 import type { Service } from '../../types';
+import { Pencil, Clock, Trash2 } from 'lucide-react';
 
 interface ServiceCardProps {
   service: Service;
@@ -15,20 +16,27 @@ export function ServiceCard({ service, onEdit, onDelete }: ServiceCardProps) {
           haptic.impact('light');
           onEdit(service);
         }}
-        className="space-y-0.5 flex-1 pr-4"
+        className="space-y-0.5 flex-1 pr-4 min-w-0"
       >
-        <div className="flex items-center space-x-2">
-          <p className="font-black text-slate-800 text-sm group-hover:text-indigo-600 transition-colors">
+        <div className="flex items-center space-x-1.5 min-w-0">
+          <p className="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors truncate">
             {service.title}
           </p>
-          <span className="text-[10px] text-slate-300 font-bold">✏️</span>
+          <Pencil
+            className="w-3 h-3 text-slate-300 group-hover:text-indigo-400 transition-colors shrink-0"
+            strokeWidth={2.5}
+          />
         </div>
-        <p className="text-xs text-slate-400 font-bold uppercase tracking-wide mt-0.5">
-          ⏱ {service.duration} мин ·{' '}
+
+        <div className="flex items-center text-xs text-slate-400 font-medium mt-1 space-x-1.5">
+          <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" strokeWidth={2} />
+          <span>{service.duration} мин</span>
+          <span className="text-slate-300 font-light">·</span>
           <span className="text-indigo-600 font-extrabold">{service.price} ₽</span>
-        </p>
+        </div>
+
         {service.description && (
-          <p className="text-[11px] text-slate-400 line-clamp-1 mt-1 bg-slate-50 px-2 py-0.5 rounded-md inline-block font-medium">
+          <p className="text-[11px] text-slate-400 line-clamp-1 mt-1.5 bg-slate-50 px-2 py-0.5 rounded-md inline-block font-medium max-w-full">
             {service.description}
           </p>
         )}
@@ -42,9 +50,9 @@ export function ServiceCard({ service, onEdit, onDelete }: ServiceCardProps) {
             onDelete(service.id);
           }
         }}
-        className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-95 border border-transparent hover:border-red-100 text-sm"
+        className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 active:bg-red-100 rounded-xl transition-all active:scale-95 border border-transparent hover:border-red-100 shrink-0 cursor-pointer"
       >
-        🗑️
+        <Trash2 className="w-4 h-4" strokeWidth={2} />
       </button>
     </div>
   );

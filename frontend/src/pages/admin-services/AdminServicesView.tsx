@@ -7,6 +7,7 @@ import type { BookingState } from '../../store/types';
 import { haptic } from '../../shared/lib/haptic/haptic';
 import { PageHeader } from '../../shared/ui/page-header/PageHeader';
 import { ServiceCard } from '../../entities/service/ServiceCard';
+import { Briefcase, Plus } from 'lucide-react';
 
 export function AdminServicesView() {
   // ИСПРАВЛЕНО: Явно типизируем вызовы методов стора
@@ -92,8 +93,10 @@ export function AdminServicesView() {
       {/* Список услуг */}
       <div className="space-y-2.5">
         {services.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-8 bg-white border border-dashed border-slate-200 rounded-2xl text-center">
-            <span className="text-2xl mb-2">✂️</span>
+          <div className="flex flex-col items-center justify-center p-8 bg-white border border-dashed border-slate-200 rounded-2xl text-center animate-fadeIn">
+            <div className="p-3 bg-slate-50 text-slate-300 rounded-full mb-2 shrink-0">
+              <Briefcase className="w-6 h-6" strokeWidth={1.5} />
+            </div>
             <p className="text-xs font-bold text-slate-400">Прайс-лист пуст</p>
             <p className="text-[10px] text-slate-300 mt-0.5">
               Добавьте первую услугу, чтобы запустить запись
@@ -115,9 +118,13 @@ export function AdminServicesView() {
       <div className="fixed bottom-20 left-4 right-4 max-w-md mx-auto z-30">
         <button
           onClick={handleOpenCreate}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg text-sm active:scale-98"
+          className="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-md text-sm active:scale-98 cursor-pointer flex items-center justify-center space-x-1.5 group"
         >
-          + Добавить новую услугу
+          <Plus
+            className="w-4 h-4 text-white group-hover:rotate-90 transition-transform duration-200"
+            strokeWidth={2.5}
+          />
+          <span>Добавить новую услугу</span>
         </button>
       </div>
 

@@ -1,6 +1,7 @@
 import { haptic } from '../../shared/lib/haptic/haptic';
 import { PageHeader } from '../../shared/ui/page-header/PageHeader';
 import { useBookingStore } from '../../store/useBookingStore';
+import { Copy, Send } from 'lucide-react';
 
 export function AdminLinkShareView() {
   const currentMasterId = useBookingStore((state) => state.currentMasterId);
@@ -67,16 +68,24 @@ export function AdminLinkShareView() {
         <div className="grid grid-cols-2 gap-3 pt-2">
           <button
             onClick={handleCopyLink}
-            className="p-3 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 text-xs font-bold rounded-xl transition-all shadow-sm text-center"
+            className="flex items-center justify-center space-x-1.5 p-3 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 active:scale-95 text-slate-700 text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer group"
           >
-            📋 Копировать
+            <Copy
+              className="w-3.5 h-3.5 text-slate-500 group-hover:scale-105 transition-transform"
+              strokeWidth={2.2}
+            />
+            <span>Копировать</span>
           </button>
 
           <button
             onClick={handleShareInTelegram}
-            className="p-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-sm text-center"
+            className="flex items-center justify-center space-x-1.5 p-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer group"
           >
-            ✈️ Отправить в ТГ
+            <Send
+              className="w-3.5 h-3.5 text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
+              strokeWidth={2.2}
+            />
+            <span>Отправить в ТГ</span>
           </button>
         </div>
       </div>

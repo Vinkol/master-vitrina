@@ -1,4 +1,5 @@
 import { useBookingStore } from '../store/useBookingStore';
+import { Home, Users, User, ToolCase } from 'lucide-react';
 
 export function TabBar() {
   const { currentScreen, setScreen } = useBookingStore();
@@ -27,7 +28,10 @@ export function TabBar() {
           currentScreen === 'admin-placeholder-main' ? 'text-indigo-600' : 'text-slate-400'
         }`}
       >
-        <span className="text-xl">📅</span>
+        <Home
+          className="w-5 h-5"
+          strokeWidth={currentScreen === 'admin-placeholder-main' ? 2.5 : 2}
+        />
         <span>Главная</span>
       </button>
 
@@ -38,7 +42,7 @@ export function TabBar() {
           currentScreen === 'admin-services' ? 'text-indigo-600' : 'text-slate-400'
         }`}
       >
-        <span className="text-xl">✂️</span>
+        <ToolCase className="w-5 h-5" strokeWidth={currentScreen === 'admin-services' ? 2.5 : 2} />
         <span>Каталог</span>
       </button>
 
@@ -49,7 +53,10 @@ export function TabBar() {
           currentScreen === 'admin-placeholder-clients' ? 'text-indigo-600' : 'text-slate-400'
         }`}
       >
-        <span className="text-xl">👥</span>
+        <Users
+          className="w-5 h-5"
+          strokeWidth={currentScreen === 'admin-placeholder-clients' ? 2.5 : 2}
+        />
         <span>Клиенты</span>
       </button>
 
@@ -60,7 +67,7 @@ export function TabBar() {
           currentScreen === 'admin-dashboard' ? 'text-indigo-600' : 'text-slate-400'
         }`}
       >
-        <span className="text-xl">⚙️</span>
+        <User className="w-5 h-5" strokeWidth={currentScreen === 'admin-dashboard' ? 2.5 : 2} />
         <span>Профиль</span>
       </button>
     </div>

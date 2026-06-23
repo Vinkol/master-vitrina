@@ -1,4 +1,5 @@
 import type { MasterProfile } from '../../types';
+import { User, Clock } from 'lucide-react';
 
 interface MasterProfileCardProps {
   profile: MasterProfile;
@@ -16,7 +17,7 @@ export function MasterProfileCard({ profile, workingHoursLabel }: MasterProfileC
         {profile.avatar?.startsWith('data:image') ? (
           <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" />
         ) : (
-          <span className="text-2xl">{profile.avatar || ''}</span>
+          <User className="w-9 h-9 text-slate-300" strokeWidth={1.5} />
         )}
       </div>
 
@@ -29,7 +30,8 @@ export function MasterProfileCard({ profile, workingHoursLabel }: MasterProfileC
       )}
 
       <div className="mt-4 pt-3 border-t border-slate-50 flex justify-center items-center space-x-2 text-[11px] text-slate-400 font-bold uppercase tracking-wide">
-        <span>🕒 Время работы сегодня:</span>
+        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" strokeWidth={2} />
+        <span>Время работы сегодня:</span>
         <span
           className={`px-2.5 py-0.5 rounded-md normal-case font-extrabold transition-all ${
             isWeekend

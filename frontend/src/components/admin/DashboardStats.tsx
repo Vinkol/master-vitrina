@@ -1,3 +1,5 @@
+import { Calendar } from 'lucide-react';
+
 interface DashboardStatsProps {
   appointmentsCount: number;
 }
@@ -9,9 +11,11 @@ export function DashboardStats({ appointmentsCount }: DashboardStatsProps) {
         <p className="text-[10px] text-indigo-100 font-bold uppercase tracking-wider">
           Всего записей в базе
         </p>
-        <p className="text-2xl font-black mt-0.5">{appointmentsCount}</p>
+        <p className="text-2xl font-black mt-0.4">{appointmentsCount}</p>
       </div>
-      <span className="text-2xl bg-white/10 p-2 rounded-xl">📅</span>
+      <div className="flex items-center justify-center bg-white/15 p-2.5 rounded-xl backdrop-blur-xs shrink-0">
+        <Calendar className="w-5 h-5 text-white" strokeWidth={2.2} />
+      </div>
     </div>
   );
 }

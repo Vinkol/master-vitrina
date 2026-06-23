@@ -1,3 +1,5 @@
+import { CalendarDays } from 'lucide-react';
+
 interface DashboardHeaderProps {
   visibleMonth: string;
   onOpenMonthModal: () => void;
@@ -18,7 +20,10 @@ export function DashboardHeader({ visibleMonth, onOpenMonthModal }: DashboardHea
         onClick={onOpenMonthModal}
         className="flex items-center space-x-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-all active:scale-95 text-xs font-bold"
       >
-        <span>📅</span>
+        <CalendarDays
+          className="w-4 h-4 text-indigo-600 group-hover:scale-105 transition-transform"
+          strokeWidth={2}
+        />
         <span>Весь месяц</span>
       </button>
     </div>

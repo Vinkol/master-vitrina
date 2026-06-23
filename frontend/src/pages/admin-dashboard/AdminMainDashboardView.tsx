@@ -6,6 +6,7 @@ import { CalendarRibbon } from '../../widgets/admin-calendar/CalendarRibbon';
 import { formatToUserDate } from '../../shared/lib/calendar/dateFormatter';
 import { AppointmentRow } from '../../entities/appointment/AppointmentRow';
 import { MonthCalendarSheet } from '../../widgets/admin-calendar/MonthCalendarSheet';
+import { PlusCircle, Link2, CalendarX } from 'lucide-react';
 
 export function AdminMainDashboardView() {
   const dashboard = useAdminDashboard();
@@ -40,7 +41,9 @@ export function AdminMainDashboardView() {
           }}
           className="flex flex-col items-start p-4 bg-linear-to-br from-indigo-500 to-indigo-600 text-white rounded-2xl shadow-sm active:scale-98 transition-all group cursor-pointer"
         >
-          <div className="p-2 bg-white/20 rounded-xl mb-3 text-lg">📝</div>
+          <div className="p-2 bg-white/15 rounded-xl mb-3 backdrop-blur-xs text-white shrink-0">
+            <PlusCircle className="w-5 h-5" strokeWidth={2.2} />
+          </div>
           <span className="text-xs font-black leading-tight">Записать вручную</span>
           <span className="text-[9px] text-indigo-100 mt-0.5">Клиент позвонил сам</span>
         </button>
@@ -52,7 +55,9 @@ export function AdminMainDashboardView() {
           }}
           className="flex flex-col items-start p-4 bg-white border border-slate-200/80 text-slate-800 rounded-2xl shadow-xs active:scale-98 transition-all group cursor-pointer"
         >
-          <div className="p-2 bg-slate-100 rounded-xl mb-3 text-lg">🔗</div>
+          <div className="p-2 bg-slate-50 border border-slate-100 text-slate-500 rounded-xl mb-3 shrink-0 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+            <Link2 className="w-5 h-5" strokeWidth={2} />
+          </div>
           <span className="text-xs font-black leading-tight">Ссылка на запись</span>
           <span className="text-[9px] text-slate-400 mt-0.5">Поделиться витриной</span>
         </button>
@@ -74,7 +79,9 @@ export function AdminMainDashboardView() {
 
         {dashboard.filteredAppointments.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 bg-white border border-dashed border-slate-200 rounded-2xl text-center">
-            <span className="text-2xl mb-2">🍃</span>
+            <div className="p-3 bg-slate-50 text-slate-300 rounded-full mb-2 shrink-0">
+              <CalendarX className="w-6 h-6" strokeWidth={1.5} />
+            </div>
             <p className="text-xs font-bold text-slate-400">На этот день записей нет</p>
           </div>
         ) : (

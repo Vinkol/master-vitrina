@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Service } from '../../types';
 import { haptic } from '../../shared/lib/haptic/haptic';
+import { ChevronDown, Briefcase, Clock, Check } from 'lucide-react';
 
 interface ServiceDropdownProps {
   services: Service[];
@@ -41,11 +42,12 @@ export function ServiceDropdown({
           <span className="text-slate-400 font-medium">Выберите услугу из прайса</span>
         )}
 
-        <span
-          className={`text-slate-300 text-xs transition-transform duration-200 ${isOpen ? 'rotate-180 text-indigo-500' : ''}`}
-        >
-          ▼
-        </span>
+        <ChevronDown
+          className={`w-4 h-4 text-slate-300 transition-transform duration-200 shrink-0 ${
+            isOpen ? 'rotate-180 text-indigo-500' : ''
+          }`}
+          strokeWidth={2.5}
+        />
       </button>
 
       {/* Выпадающее оверлей-меню */}
@@ -56,8 +58,9 @@ export function ServiceDropdown({
 
           <div className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-100 rounded-2xl shadow-xl z-20 overflow-hidden divide-y divide-slate-50 max-h-48 overflow-y-auto animate-fadeIn scrollbar-none">
             {services.length === 0 ? (
-              <div className="p-4 text-center text-xs text-slate-400 font-bold">
-                Прайс-лист пуст ✂️
+              <div className="p-5 flex flex-col items-center justify-center text-center text-xs text-slate-400 font-bold space-y-1.5">
+                <Briefcase className="w-5 h-5 text-slate-300" strokeWidth={1.5} />
+                <span>Прайс-лист услуг пока пуст</span>
               </div>
             ) : (
               services.map((service) => {
@@ -79,9 +82,10 @@ export function ServiceDropdown({
                   >
                     <div className="min-w-0 pr-2">
                       <p className="truncate">{service.title}</p>
-                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                        ⏱ Длительность: {service.duration} мин
-                      </p>
+                      <div className="flex items-center text-slate-400 font-medium mt-1 space-x-1">
+                        <Clock className="w-3 h-3 text-slate-400 shrink-0" strokeWidth={2} />
+                        <span>Длительность: {service.duration} мин</span>
+                      </div>
                     </div>
                     <div className="text-right shrink-0 flex items-center space-x-2">
                       <span
@@ -93,7 +97,9 @@ export function ServiceDropdown({
                       >
                         {service.price} ₽
                       </span>
-                      {isSelected && <span className="text-indigo-600 text-[10px]">✓</span>}
+                      {isSelected && (
+                        <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" strokeWidth={3} />
+                      )}
                     </div>
                   </button>
                 );

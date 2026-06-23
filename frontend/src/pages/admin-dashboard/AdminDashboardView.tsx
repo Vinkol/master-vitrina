@@ -4,6 +4,7 @@ import { DashboardStats } from '../../components/admin/DashboardStats';
 import { MenuRowButton } from '../../components/admin/MenuRowButton';
 import { Loader } from '../../shared/ui/loader/Loader';
 import { haptic } from '../../shared/lib/haptic/haptic';
+import { Link2, CalendarClock, MessageSquare, ToolCase } from 'lucide-react';
 
 export function AdminDashboardView() {
   const masterProfile = useBookingStore((state) => state.masterProfile);
@@ -54,12 +55,12 @@ export function AdminDashboardView() {
             masterProfile.avatar?.startsWith('data:image') ? (
               <img
                 src={masterProfile.avatar}
-                className="w-6 h-6 rounded-md object-cover scale-[1.3]"
+                className="w-5 h-5 rounded-md object-cover scale-[1.3]"
                 alt="Avatar"
               />
             ) : (
               <svg
-                className="w-6 h-6 text-indigo-600 group-hover:text-indigo-700 transition-colors"
+                className="w-5 h-5 text-indigo-600 group-hover:text-indigo-700 transition-colors"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -80,7 +81,7 @@ export function AdminDashboardView() {
           onClick={() => handleNavigate('admin-link-share')}
           title="Ссылка для записи"
           subtitle="Поделиться витриной в соцсетях"
-          icon="🔗"
+          icon={<Link2 className="w-5 h-5 text-indigo-600" />}
         />
 
         {/* Прайс-лист услуг */}
@@ -88,7 +89,7 @@ export function AdminDashboardView() {
           onClick={() => handleNavigate('admin-services')}
           title="Настройка услуг"
           subtitle="Добавление, удаление и цены"
-          icon="📋"
+          icon={<ToolCase className="w-5 h-5 text-indigo-600" />}
         />
 
         {/* Расписание рабочего времени */}
@@ -96,14 +97,14 @@ export function AdminDashboardView() {
           onClick={() => handleNavigate('admin-hours-edit')}
           title="Рабочее время"
           subtitle={`Рабочих дней на этой неделе: ${workingDaysCount} из 7`}
-          icon="⏰"
+          icon={<CalendarClock className="w-5 h-5 text-indigo-600" />}
         />
 
         <MenuRowButton
           onClick={handleOpenSupport}
-          icon="💬"
           title="Прямая поддержка"
           subtitle="Что-то сломалось или есть идея? Напишите мне лично"
+          icon={<MessageSquare className="w-5 h-5 text-indigo-600" />}
         />
       </div>
     </div>

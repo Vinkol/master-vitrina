@@ -11,8 +11,7 @@ import {
 import { Briefcase, Calendar, Clock, Timer } from 'lucide-react';
 
 export function BookingConfirmView() {
-  const { selectedService, selectedDate, selectedTime, setScreen, resetBooking } =
-    useBookingStore();
+  const { selectedService, selectedDate, selectedTime, setScreen } = useBookingStore();
 
   const [name, setName] = useState<string>('');
   const [phoneBody, setPhoneBody] = useState<string>('');
@@ -83,20 +82,14 @@ export function BookingConfirmView() {
       try {
         await useBookingStore.getState().createAppointment(clientName.trim(), finalPhone);
         haptic.notification('success');
-
-        if (window.Telegram?.WebApp?.showAlert) {
-          window.Telegram.WebApp.showAlert(`🎉 Вы успешно записаны!`);
-        } else {
-          alert(`🎉 Вы успешно записаны!`);
-        }
-        resetBooking();
+        setScreen('booking-success');
       } catch (err) {
         console.error('Ошибка бронирования:', err);
       } finally {
         setIsSubmitting(false);
       }
     },
-    [isFormValid, resetBooking],
+    [isFormValid, setScreen],
   );
 
   // ГЛАВНАЯ КНОПКА ТЕЛЕГРАМА

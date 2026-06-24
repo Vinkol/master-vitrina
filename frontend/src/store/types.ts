@@ -11,6 +11,7 @@ export type Screen =
   | 'admin-link-share'
   | 'admin-placeholder-main'
   | 'booking-confirm'
+  | 'booking-success'
   | 'admin-placeholder-clients';
 
 export interface RegisterMasterPayload {

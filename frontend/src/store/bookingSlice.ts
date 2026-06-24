@@ -93,8 +93,6 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
       }
 
       await get().fetchAppointments();
-
-      get().resetBooking();
     } catch (e) {
       console.error('Ошибка создания записи через FastAPI:', e);
       throw e;

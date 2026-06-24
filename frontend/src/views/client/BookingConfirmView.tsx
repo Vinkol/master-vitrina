@@ -1,132 +1,30 @@
-import { useState, useEffect, useCallback } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
 import { haptic } from '../../shared/lib/haptic/haptic';
-import { formatToUserDate } from '../../shared/lib/calendar/dateFormatter';
-import {
-  formatPhoneBody,
-  validateCngName,
-  COUNTRY_CONFIGS,
-  type CountryCode,
-} from '../../shared/lib/phone/phoneUtils';
-import { Briefcase, Calendar, Clock, Timer } from 'lucide-react';
+import { COUNTRY_CONFIGS, type CountryCode } from '../../shared/lib/phone/phoneUtils';
+import { useBookingForm } from '../../features/manual-booking/useBookingForm';
+import { useTelegramMainButton } from '../../features/manual-booking/useTelegramMainButton';
+import { BookingDetailsCard } from '../../components/client/BookingDetailsCard';
 
 export function BookingConfirmView() {
   const { selectedService, selectedDate, selectedTime, setScreen } = useBookingStore();
 
-  const [name, setName] = useState<string>('');
-  const [phoneBody, setPhoneBody] = useState<string>('');
-  const [selectedCountry, setSelectedCountry] = useState<CountryCode>('RU');
+  const form = useBookingForm();
 
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [nameError, setNameError] = useState<string | null>(null);
-  const [phoneError, setPhoneError] = useState<string | null>(null);
-
-  const currentConfig = COUNTRY_CONFIGS[selectedCountry];
-  const fullRawPhone = `${currentConfig.prefix}${phoneBody.replace(/\D/g, '')}`;
-
-  const totalDigitsInPhone = fullRawPhone.replace(/\D/g, '').length;
-  const isFormValid =
-    name.trim().length >= 2 &&
-    !nameError &&
-    totalDigitsInPhone === currentConfig.digitsCount &&
-    !phoneError;
-
-  const handleGoBack = () => {
-    haptic.impact('light');
-    setScreen('calendar');
-  };
-
-  const handleNameChange = (val: string) => {
-    const capitalized = val
-      .toLowerCase()
-      .replace(/(^|\s|-)[a-zа-яё]/g, (char) => char.toUpperCase());
-
-    setName(capitalized);
-    if (capitalized.trim() && !validateCngName(capitalized)) {
-      setNameError('Имя может содержать только буквы');
-    } else if (capitalized.trim() && capitalized.trim().length < 2) {
-      setNameError('Имя слишком короткое');
-    } else {
-      setNameError(null);
-    }
-  };
-
-  const handlePhoneChange = (val: string) => {
-    const formattedBody = formatPhoneBody(val, selectedCountry);
-    setPhoneBody(formattedBody);
-
-    const pureDigits = formattedBody.replace(/\D/g, '');
-    const requiredBodyLength =
-      currentConfig.digitsCount - currentConfig.prefix.replace(/\D/g, '').length;
-
-    if (pureDigits.length > 0 && pureDigits.length < requiredBodyLength) {
-      setPhoneError('Неполный номер телефона');
-    } else {
-      setPhoneError(null);
-    }
-  };
-
-  // Переключение страны в выпадающем списке
-  const handleCountryChange = (country: CountryCode) => {
-    haptic.impact('light');
-    setSelectedCountry(country);
-    setPhoneBody('');
-    setPhoneError(null);
-  };
-
-  const handleConfirmBooking = useCallback(
-    async (clientName: string, finalPhone: string) => {
-      if (!isFormValid) return;
-
-      setIsSubmitting(true);
-      try {
-        await useBookingStore.getState().createAppointment(clientName.trim(), finalPhone);
-        haptic.notification('success');
-        setScreen('booking-success');
-      } catch (err) {
-        console.error('Ошибка бронирования:', err);
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [isFormValid, setScreen],
-  );
-
-  // ГЛАВНАЯ КНОПКА ТЕЛЕГРАМА
-  useEffect(() => {
-    const tg = window.Telegram?.WebApp;
-    if (!tg) return;
-
-    if (isFormValid) {
-      tg.MainButton.text = 'Подтвердить запись';
-      tg.MainButton.show();
-
-      const handleMainButtonClick = () => {
-        tg.MainButton.showProgress();
-        void (async () => {
-          await handleConfirmBooking(name, fullRawPhone);
-          tg.MainButton.hideProgress();
-          tg.MainButton.hide();
-        })();
-      };
-
-      tg.MainButton.onClick(handleMainButtonClick);
-
-      return () => {
-        tg.MainButton.offClick(handleMainButtonClick);
-        tg.MainButton.hide();
-      };
-    } else {
-      tg.MainButton.hide();
-    }
-  }, [name, fullRawPhone, isFormValid, handleConfirmBooking]);
+  useTelegramMainButton({
+    isFormValid: form.isFormValid,
+    buttonText: 'Подтвердить запись',
+    onClick: () => form.handleConfirmBooking(form.name, form.fullRawPhone),
+  });
 
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-5 min-h-screen bg-slate-50 text-slate-800 pb-24 relative select-none animate-fadeIn">
       {/* ХЕДЕР */}
       <div className="flex items-center space-x-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
         <button
-          onClick={handleGoBack}
+          onClick={() => {
+            haptic.impact('light');
+            setScreen('calendar');
+          }}
           className="p-2 hover:bg-slate-100 active:scale-95 rounded-xl text-indigo-600 transition-all text-sm font-bold"
         >
           ← Назад
@@ -134,58 +32,11 @@ export function BookingConfirmView() {
         <h3 className="font-black text-slate-800 text-sm">Подтверждение записи</h3>
       </div>
 
-      {/* РЕЗЮМЕ ЗАПИСИ */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs space-y-4 text-left animate-fadeIn">
-        {/* Сделали заголовок мягче и читаемее */}
-        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide">
-          Детали вашего визита
-        </h4>
+      {/* ДЕТАЛИ ВИЗИТА */}
+      <BookingDetailsCard service={selectedService} date={selectedDate} time={selectedTime} />
 
-        <div className="space-y-3">
-          {/* Услуга */}
-          <div className="flex items-start space-x-2 text-sm font-bold text-slate-700">
-            <Briefcase className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" strokeWidth={2} />
-            <p className="min-w-0">
-              Услуга:{' '}
-              <span className="text-indigo-600 font-extrabold">{selectedService?.title}</span>
-            </p>
-          </div>
-
-          {/* Длительность и Цена */}
-          <div className="flex items-center space-x-2 text-xs text-slate-500 font-medium pl-6">
-            <Timer className="w-3.5 h-3.5 text-slate-400 shrink-0" strokeWidth={2} />
-            <span>Длительность: {selectedService?.duration} мин</span>
-            <span className="text-slate-300">·</span>
-            <span className="text-indigo-600 font-bold">Цена: {selectedService?.price} ₽</span>
-          </div>
-
-          {/* Разделитель */}
-          <div className="h-px bg-slate-100 my-2" />
-
-          {/* Дата */}
-          <div className="flex items-center space-x-2 text-sm font-bold text-slate-700">
-            <Calendar className="w-4 h-4 text-slate-400 shrink-0" strokeWidth={2} />
-            <p>
-              Дата:{' '}
-              <span className="font-extrabold text-slate-800">
-                {selectedDate ? formatToUserDate(selectedDate) : ''}
-              </span>
-            </p>
-          </div>
-
-          {/* Время */}
-          <div className="flex items-center space-x-2 text-sm font-bold text-slate-700">
-            <Clock className="w-4 h-4 text-slate-400 shrink-0" strokeWidth={2} />
-            <p>
-              Время: <span className="text-indigo-600 font-black">{selectedTime}</span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ФОРМА ВВОДА С СЕЛЕКТОРОМ СТРАН */}
+      {/* ФОРМА ВВОДА */}
       <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs space-y-4 text-left">
-        {/* ИНПУТ ИМЕНИ */}
         <div>
           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
             Ваше имя *
@@ -193,26 +44,24 @@ export function BookingConfirmView() {
           <input
             type="text"
             placeholder="Введите ваше имя"
-            value={name}
-            onChange={(e) => handleNameChange(e.target.value)}
-            className={`w-full p-3.5 rounded-xl border focus:outline-none text-sm bg-slate-50/50 font-bold ${nameError ? 'border-rose-400 focus:border-rose-500 text-rose-700' : 'border-slate-200 focus:border-indigo-600 text-slate-700'}`}
+            value={form.name}
+            onChange={(e) => form.handleNameChange(e.target.value)}
+            className={`w-full p-3.5 rounded-xl border focus:outline-none text-sm bg-slate-50/50 font-bold ${form.nameError ? 'border-rose-400 focus:border-rose-500 text-rose-700' : 'border-slate-200 focus:border-indigo-600 text-slate-700'}`}
           />
-          {nameError && (
-            <p className="text-[10px] text-rose-500 font-bold mt-1 pl-1">⚠️ {nameError}</p>
+          {form.nameError && (
+            <p className="text-[10px] text-rose-500 font-bold mt-1 pl-1">⚠️ {form.nameError}</p>
           )}
         </div>
 
-        {/* СЛИТНЫЙ ИНПУТ ТЕЛЕФОНА С ВЫБОРОМ ФЛАГА */}
         <div>
           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
             Номер телефона *
           </label>
           <div className="flex space-x-2">
-            {/* ВЫПАДАЮЩИЙ СПИСОК СТРАН */}
             <div className="relative shrink-0">
               <select
-                value={selectedCountry}
-                onChange={(e) => handleCountryChange(e.target.value as CountryCode)}
+                value={form.selectedCountry}
+                onChange={(e) => form.handleCountryChange(e.target.value as CountryCode)}
                 className="appearance-none bg-slate-50/50 border border-slate-200 rounded-xl p-3.5 pr-8 text-sm font-bold text-slate-700 focus:outline-none focus:border-indigo-600 h-full"
               >
                 {Object.values(COUNTRY_CONFIGS).map((c) => (
@@ -221,23 +70,21 @@ export function BookingConfirmView() {
                   </option>
                 ))}
               </select>
-              {/* Кастомная маленькая стрелочка для красоты селекта */}
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400 text-[10px]">
                 ▼
               </div>
             </div>
 
-            {/* ИНПУТ ДЛЯ ТЕЛА НОМЕРА */}
             <input
               type="text"
-              placeholder={currentConfig.placeholder}
-              value={phoneBody}
-              onChange={(e) => handlePhoneChange(e.target.value)}
-              className={`w-full p-3.5 rounded-xl border focus:outline-none text-sm bg-slate-50/50 font-bold ${phoneError ? 'border-rose-400 focus:border-rose-500 text-rose-700' : 'border-slate-200 focus:border-indigo-600 text-slate-700'}`}
+              placeholder={form.currentConfig.placeholder}
+              value={form.phoneBody}
+              onChange={(e) => form.handlePhoneChange(e.target.value)}
+              className={`w-full p-3.5 rounded-xl border focus:outline-none text-sm bg-slate-50/50 font-bold ${form.phoneError ? 'border-rose-400 focus:border-rose-500 text-rose-700' : 'border-slate-200 focus:border-indigo-600 text-slate-700'}`}
             />
           </div>
-          {phoneError && (
-            <p className="text-[10px] text-rose-500 font-bold mt-1 pl-1">⚠️ {phoneError}</p>
+          {form.phoneError && (
+            <p className="text-[10px] text-rose-500 font-bold mt-1 pl-1">⚠️ {form.phoneError}</p>
           )}
         </div>
       </div>
@@ -246,13 +93,11 @@ export function BookingConfirmView() {
       {!window.Telegram?.WebApp?.initData && (
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 animate-fadeIn">
           <button
-            onClick={() => {
-              void handleConfirmBooking(name, fullRawPhone);
-            }}
-            disabled={isSubmitting || !isFormValid} // Обновили валидацию кнопки
+            onClick={() => void form.handleConfirmBooking(form.name, form.fullRawPhone)}
+            disabled={form.isSubmitting || !form.isFormValid}
             className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-sm text-sm"
           >
-            {isSubmitting ? 'Сохранение...' : 'Записаться онлайн'}
+            {form.isSubmitting ? 'Сохранение...' : 'Записаться онлайн'}
           </button>
         </div>
       )}

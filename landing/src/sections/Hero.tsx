@@ -57,7 +57,7 @@ export function Hero() {
           <Button 
             variant="popular"
             as="a"
-            href="https://t.me"
+            href="https://t.me/mastervitrinabot"
             target="_blank"
             rel="noreferrer"
             className="sm:w-auto px-10"

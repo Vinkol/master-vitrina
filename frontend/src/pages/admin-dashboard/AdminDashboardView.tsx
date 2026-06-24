@@ -4,7 +4,7 @@ import { DashboardStats } from '../../components/admin/DashboardStats';
 import { MenuRowButton } from '../../components/admin/MenuRowButton';
 import { Loader } from '../../shared/ui/loader/Loader';
 import { haptic } from '../../shared/lib/haptic/haptic';
-import { Link2, CalendarClock, MessageSquare, ToolCase } from 'lucide-react';
+import { CalendarClock, MessageSquare } from 'lucide-react';
 
 export function AdminDashboardView() {
   const masterProfile = useBookingStore((state) => state.masterProfile);
@@ -52,44 +52,20 @@ export function AdminDashboardView() {
           title="Данные профиля"
           subtitle={`${masterProfile.name || 'Имя не указано'} • ${masterProfile.bio || 'Без БИО'}`}
           icon={
-            masterProfile.avatar?.startsWith('data:image') ? (
-              <img
-                src={masterProfile.avatar}
-                className="w-5 h-5 rounded-md object-cover scale-[1.3]"
-                alt="Avatar"
+            <svg
+              className="w-5 h-5 text-indigo-600 group-hover:text-indigo-700 transition-colors"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
               />
-            ) : (
-              <svg
-                className="w-5 h-5 text-indigo-600 group-hover:text-indigo-700 transition-colors"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
-            )
+            </svg>
           }
-        />
-
-        {/* Ссылка для клиентов */}
-        <MenuRowButton
-          onClick={() => handleNavigate('admin-link-share')}
-          title="Ссылка для записи"
-          subtitle="Поделиться витриной в соцсетях"
-          icon={<Link2 className="w-5 h-5 text-indigo-600" />}
-        />
-
-        {/* Прайс-лист услуг */}
-        <MenuRowButton
-          onClick={() => handleNavigate('admin-services')}
-          title="Настройка услуг"
-          subtitle="Добавление, удаление и цены"
-          icon={<ToolCase className="w-5 h-5 text-indigo-600" />}
         />
 
         {/* Расписание рабочего времени */}

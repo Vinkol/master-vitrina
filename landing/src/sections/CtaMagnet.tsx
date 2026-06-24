@@ -23,7 +23,7 @@ export function CtaMagnet() {
 
             <div className="pt-4">
               <a
-                href="https://t.me"
+                href="https://t.me/mastervitrinabot"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-block bg-white hover:bg-slate-100 text-slate-950 font-black text-xs uppercase tracking-wider py-4 px-10 rounded-xl shadow-lg transition-all active:scale-98 cursor-pointer"

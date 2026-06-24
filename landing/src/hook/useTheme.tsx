@@ -7,7 +7,6 @@ interface ThemeContextType {
   toggleTheme: () => void;
 }
 
-// 🆕 Создаем объект контекста здесь, отдельно от компонентов!
 export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function useTheme() {

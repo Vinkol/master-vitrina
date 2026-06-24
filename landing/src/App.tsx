@@ -12,7 +12,7 @@ function App() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#030712] transition-colors duration-500 font-sans relative selection:bg-indigo-500/30">
+    <div>
       <div className="fixed-global-canvas" />
       <Header theme={theme} toggleTheme={toggleTheme} />    
       <Hero />

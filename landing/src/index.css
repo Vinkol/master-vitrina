@@ -6,36 +6,18 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: #ffffff;
+  background-color: #eeeeee;
   transition: background-color 0.5s ease;
+
+  /* Сброс UI Safari на iOS */
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .dark body {
   background-color: #030712;
-}
-
-/* ДИНАМИЧЕСКИЙ СВЕТОВОЙ ФОН */
-.aurora-container {
-  position: relative;
-  width: 100%;
-  overflow: hidden;
-}
-
-/* Анимированные сферы плазмы на заднем плане */
-.aurora-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(120px);
-  mix-blend-mode: multiply;
-  opacity: 0.25;
-  z-index: 1;
-  pointer-events: none;
-  transition: opacity 0.5s ease;
-}
-
-.dark .aurora-blob {
-  mix-blend-mode: screen;
-  opacity: 0.12;
 }
 
 /* ЗАФИКСИРОВАННЫЙ И ДИНАМИЧНЫЙ ХОЛСТ */

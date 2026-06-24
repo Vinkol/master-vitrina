@@ -20,7 +20,7 @@ export function useMainView() {
     const currentDayConfig = masterProfile.schedule.find((day) => day.day_index === dbDayIndex);
 
     if (!currentDayConfig || !currentDayConfig.is_working) {
-      return 'Сегодня выходной';
+      return 'Выходной';
     }
 
     const start = currentDayConfig.working_start?.substring(0, 5) || '10:00';

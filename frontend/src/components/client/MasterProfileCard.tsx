@@ -14,7 +14,7 @@ export function MasterProfileCard({ profile, workingHoursLabel }: MasterProfileC
       <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-indigo-500 to-purple-500" />
 
       <div className="w-20 h-20 rounded-full mx-auto flex items-center justify-center shadow-inner border-2 border-white mt-2 overflow-hidden bg-slate-100">
-        {profile.avatar?.startsWith('data:image') ? (
+        {profile.avatar ? (
           <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" />
         ) : (
           <User className="w-9 h-9 text-slate-300" strokeWidth={1.5} />

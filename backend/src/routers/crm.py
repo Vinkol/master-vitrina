@@ -6,9 +6,9 @@ from sqlalchemy import select, func, or_, and_, desc, case
 
 from src.database import get_db
 from src.models import ClientAppointment, BlockedClient
-from src.schemas import CRMClientResponse
+from src.schemas import CRMClientResponse, ClientBlockPayload
 
-router = APIRouter(prefix="/master", tags=["crm"])
+router = APIRouter(prefix="/master", tags=["CRM-Clients"])
 
 def format_russian_date(d: date | None) -> str | None:
     if not d:
@@ -73,7 +73,7 @@ async def get_crm_clients(
     if filter == "blocked":
         stmt = stmt.having(BlockedClient.id.isnot(None))
     elif filter == "loyal":
-        stmt = stmt.having(and_(func.count(ClientAppointment.id) >= 3, BlockedClient.id.is_() if filter == "blocked" else BlockedClient.id.is_(None)))
+        stmt = stmt.having(and_(func.count(ClientAppointment.id) >= 3, BlockedClient.id.is_(None)))
     elif filter == "new":
         stmt = stmt.having(and_(func.count(ClientAppointment.id) == 1, BlockedClient.id.is_(None)))
     elif filter == "active":
@@ -109,3 +109,67 @@ async def get_crm_clients(
         })
 
     return mapped_clients
+
+@router.post("/clients/block")
+async def block_client(
+    payload: ClientBlockPayload, 
+    db: AsyncSession = Depends(get_db)
+):
+    clean_phone = payload.client_phone.strip()
+    
+    # Быстрая проверка, чтобы не плодить дубликаты в ЧС
+    query_exists = select(
+        select(BlockedClient.id)
+        .where(
+            and_(
+                BlockedClient.master_id == payload.master_id,
+                BlockedClient.client_phone == clean_phone
+            )
+        )
+        .exists()
+    )
+    already_blocked = (await db.execute(query_exists)).scalar()
+    
+    if already_blocked:
+        return {"status": "success", "message": "Клиент уже в черном списке"}
+    
+    # Создаем запись блокировки
+    new_block = BlockedClient(
+        master_id=payload.master_id,
+        client_phone=clean_phone
+    )
+    db.add(new_block)
+    await db.commit()
+    
+    return {"status": "success", "message": "Клиент успешно заблокирован"}
+
+
+@router.post("/clients/unblock")
+async def unblock_client(
+    payload: ClientBlockPayload, 
+    db: AsyncSession = Depends(get_db)
+):
+    clean_phone = payload.client_phone.strip()
+    
+    # Ищем запись для удаления
+    query = select(BlockedClient).where(
+        and_(
+            BlockedClient.master_id == payload.master_id,
+            BlockedClient.client_phone == clean_phone
+        )
+    )
+    result = await db.execute(query)
+    blocked_record = result.scalar_one_or_none()
+    
+    if not blocked_record:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=404, 
+            detail="Клиент не найден в черном списке мастера"
+        )
+    
+    # Удаляем запись
+    await db.delete(blocked_record)
+    await db.commit()
+    
+    return {"status": "success", "message": "Клиент успешно разблокирован"}

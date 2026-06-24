@@ -3,6 +3,7 @@ import { useBookingStore } from '../../store/useBookingStore';
 import { Loader } from '../../shared/ui/loader/Loader';
 import { haptic } from '../../shared/lib/haptic/haptic';
 import { PageHeader } from '../../shared/ui/page-header/PageHeader';
+import { supabase } from '../../shared/api/supabase';
 
 export function AdminProfileEditView() {
   const masterProfile = useBookingStore((state) => state.masterProfile);
@@ -12,6 +13,7 @@ export function AdminProfileEditView() {
   const [name, setName] = useState<string>(() => masterProfile?.name || '');
   const [bio, setBio] = useState<string>(() => masterProfile?.bio || '');
   const [avatar, setAvatar] = useState<string | null>(() => masterProfile?.avatar || null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   if (!masterProfile) {
@@ -22,7 +24,20 @@ export function AdminProfileEditView() {
     haptic.impact('medium');
     setIsSaving(true);
     try {
-      await updateProfileInDB({ name, bio, avatar: avatar || undefined });
+      let finalAvatarUrl = avatar;
+      if (avatarFile) {
+        const fileExt = avatarFile.name.split('.').pop() || 'jpg';
+        const fileName = `${masterProfile.id || crypto.randomUUID()}-${Date.now()}.${fileExt}`;
+        const filePath = `avatars/${fileName}`;
+        const bucket = supabase.storage.from('masters');
+        const response = await bucket.upload(filePath, avatarFile, { upsert: true });
+        if (response.error) {
+          throw response.error;
+        }
+        const { data: urlData } = bucket.getPublicUrl(filePath);
+        finalAvatarUrl = urlData.publicUrl;
+      }
+      await updateProfileInDB({ name, bio, avatar: finalAvatarUrl || undefined });
       setScreen('admin-dashboard');
     } catch (e) {
       console.error('Ошибка сохранения профиля:', e);
@@ -35,13 +50,8 @@ export function AdminProfileEditView() {
     const file = e.target.files?.[0];
     if (file) {
       haptic.impact('light');
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          setAvatar(reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
+      setAvatarFile(file);
+      setAvatar(URL.createObjectURL(file));
     }
   };
 
@@ -65,7 +75,7 @@ export function AdminProfileEditView() {
 
           <div className="relative group">
             <div className="w-24 h-24 bg-slate-100 border-4 border-white shadow-md rounded-full flex items-center justify-center overflow-hidden">
-              {avatar?.startsWith('data:image') ? (
+              {avatar ? (
                 <img src={avatar} className="w-full h-full object-cover" alt="Avatar" />
               ) : (
                 <div className="w-full h-full bg-slate-200 flex items-center justify-center">
@@ -87,8 +97,6 @@ export function AdminProfileEditView() {
             </div>
 
             <label className="absolute inset-0 bg-black/40 text-white rounded-full flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer text-[10px] font-bold space-y-0.5">
-              <span>📷</span>
-              <span>Изменить</span>
               <input
                 type="file"
                 accept="image/*"

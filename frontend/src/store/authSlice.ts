@@ -115,7 +115,7 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (s
           });
 
           await Promise.all([store.fetchServices(), store.fetchAppointments()]);
-          store.setScreen('admin-dashboard');
+          store.setScreen('admin-placeholder-main');
         } catch (profileErr) {
           console.error('Ошибка при проверке профиля мастера:', profileErr);
           set({ isRegisteredMaster: false, masterProfile: null });

@@ -138,10 +138,9 @@ export function AdminProfileEditView() {
           </div>
         </div>
       </div>
-
       <div className="p-4 bg-indigo-50/40 rounded-2xl border border-indigo-100/30 text-left">
-        <p className="text-[11px] text-indigo-900/80 font-semibold leading-relaxed">
-          ✨ Данные сохраняются только после нажатия кнопки «Сохранить». Ваши клиенты сразу увидят
+        <p className="text-[10px] font-medium text-slate-400 text-center px-4 leading-normal">
+          Данные сохраняются только после нажатия кнопки «Сохранить». Ваши клиенты сразу увидят
           обновленный профиль на витрине онлайн-записи.
         </p>
       </div>

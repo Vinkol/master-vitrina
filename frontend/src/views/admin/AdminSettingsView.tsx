@@ -55,7 +55,7 @@ export const AdminSettingsView: React.FC = () => {
               <Palette className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs font-black text-slate-700 leading-none">Тема оформления</p>
+              <p className="text-xs font-black text-slate-700 leading-none">Тема</p>
               <p className="text-[10px] font-medium text-slate-400 mt-1">Светлая / Темная тема</p>
             </div>
           </div>
@@ -76,7 +76,7 @@ export const AdminSettingsView: React.FC = () => {
               <Languages className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs font-black text-slate-700 leading-none">Язык интерфейса</p>
+              <p className="text-xs font-black text-slate-700 leading-none">Язык</p>
               <p className="text-[10px] font-medium text-slate-400 mt-1">Локализация системы</p>
             </div>
           </div>
@@ -88,12 +88,12 @@ export const AdminSettingsView: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* НЕБОЛЬШАЯ ИНФОРМАЦИОННАЯ ПОДСКАЗКА СНИЗУ ПЛАТА */}
-      <p className="text-[10px] font-medium text-slate-400 text-center px-4 leading-normal">
-        Выбранная валюта автоматически применится ко всем вашим услугам, карточкам записи и витрине
-        бронирования для клиентов.
-      </p>
+      <div className="p-4 bg-indigo-50/40 rounded-2xl border border-indigo-100/30 text-left">
+        <p className="text-[10px] font-medium text-slate-400 text-center px-4 leading-normal">
+          Данные сохраняются только после нажатия кнопки «Сохранить». Выбранная валюта автоматически
+          применится ко всем вашим услугам, карточкам записи и витрине бронирования для клиентов.
+        </p>
+      </div>
     </div>
   );
 };

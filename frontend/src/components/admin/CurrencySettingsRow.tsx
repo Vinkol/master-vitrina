@@ -40,7 +40,7 @@ export function CurrencySettingsRow({
             <Coins className="w-4 h-4" />
           </div>
           <div>
-            <p className="text-xs font-black text-slate-800 leading-none">Валюта прайса</p>
+            <p className="text-xs font-black text-slate-800 leading-none">Валюта</p>
             <p className="text-[10px] font-medium text-slate-400 mt-1">Для цен на витрине</p>
           </div>
         </div>

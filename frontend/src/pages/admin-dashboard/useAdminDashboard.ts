@@ -1,12 +1,15 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
+import { useAppointments } from '../../features/appointments/useAppointments'; // ИМПОРТ НАШЕГО ХУКА ЗАПИСЕЙ
 import type { Appointment, CalendarDay } from '../../types';
 import { getNextNDays, getTodayIsoString } from '../../shared/lib/calendar/dateHelpers';
 import { haptic } from '../../shared/lib/haptic/haptic';
+import { useServices } from '../../features/master/useServices';
 
 export function useAdminDashboard() {
-  const appointments = useBookingStore((state) => state.appointments);
   const setScreen = useBookingStore((state) => state.setScreen);
+  const { appointments, isLoading: isAppointmentsLoading } = useAppointments();
+  const { services, isLoading: isServicesLoading } = useServices();
 
   const todayIso = useMemo(() => getTodayIsoString(), []);
   const daysList = useMemo<CalendarDay[]>(() => getNextNDays(), []);
@@ -21,7 +24,6 @@ export function useAdminDashboard() {
   });
 
   const scrollRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer) return;
@@ -50,7 +52,6 @@ export function useAdminDashboard() {
     };
   }, [daysList]);
 
-  // Автоскролл к выбранному дню при первой инициализации
   useEffect(() => {
     if (scrollRef.current) {
       const activeElem = scrollRef.current.querySelector('[data-active="true"]');
@@ -79,6 +80,8 @@ export function useAdminDashboard() {
 
   return {
     appointments,
+    services,
+    isLoading: isAppointmentsLoading || isServicesLoading,
     setScreen,
     todayIso,
     daysList,

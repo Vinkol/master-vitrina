@@ -79,7 +79,7 @@ export function AdminDashboardView() {
         <MenuRowButton
           onClick={() => handleNavigate('admin-settings')}
           title="Общие настройки"
-          subtitle="Валюта прайс-листа, кастомизация витрины и темы"
+          subtitle="Валюта, настройка языка и темы"
           icon={<Settings className="w-5 h-5 text-indigo-600" />}
         />
 

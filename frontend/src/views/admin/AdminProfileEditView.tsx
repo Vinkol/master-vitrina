@@ -4,6 +4,7 @@ import { Loader } from '../../shared/ui/loader/Loader';
 import { haptic } from '../../shared/lib/haptic/haptic';
 import { PageHeader } from '../../shared/ui/page-header/PageHeader';
 import { supabase } from '../../shared/api/supabase';
+import imageCompression from 'browser-image-compression';
 
 export function AdminProfileEditView() {
   const masterProfile = useBookingStore((state) => state.masterProfile);
@@ -46,10 +47,23 @@ export function AdminProfileEditView() {
     }
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      haptic.impact('light');
+    if (!file) return;
+    haptic.impact('light');
+    const options = {
+      maxSizeMB: 0.05,
+      maxWidthOrHeight: 400,
+      useWebWorker: true,
+      fileType: 'image/jpeg',
+    };
+
+    try {
+      const compressedFile = await imageCompression(file, options);
+      setAvatarFile(compressedFile);
+      setAvatar(URL.createObjectURL(compressedFile));
+    } catch (error) {
+      console.error('Ошибка сжатия изображения:', error);
       setAvatarFile(file);
       setAvatar(URL.createObjectURL(file));
     }
@@ -101,7 +115,9 @@ export function AdminProfileEditView() {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={handleAvatarChange}
+                onChange={(e) => {
+                  void handleAvatarChange(e);
+                }}
               />
             </label>
           </div>

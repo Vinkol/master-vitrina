@@ -28,7 +28,7 @@ export function CalendarView() {
     goToConfirm();
   }, [goToConfirm]);
 
-  // 📡 ЗАПРОС СЛОТОВ FASTAPI БЭКЕНДА
+  // ЗАПРОС СЛОТОВ
   useEffect(() => {
     if (!currentMasterId || !selectedDate || !selectedService?.duration) return;
 

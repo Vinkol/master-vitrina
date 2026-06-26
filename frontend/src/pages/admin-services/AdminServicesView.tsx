@@ -1,21 +1,28 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
+import { useServices } from '../../features/master/useServices';
 import { ServiceFormSheet } from '../../features/service-management/ServiceFormSheet';
 import type { Service } from '../../types';
 import type { BookingState } from '../../store/types';
 import { haptic } from '../../shared/lib/haptic/haptic';
 import { PageHeader } from '../../shared/ui/page-header/PageHeader';
 import { ServiceCard } from '../../entities/service/ServiceCard';
+import { Loader } from '../../shared/ui/loader/Loader';
 import { Briefcase, Plus } from 'lucide-react';
 
 export function AdminServicesView() {
-  // ИСПРАВЛЕНО: Явно типизируем вызовы методов стора
-  const services = useBookingStore((state: BookingState) => state.services);
-  const addService = useBookingStore((state: BookingState) => state.addService);
-  const updateService = useBookingStore((state: BookingState) => state.updateService);
-  const deleteService = useBookingStore((state: BookingState) => state.deleteService);
   const setScreen = useBookingStore((state: BookingState) => state.setScreen);
+  const {
+    services,
+    isLoading,
+    addService,
+    updateService,
+    deleteService,
+    isAdding,
+    isUpdating,
+    isDeleting,
+  } = useServices();
 
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -24,6 +31,7 @@ export function AdminServicesView() {
   const [price, setPrice] = useState<string>('');
   const [duration, setDuration] = useState<string>('60');
   const [description, setDescription] = useState<string>('');
+  const isMutating = isAdding || isUpdating || isDeleting;
 
   const handleOpenCreate = () => {
     haptic.impact('light');
@@ -46,7 +54,7 @@ export function AdminServicesView() {
 
   const handleSave = (e: FormEvent) => {
     e.preventDefault();
-    if (!title || !price || !duration) return;
+    if (!title || !price || !duration || isMutating) return;
 
     haptic.impact('medium');
 
@@ -60,27 +68,33 @@ export function AdminServicesView() {
     void (async () => {
       try {
         if (editingService) {
-          await updateService(editingService.id, serviceData);
+          await updateService({ id: editingService.id, fields: serviceData });
         } else {
           await addService(serviceData);
         }
         setIsFormOpen(false);
-      } catch {
-        console.error('Не удалось сохранить услугу на бэкенде');
+      } catch (err) {
+        console.error('Не удалось сохранить услугу на бэкенде', err);
       }
     })();
   };
 
   const handleDeleteService = (id: string) => {
     haptic.impact('medium');
+    if (isMutating) return;
+
     void (async () => {
       try {
         await deleteService(id);
-      } catch {
-        console.error('Не удалось удалить услугу через FastAPI');
+      } catch (err) {
+        console.error('Не удалось удалить услугу через FastAPI', err);
       }
     })();
   };
+
+  if (isLoading && services.length === 0) {
+    return <Loader text="Загрузка прайс-листа..." />;
+  }
 
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-6 bg-slate-50 min-h-screen text-slate-800 pb-36 select-none animate-fadeIn">
@@ -118,7 +132,8 @@ export function AdminServicesView() {
       <div className="fixed bottom-20 left-4 right-4 max-w-md mx-auto z-30">
         <button
           onClick={handleOpenCreate}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-md text-sm active:scale-98 cursor-pointer flex items-center justify-center space-x-1.5 group"
+          disabled={isMutating}
+          className="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-md text-sm active:scale-98 cursor-pointer flex items-center justify-center space-x-1.5 group disabled:opacity-50"
         >
           <Plus
             className="w-4 h-4 text-white group-hover:rotate-90 transition-transform duration-200"

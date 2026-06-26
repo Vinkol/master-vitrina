@@ -1,211 +1,47 @@
 import type { StateCreator } from 'zustand';
-import type { BookingState, MasterSlice, Service, MasterProfile } from './types';
-
-const getAuthHeaders = (token: string | null) => ({
-  'Content-Type': 'application/json',
-  ...(token ? { Authorization: `Bearer ${token}` } : {}),
-});
+import type { BookingState, MasterSlice } from './types';
 
 export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> = (set, get) => ({
   masterProfile: null,
   services: [],
 
-  // Получение профиля мастера
-  fetchProfile: async () => {
-    const masterId = get().currentMasterId;
-    if (!masterId) return;
-
-    try {
-      const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
-      const token = get().accessToken;
-
-      // СНАЧАЛА качаем текстовый профиль (Имя, био, аватарку)
-      const profileRes = await fetch(`${baseUrl}/api/v1/master/profile`, {
-        method: 'GET',
-        headers: getAuthHeaders(token),
-      });
-      if (!profileRes.ok) throw new Error('Не удалось загрузить данные профиля');
-      const profileData = (await profileRes.json()) as {
-        name: string;
-        bio: string | null;
-        avatar: string | null;
-        telegram_id: number;
-        currency?: string;
+  // мутатор профиля
+  updateProfileInDB: (updatedFields) => {
+    return set((state) => {
+      const currentProfile = state.masterProfile || {
+        id: get().currentMasterId || '',
+        telegram_id: 0,
+        name: 'Мастер',
+        bio: '',
+        avatar: '',
+        schedule: [],
+        currency: 'RUB',
       };
-
-      // ЗАТЕМ качаем его расписание из соседнего роутера
-      const scheduleRes = await fetch(`${baseUrl}/api/v1/master/schedule`, {
-        method: 'GET',
-        headers: getAuthHeaders(token),
-      });
-      let rawSchedule: Record<string, unknown>[] = [];
-
-      if (scheduleRes.ok) {
-        const scheduleData = (await scheduleRes.json()) as { schedule: unknown };
-        if (Array.isArray(scheduleData.schedule)) {
-          rawSchedule = scheduleData.schedule as Record<string, unknown>[];
-        }
-      }
-
-      const profile: MasterProfile = {
-        id: masterId,
-        telegram_id: profileData.telegram_id,
-        name: profileData.name,
-        bio: profileData.bio || '',
-        avatar: profileData.avatar || '',
-        schedule: rawSchedule,
-        currency: profileData.currency || 'RUB',
-      } as unknown as MasterProfile;
-
-      set({ masterProfile: profile });
-    } catch (err) {
-      console.error('Ошибка загрузки профиля мастера через FastAPI:', err);
-    }
+      return { masterProfile: { ...currentProfile, ...updatedFields } };
+    });
   },
 
-  // Обновление профиля мастера
-  updateProfileInDB: async (updatedFields) => {
-    try {
-      const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
-      const token = get().accessToken;
+  // сеттер списка услуг
+  setServicesLocally: (services) => set({ services }),
 
-      if (updatedFields.schedule !== undefined) {
-        const response = await fetch(`${baseUrl}/api/v1/master/schedule`, {
-          method: 'PUT',
-          headers: getAuthHeaders(token),
-          body: JSON.stringify(updatedFields.schedule),
-        });
-        if (!response.ok) throw new Error('Бэкенд отклонил сохранение расписания');
-      }
-
-      if (
-        updatedFields.name !== undefined ||
-        updatedFields.bio !== undefined ||
-        updatedFields.avatar !== undefined ||
-        updatedFields.currency !== undefined
-      ) {
-        const response = await fetch(`${baseUrl}/api/v1/master/profile`, {
-          method: 'PATCH',
-          headers: getAuthHeaders(token),
-          body: JSON.stringify({
-            name: updatedFields.name,
-            bio: updatedFields.bio,
-            avatar: updatedFields.avatar,
-            currency: updatedFields.currency,
-          }),
-        });
-        if (!response.ok) throw new Error('Бэкенд отклонил обновление данных профиля');
-      }
-
-      set((state) => {
-        const currentProfile = state.masterProfile || {
-          id: get().currentMasterId || '',
-          telegram_id: 0,
-          name: 'Мастер',
-          bio: '',
-          avatar: '',
-          schedule: [],
-          currency: 'RUB',
-        };
-        return {
-          masterProfile: { ...currentProfile, ...updatedFields },
-        };
-      });
-    } catch (err) {
-      console.error('Ошибка обновления профиля через FastAPI:', err);
-    }
+  // мутаторы для мгновенного обновления интерфейса
+  addService: (service) => {
+    const optimisticService = {
+      ...service,
+      id: crypto.randomUUID(),
+    };
+    set((state) => ({ services: [...state.services, optimisticService] }));
   },
 
-  // Получение списка услуг
-  fetchServices: async () => {
-    const masterId = get().currentMasterId;
-    if (!masterId) return;
-
-    try {
-      const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
-
-      // Наш GET-роутер услуг /master/{master_id} доступен без токена (чтобы клиенты видели прайс)
-      const response = await fetch(`${baseUrl}/api/v1/services/master/${masterId}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (!response.ok) throw new Error('Ошибка загрузки списка услуг');
-      const data = (await response.json()) as Service[];
-
-      set({ services: data });
-    } catch (e) {
-      console.error('Ошибка загрузки услуг через FastAPI:', e);
-    }
+  updateService: (id, updatedService) => {
+    set((state) => ({
+      services: state.services.map((s) => (s.id === id ? { ...s, ...updatedService } : s)),
+    }));
   },
 
-  // Добавление новой услуги
-  addService: async (service) => {
-    try {
-      const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
-      const token = get().accessToken;
-
-      const response = await fetch(`${baseUrl}/api/v1/services`, {
-        method: 'POST',
-        headers: getAuthHeaders(token),
-        body: JSON.stringify({
-          title: service.title,
-          description: service.description,
-          price: service.price,
-          duration: service.duration,
-        }),
-      });
-
-      if (!response.ok) throw new Error('Бэкенд не смог создать услугу');
-      const newService = (await response.json()) as Service;
-
-      set((state) => ({ services: [...state.services, newService] }));
-    } catch (err) {
-      console.error('Ошибка сохранения услуги через FastAPI:', err);
-    }
-  },
-
-  // Обновление услуги (Наш добавленный эндпоинт PATCH!)
-  updateService: async (id, updatedService) => {
-    try {
-      const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
-      const token = get().accessToken;
-
-      const response = await fetch(`${baseUrl}/api/v1/services/${id}`, {
-        method: 'PATCH',
-        headers: getAuthHeaders(token),
-        body: JSON.stringify(updatedService),
-      });
-
-      if (!response.ok) throw new Error('Бэкенд отклонил обновление услуги');
-      const updated = (await response.json()) as Service;
-
-      set((state) => ({
-        services: state.services.map((s) => (s.id === id ? updated : s)),
-      }));
-    } catch (err) {
-      console.error('Не удалось обновить услугу через FastAPI:', err);
-    }
-  },
-
-  // Удаление услуги
-  deleteService: async (id) => {
-    try {
-      const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
-      const token = get().accessToken;
-
-      const response = await fetch(`${baseUrl}/api/v1/services/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(token),
-      });
-
-      if (!response.ok) throw new Error('Бэкенд не разрешил удалить услугу');
-
-      set((state) => ({
-        services: state.services.filter((s) => s.id !== id),
-      }));
-    } catch (err) {
-      console.error('Не удалось удалить услугу через FastAPI:', err);
-    }
+  deleteService: (id) => {
+    set((state) => ({
+      services: state.services.filter((s) => s.id !== id),
+    }));
   },
 });

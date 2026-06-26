@@ -3,25 +3,25 @@ import { useBookingStore } from '../../store/useBookingStore';
 import { PageHeader } from '../../shared/ui/page-header/PageHeader';
 import { ChevronRight, Languages, Palette } from 'lucide-react';
 import { CurrencySettingsRow } from '../../components/admin/CurrencySettingsRow';
+import { useMasterProfile } from '../../features/master/useMasterProfile';
+import { Loader } from '../../shared/ui/loader/Loader';
 
 export const AdminSettingsView: React.FC = () => {
-  const masterProfile = useBookingStore((state) => state.masterProfile);
-  const updateProfileInDB = useBookingStore((state) => state.updateProfileInDB);
   const setScreen = useBookingStore((state) => state.setScreen);
-  const [currency, setCurrency] = useState<string>(masterProfile?.currency || 'RUB');
-  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const { profile: masterProfile, updateProfile, isSaving, isLoading } = useMasterProfile();
+  const [currency, setCurrency] = useState<string>(() => masterProfile?.currency || 'RUB');
+
+  if (isLoading || !masterProfile) {
+    return <Loader text="Загрузка настроек..." />;
+  }
 
   const onSaveSubmit = () => {
-    setIsSaving(true);
-    updateProfileInDB({ currency })
+    updateProfile({ currency })
       .then(() => {
         setScreen('admin-dashboard');
       })
       .catch((error) => {
         console.error('Ошибка при сохранении настроек:', error);
-      })
-      .finally(() => {
-        setIsSaving(false);
       });
   };
 

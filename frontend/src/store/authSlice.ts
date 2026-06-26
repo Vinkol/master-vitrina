@@ -81,7 +81,7 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (s
           currentMasterId: startParam,
           isRegisteredMaster: false,
         });
-        await store.fetchMasterData();
+        store.fetchMasterData();
         store.setScreen('profile');
       } else {
         console.log('Приложение запущено в режиме мастера (админка)');
@@ -93,6 +93,19 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (s
           });
 
           if (profileResponse.status === 404) {
+            if (import.meta.env.DEV) {
+              console.log(
+                'Профиль не найден, но мы в DEV-режиме. Подменяем данные на реального мастера.',
+              );
+              set({
+                isRegisteredMaster: true,
+                masterProfile: null,
+                user: { id: '5ff7cdb8-38eb-4410-b952-d7f6f8653e5b', name: 'Мастер (Дев)' },
+                currentMasterId: '5ff7cdb8-38eb-4410-b952-d7f6f8653e5b',
+                isLoading: false,
+              });
+              return;
+            }
             set({
               isRegisteredMaster: false,
               masterProfile: null,
@@ -109,13 +122,9 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (s
 
           set({
             isRegisteredMaster: true,
-            masterProfile: masterProfileData,
             user: { id: masterProfileData.id, name: masterProfileData.name },
             currentMasterId: masterProfileData.id,
           });
-
-          await Promise.all([store.fetchServices(), store.fetchAppointments()]);
-          store.setScreen('admin-placeholder-main');
         } catch (profileErr) {
           console.error('Ошибка при проверке профиля мастера:', profileErr);
           set({ isRegisteredMaster: false, masterProfile: null });
@@ -134,7 +143,7 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (s
     }
   },
 
-  registerMaster: async (profileFields: { name: string; bio?: string; avatar?: string }) => {
+  registerMaster: async (profileFields) => {
     set({ isLoading: true });
     try {
       const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
@@ -169,7 +178,6 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (s
       });
 
       const store = get();
-      await Promise.all([store.fetchServices(), store.fetchAppointments()]);
       store.setScreen('admin-dashboard');
 
       return true;

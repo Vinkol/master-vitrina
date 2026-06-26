@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
-import type { DaySchedule, TimeInterval } from '../../types';
+import { useMasterProfile } from '../../features/master/useMasterProfile';
+import type { DaySchedule } from '../../store/types';
 import { haptic } from '../../shared/lib/haptic/haptic';
+import type { TimeInterval } from '../../types';
 
 const defaultSchedule: DaySchedule[] = Array.from({ length: 7 }, (_, i) => ({
-  day_index: i,
   day_id: i,
+  day_index: i,
   day_name: `День ${i}`,
   is_working: i < 5,
   working_start: '10:00',
@@ -18,14 +20,11 @@ const defaultSchedule: DaySchedule[] = Array.from({ length: 7 }, (_, i) => ({
 }));
 
 export function useAdminHours() {
-  const masterProfile = useBookingStore((state) => state.masterProfile);
-  const updateProfileInDB = useBookingStore((state) => state.updateProfileInDB);
   const setScreen = useBookingStore((state) => state.setScreen);
 
-  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const { profile: masterProfile, updateProfile, isSaving: isMutationSaving } = useMasterProfile();
   const [schedule, setSchedule] = useState<DaySchedule[]>(() => {
     const fromDB = masterProfile?.schedule;
-
     if (!fromDB || !Array.isArray(fromDB) || fromDB.length === 0) {
       return defaultSchedule;
     }
@@ -83,17 +82,14 @@ export function useAdminHours() {
 
   const handleSave = async () => {
     haptic.impact('medium');
-    setIsSaving(true);
 
-    const cleanedSchedule = schedule.map((day) => ({
+    const cleanedSchedule: DaySchedule[] = schedule.map((day) => ({
       day_id: day.day_index,
       day_name: String(day.day_name || `День ${day.day_index}`),
       start_time: day.working_start,
       end_time: day.working_end,
       break_start: day.break_start || '',
       break_end: day.break_end || '',
-
-      // Старые ключи, которые требует тип DaySchedule на фронтенде
       day_index: day.day_index,
       is_working: day.is_working,
       working_start: day.working_start,
@@ -106,19 +102,17 @@ export function useAdminHours() {
     }));
 
     try {
-      await updateProfileInDB({ schedule: cleanedSchedule });
+      await updateProfile({ schedule: cleanedSchedule });
       setScreen('admin-dashboard');
     } catch (e) {
       console.error('Ошибка сохранения графика:', e);
-    } finally {
-      setIsSaving(false);
     }
   };
 
   return {
     masterProfile,
     schedule,
-    isSaving,
+    isSaving: isMutationSaving,
     setScreen,
     updateDay,
     addBreak,

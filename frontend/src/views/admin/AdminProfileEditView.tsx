@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
+import { useMasterProfile } from '../../features/master/useMasterProfile'; // ИМПОРТ НАШЕГО ХУКА
 import { Loader } from '../../shared/ui/loader/Loader';
 import { haptic } from '../../shared/lib/haptic/haptic';
 import { PageHeader } from '../../shared/ui/page-header/PageHeader';
@@ -7,23 +8,26 @@ import { supabase } from '../../shared/api/supabase';
 import imageCompression from 'browser-image-compression';
 
 export function AdminProfileEditView() {
-  const masterProfile = useBookingStore((state) => state.masterProfile);
-  const updateProfileInDB = useBookingStore((state) => state.updateProfileInDB);
   const setScreen = useBookingStore((state) => state.setScreen);
-
+  const {
+    profile: masterProfile,
+    updateProfile,
+    isSaving: isMutationSaving,
+    isLoading,
+  } = useMasterProfile();
   const [name, setName] = useState<string>(() => masterProfile?.name || '');
   const [bio, setBio] = useState<string>(() => masterProfile?.bio || '');
   const [avatar, setAvatar] = useState<string | null>(() => masterProfile?.avatar || null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
 
-  if (!masterProfile) {
+  if (isLoading || !masterProfile) {
     return <Loader text="Загрузка профиля..." />;
   }
 
   const handleSave = async () => {
     haptic.impact('medium');
-    setIsSaving(true);
+    setIsUploading(true);
     try {
       let finalAvatarUrl = avatar;
       if (avatarFile) {
@@ -38,12 +42,12 @@ export function AdminProfileEditView() {
         const { data: urlData } = bucket.getPublicUrl(filePath);
         finalAvatarUrl = urlData.publicUrl;
       }
-      await updateProfileInDB({ name, bio, avatar: finalAvatarUrl || undefined });
+      await updateProfile({ name, bio, avatar: finalAvatarUrl || undefined });
       setScreen('admin-dashboard');
     } catch (e) {
       console.error('Ошибка сохранения профиля:', e);
     } finally {
-      setIsSaving(false);
+      setIsUploading(false);
     }
   };
 
@@ -68,6 +72,7 @@ export function AdminProfileEditView() {
       setAvatar(URL.createObjectURL(file));
     }
   };
+  const isCombinedSaving = isUploading || isMutationSaving;
 
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-4 bg-slate-50 min-h-screen text-slate-800 pb-24 select-none">
@@ -78,7 +83,7 @@ export function AdminProfileEditView() {
         onSaveClick={() => {
           void handleSave();
         }}
-        isSaving={isSaving}
+        isSaving={isCombinedSaving}
       />
 
       <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-5">

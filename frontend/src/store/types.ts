@@ -83,20 +83,18 @@ export interface CrmSlice {
 export interface MasterSlice {
   masterProfile: MasterProfile | null;
   services: Service[];
-  fetchProfile: () => Promise<void>;
-  updateProfileInDB: (updatedFields: Partial<MasterProfile>) => Promise<void>;
-  fetchServices: () => Promise<void>;
-  addService: (service: Omit<Service, 'id'>) => Promise<void>;
-  updateService: (id: string, updatedService: Partial<Service>) => Promise<void>;
-  deleteService: (id: string) => Promise<void>;
+  updateProfileInDB: (updatedFields: Partial<MasterProfile>) => void;
+  setServicesLocally: (services: Service[]) => void;
+  addService: (service: Omit<Service, 'id'>) => void;
+  updateService: (id: string, updatedService: Partial<Service>) => void;
+  deleteService: (id: string) => void;
 }
 
 export interface BookingSlice {
   currentScreen: Screen;
   setScreen: (screen: Screen) => void;
   appointments: Appointment[];
-  fetchAppointments: () => Promise<void>;
-  createAppointment: (clientName: string, clientPhone: string) => Promise<void>;
+  setAppointmentsLocally: (appointments: Appointment[]) => void;
   currentMasterId: string | null;
   isOwner: boolean;
   botUsername: string;
@@ -109,7 +107,7 @@ export interface BookingSlice {
   setDate: (date: string) => void;
   setTime: (slot: string) => void;
   resetBooking: () => void;
-  fetchMasterData: () => Promise<void>;
+  fetchMasterData: () => void;
   goToConfirm: () => void;
 }
 

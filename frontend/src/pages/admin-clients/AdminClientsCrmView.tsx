@@ -1,7 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { CrmFilterTabs } from '../../components/admin/CrmFilterTabs';
 import { CrmEmptyState } from '../../components/admin/CrmEmptyState';
-import { CrmSkeletonLoader } from '../../components/admin/CrmSkeletonLoader';
 import { PageHeader } from '../../shared/ui/page-header/PageHeader';
 import { ClientCrmCard } from '../../entities/client/ClientCrmCard';
 import { Search, X } from 'lucide-react';
@@ -93,7 +92,6 @@ export function AdminClientsCrmView() {
             <ClientCrmSkeletonCard />
             <ClientCrmSkeletonCard />
             <ClientCrmSkeletonCard />
-            <ClientCrmSkeletonCard />
           </>
         ) : filteredClients.length === 0 ? (
           <CrmEmptyState />
@@ -108,11 +106,13 @@ export function AdminClientsCrmView() {
         )}
 
         {/* СЕНСОРНЫЙ ТРИГГЕР + СПИННЕР ПОДГРУЗКИ */}
-        <div
-          ref={loadMoreTriggerRef}
-          className="w-full py-6 flex items-center justify-center min-h-13"
-        >
-          {isLoading && filteredClients.length > 0 && <CrmSkeletonLoader isLoading={true} />}
+        <div ref={loadMoreTriggerRef} className="w-full space-y-2.5">
+          {isLoading && filteredClients.length > 0 && (
+            <>
+              <ClientCrmSkeletonCard />
+              <ClientCrmSkeletonCard />
+            </>
+          )}
         </div>
       </div>
     </div>

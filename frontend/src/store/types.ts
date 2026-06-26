@@ -9,6 +9,7 @@ export type Screen =
   | 'admin-profile-edit'
   | 'admin-hours-edit'
   | 'admin-link-share'
+  | 'admin-settings'
   | 'admin-placeholder-main'
   | 'booking-confirm'
   | 'booking-success'

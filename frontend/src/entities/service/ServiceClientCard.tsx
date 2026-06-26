@@ -1,3 +1,5 @@
+import { formatPrice } from '../../shared/lib/formatPrice/priceFormatter';
+import { useBookingStore } from '../../store/useBookingStore';
 import type { Service } from '../../types';
 import { Clock, ChevronRight } from 'lucide-react';
 
@@ -7,6 +9,8 @@ interface ServiceItemRowProps {
 }
 
 export function ServiceClientCard({ service, onClick }: ServiceItemRowProps) {
+  const masterCurrency = useBookingStore((state) => state.masterProfile?.currency) || 'RUB';
+
   return (
     <div
       onClick={onClick}
@@ -23,7 +27,9 @@ export function ServiceClientCard({ service, onClick }: ServiceItemRowProps) {
       </div>
       <div className="text-right flex items-center space-x-2 shrink-0">
         <div>
-          <p className="font-extrabold text-indigo-600 text-base leading-none">{service.price} ₽</p>
+          <p className="font-extrabold text-indigo-600 text-base leading-none">
+            {formatPrice(service.price, masterCurrency)}
+          </p>
           <p className="text-[10px] text-slate-400 underline decoration-dotted font-medium mt-1 inline-block">
             подробнее
           </p>

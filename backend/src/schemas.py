@@ -18,6 +18,7 @@ class UserMasterBase(BaseModel):
     bio: str | None = None
     avatar: str | None = None
     schedule: list = []
+    currency: str = Field(default="RUB", max_length=10)
 
 class MasterProfileResponse(BaseModel):
     id: uuid.UUID
@@ -26,6 +27,7 @@ class MasterProfileResponse(BaseModel):
     name: str
     bio: str | None
     avatar: str | None
+    currency: str
     
     class Config:
         from_attributes = True
@@ -34,6 +36,7 @@ class MasterProfileUpdate(BaseModel):
     name: str | None = Field(None, max_length=255)
     bio: str | None = Field(None, max_length=1000)
     avatar: str | None = None
+    currency: str | None = Field(None, max_length=10)
 
 class UserMasterCreate(UserMasterBase):
     pass

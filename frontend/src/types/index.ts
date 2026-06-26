@@ -5,7 +5,8 @@ export interface MasterProfile {
   name: string; // text
   bio: string; // text
   avatar: string; // text
-  schedule: DaySchedule[]; // jsonb (Массив расписания дней)
+  schedule: DaySchedule[];
+  currency: string;
 }
 
 // Таблица пользователя

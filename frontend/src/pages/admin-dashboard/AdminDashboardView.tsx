@@ -4,7 +4,7 @@ import { DashboardStats } from '../../components/admin/DashboardStats';
 import { MenuRowButton } from '../../components/admin/MenuRowButton';
 import { Loader } from '../../shared/ui/loader/Loader';
 import { haptic } from '../../shared/lib/haptic/haptic';
-import { CalendarClock, MessageSquare } from 'lucide-react';
+import { CalendarClock, MessageSquare, Settings } from 'lucide-react';
 
 export function AdminDashboardView() {
   const masterProfile = useBookingStore((state) => state.masterProfile);
@@ -74,6 +74,13 @@ export function AdminDashboardView() {
           title="Рабочее время"
           subtitle={`Рабочих дней на этой неделе: ${workingDaysCount} из 7`}
           icon={<CalendarClock className="w-5 h-5 text-indigo-600" />}
+        />
+
+        <MenuRowButton
+          onClick={() => handleNavigate('admin-settings')}
+          title="Общие настройки"
+          subtitle="Валюта прайс-листа, кастомизация витрины и темы"
+          icon={<Settings className="w-5 h-5 text-indigo-600" />}
         />
 
         <MenuRowButton

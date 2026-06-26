@@ -30,6 +30,7 @@ export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> 
         bio: string | null;
         avatar: string | null;
         telegram_id: number;
+        currency?: string;
       };
 
       // ЗАТЕМ качаем его расписание из соседнего роутера
@@ -53,6 +54,7 @@ export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> 
         bio: profileData.bio || '',
         avatar: profileData.avatar || '',
         schedule: rawSchedule,
+        currency: profileData.currency || 'RUB',
       } as unknown as MasterProfile;
 
       set({ masterProfile: profile });
@@ -79,7 +81,8 @@ export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> 
       if (
         updatedFields.name !== undefined ||
         updatedFields.bio !== undefined ||
-        updatedFields.avatar !== undefined
+        updatedFields.avatar !== undefined ||
+        updatedFields.currency !== undefined
       ) {
         const response = await fetch(`${baseUrl}/api/v1/master/profile`, {
           method: 'PATCH',
@@ -88,6 +91,7 @@ export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> 
             name: updatedFields.name,
             bio: updatedFields.bio,
             avatar: updatedFields.avatar,
+            currency: updatedFields.currency,
           }),
         });
         if (!response.ok) throw new Error('Бэкенд отклонил обновление данных профиля');
@@ -101,6 +105,7 @@ export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> 
           bio: '',
           avatar: '',
           schedule: [],
+          currency: 'RUB',
         };
         return {
           masterProfile: { ...currentProfile, ...updatedFields },

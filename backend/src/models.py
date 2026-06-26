@@ -21,6 +21,7 @@ class UserMaster(Base):
     bio: Mapped[str | None] = mapped_column(String, nullable=True)
     avatar: Mapped[str | None] = mapped_column(String, nullable=True)
     schedule: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    currency: Mapped[str] = mapped_column(String(10), nullable=False, server_default=text("'RUB'"), default="RUB")
 
     # Связи (Relationships)
     services: Mapped[list["Service"]] = relationship("Service", back_populates="master", cascade="all, delete-orphan")

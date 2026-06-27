@@ -11,7 +11,7 @@ async def send_telegram_notification(chat_id: int, text: str, client_phone: str 
             [
                 {
                     "text": "📱 Открыть CRM", 
-                    "url": "https://master-vitrina.vercel.app/" 
+                    "url": "https://t.me/mastervitrinabot" 
                 }
             ]
         ]

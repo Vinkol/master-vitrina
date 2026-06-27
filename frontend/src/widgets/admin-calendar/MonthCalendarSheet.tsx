@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import type { Appointment } from '../../types';
-import { generateMonthGrid, type MonthGridResult } from '../../shared/lib/calendar/calendarCore';
 import { haptic } from '../../shared/lib/haptic/haptic';
+import { generateCalendarRange, generateMonthGrid } from '../../shared/lib/calendar/calendarCore';
 
 interface MonthCalendarSheetProps {
   isOpen: boolean;
@@ -13,18 +13,6 @@ interface MonthCalendarSheetProps {
 
 const WEEK_DAYS_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
-function getAdminCarouselData(): MonthGridResult[] {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonthIdx = now.getMonth();
-  const months: MonthGridResult[] = [];
-  for (let i = -1; i <= 12; i++) {
-    const targetDate = new Date(currentYear, currentMonthIdx + i, 1);
-    months.push(generateMonthGrid(targetDate.getFullYear(), targetDate.getMonth()));
-  }
-  return months;
-}
-
 export function MonthCalendarSheet({
   isOpen,
   onClose,
@@ -32,7 +20,7 @@ export function MonthCalendarSheet({
   appointments,
   onDateSelect,
 }: MonthCalendarSheetProps) {
-  const monthsGroup = useMemo(() => getAdminCarouselData(), []);
+  const monthsGroup = useMemo(() => generateCalendarRange(1, 12), []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const initialMonthName = useMemo(() => {
     const d = selectedDate ? new Date(selectedDate) : new Date();

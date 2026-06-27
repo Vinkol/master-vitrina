@@ -142,9 +142,10 @@ export function MonthCalendarSheet({
                   const currentDayIso = day.isoDate.split('T')[0];
                   const isSelected = selectedDate.split('T')[0] === currentDayIso;
                   const isToday = currentDayIso === todayIso;
-                  const hasAppointments = appointments.some(
+                  const dayAppointmentsCount = appointments.filter(
                     (app) => app.date.split('T')[0] === currentDayIso,
-                  );
+                  ).length;
+                  const hasAppointments = dayAppointmentsCount > 0;
 
                   return (
                     <button
@@ -164,11 +165,17 @@ export function MonthCalendarSheet({
                             : 'bg-white border-slate-100 text-slate-700 shadow-xs hover:border-slate-200'
                       }`}
                     >
-                      <span>{day.dayNumber}</span>
+                      <span className={hasAppointments ? 'mt-0.5' : ''}>{day.dayNumber}</span>
                       {hasAppointments && (
                         <span
-                          className={`absolute bottom-1 w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-indigo-500'}`}
-                        />
+                          className={`absolute -top-1 -right-1 min-w-3.75 h-3.5 px-0.5 flex items-center justify-center text-[8px] font-black rounded-full border transition-colors ${
+                            isSelected
+                              ? 'bg-white text-indigo-600 border-indigo-600'
+                              : 'bg-indigo-500 text-white border-white'
+                          }`}
+                        >
+                          {dayAppointmentsCount}
+                        </span>
                       )}
                     </button>
                   );

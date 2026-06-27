@@ -28,7 +28,10 @@ export function CalendarRibbon({
         {daysList.map((day) => {
           const isSelected = selectedDate === day.isoDate;
           const isToday = day.isoDate === todayIso;
-          const hasAppointments = appointments.some((app) => app.date === day.isoDate);
+          const dayAppointmentsCount = appointments.filter(
+            (app) => app.date === day.isoDate,
+          ).length;
+          const hasAppointments = dayAppointmentsCount > 0;
 
           return (
             <div
@@ -51,9 +54,16 @@ export function CalendarRibbon({
                 {day.dayOfWeek}
               </span>
               <span className="text-base font-black mt-0.5">{day.dayOfMonth}</span>
-
-              {hasAppointments && !isSelected && (
-                <span className="absolute bottom-1 w-1.5 h-1.5 bg-indigo-500 rounded-full" />
+              {hasAppointments && (
+                <span
+                  className={`absolute -top-1 -right-1 min-w-4 h-4 px-1 flex items-center justify-center text-[9px] font-black rounded-full border shadow-xs transition-colors ${
+                    isSelected
+                      ? 'bg-white text-indigo-600 border-indigo-600'
+                      : 'bg-indigo-600 text-white border-white'
+                  }`}
+                >
+                  {dayAppointmentsCount}
+                </span>
               )}
             </div>
           );

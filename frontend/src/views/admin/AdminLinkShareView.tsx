@@ -45,7 +45,7 @@ export function AdminLinkShareView() {
       <PageHeader
         title="Ссылка для записи"
         subtitle="Ваша персональная ссылка"
-        onBackClick={() => setScreen('admin-dashboard')}
+        onBackClick={() => setScreen('admin-placeholder-main')}
       />
 
       <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">

@@ -73,8 +73,8 @@ export interface CrmSlice {
   crmClients: CrmClient[];
   hasMoreClients: boolean;
   fetchCrmClients: (search?: string, filter?: CrmFilter, page?: number) => Promise<void>;
-  blockClient: (clientPhone: string) => Promise<void>;
-  unblockClient: (clientPhone: string) => Promise<void>;
+  blockClient: (clientPhone: string) => void;
+  unblockClient: (clientPhone: string) => void;
   crmSearchQuery: string;
   crmActiveFilter: CrmFilter;
   crmCurrentPage: number;

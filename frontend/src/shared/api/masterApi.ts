@@ -1,4 +1,12 @@
-import type { MasterProfile, DaySchedule, Service, Appointment } from '../../store/types';
+import type { CrmFilter } from '../../pages/admin-clients/useClientsCrm';
+import type {
+  MasterProfile,
+  DaySchedule,
+  Service,
+  Appointment,
+  CrmClient,
+} from '../../store/types';
+import { api } from './api';
 
 interface FastAPIProfileResponse {
   telegram_id: number;
@@ -223,4 +231,47 @@ export async function createAppointmentApi(payload: CreateAppointmentPayload): P
     }
     throw new Error('Бэкенд отклонил создание записи');
   }
+}
+
+interface FetchCrmParams {
+  masterId: string;
+  search: string;
+  filter: CrmFilter;
+  page: number;
+  size: number;
+}
+
+// 9. Чистый API-запрос на пагинацию списка клиентов
+export async function getCrmClientsApi({
+  masterId,
+  search,
+  filter,
+  page,
+  size,
+}: FetchCrmParams): Promise<CrmClient[]> {
+  const response = await api.get(`/api/v1/master/${masterId}/crm-clients`, {
+    params: {
+      search: search.trim() || undefined,
+      filter,
+      page,
+      size,
+    },
+  });
+  return (response.data as CrmClient[]) || [];
+}
+
+// 10. Чистый API-запрос на блокировку клиента
+export async function blockClientApi(masterId: string, clientPhone: string): Promise<void> {
+  await api.post('/api/v1/master/clients/block', {
+    master_id: masterId,
+    client_phone: clientPhone.trim(),
+  });
+}
+
+// 11. Чистый API-запрос на разблокировку клиента
+export async function unblockClientApi(masterId: string, clientPhone: string): Promise<void> {
+  await api.post('/api/v1/master/clients/unblock', {
+    master_id: masterId,
+    client_phone: clientPhone.trim(),
+  });
 }

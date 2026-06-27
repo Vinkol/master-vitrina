@@ -1,18 +1,14 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { useBookingStore } from '../../store/useBookingStore';
 import { useServices } from '../../features/master/useServices';
 import { ServiceFormSheet } from '../../features/service-management/ServiceFormSheet';
 import type { Service } from '../../types';
-import type { BookingState } from '../../store/types';
 import { haptic } from '../../shared/lib/haptic/haptic';
-import { PageHeader } from '../../shared/ui/page-header/PageHeader';
 import { ServiceCard } from '../../entities/service/ServiceCard';
 import { Loader } from '../../shared/ui/loader/Loader';
-import { Briefcase, Plus } from 'lucide-react';
+import { Briefcase, Plus, SlidersHorizontal } from 'lucide-react';
 
 export function AdminServicesView() {
-  const setScreen = useBookingStore((state: BookingState) => state.setScreen);
   const {
     services,
     isLoading,
@@ -98,11 +94,28 @@ export function AdminServicesView() {
 
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-6 bg-slate-50 min-h-screen text-slate-800 pb-36 select-none animate-fadeIn">
-      <PageHeader
-        title="Управление прайсом"
-        subtitle="Нажми на услугу для редактирования"
-        onBackClick={() => setScreen('admin-dashboard')}
-      />
+      <div className="flex items-center justify-between bg-white/80 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/50 shadow-[0_8px_30px_rgb(0,0,0,0.02)] sticky top-2 z-40 animate-fadeIn">
+        <div className="min-w-0 pl-1 space-y-0.5">
+          <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest bg-indigo-50/70 px-2 py-0.5 rounded-md">
+            Прайс
+          </span>
+          <h2 className="text-sm font-black text-slate-800 tracking-tight leading-tight truncate pt-0.5">
+            Управление услугами
+          </h2>
+        </div>
+
+        <div className="flex items-center shrink-0">
+          <div className="relative group p-2.5 bg-linear-to-tr from-indigo-50 to-indigo-100/50 text-indigo-600 rounded-xl border border-indigo-100/80 shadow-xs overflow-hidden">
+            {/* Световой блик на заднем фоне */}
+            <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_2.5s_infinite]" />
+
+            <SlidersHorizontal
+              className="w-4 h-4 relative z-10 text-indigo-600 animate-[pulse_3s_infinite_ease-in-out]"
+              strokeWidth={2.25}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Список услуг */}
       <div className="space-y-2.5">

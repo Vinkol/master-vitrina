@@ -1,19 +1,15 @@
 import { useRef, useCallback } from 'react';
 import { CrmFilterTabs } from '../../components/admin/CrmFilterTabs';
 import { CrmEmptyState } from '../../components/admin/CrmEmptyState';
-import { PageHeader } from '../../shared/ui/page-header/PageHeader';
 import { ClientCrmCard } from '../../entities/client/ClientCrmCard';
-import { Search, X } from 'lucide-react';
+import { Search, Users, X } from 'lucide-react';
 
 import { useClientsCrm } from './useClientsCrm';
-import { useBookingStore } from '../../store/useBookingStore';
 import { useIntersectionObserver } from '../../views/admin/useIntersectionObserver';
 import { haptic } from '../../shared/lib/haptic/haptic';
 import { ClientCrmSkeletonCard } from '../../components/admin/ClientCrmSkeletonCard';
 
 export function AdminClientsCrmView() {
-  const setScreen = useBookingStore((state) => state.setScreen);
-
   const {
     isLoading,
     hasMoreClients,
@@ -52,11 +48,26 @@ export function AdminClientsCrmView() {
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-4 bg-slate-50 min-h-screen text-slate-800 pb-28 select-none animate-fadeIn">
       {/* ХЕДЕР */}
-      <PageHeader
-        title="База клиентов"
-        subtitle="CRM-аналитика системы"
-        onBackClick={() => setScreen('admin-placeholder-main')}
-      />
+      <div className="flex items-center justify-between bg-white/80 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/50 shadow-[0_8px_30px_rgba(0,0,0,0.04)] sticky top-2 z-40 animate-fadeIn">
+        <div className="min-w-0 pl-1 space-y-0.5">
+          <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest bg-indigo-50/70 px-2 py-0.5 rounded-md">
+            CRM
+          </span>
+          <h2 className="text-sm font-black text-slate-800 tracking-tight leading-tight truncate pt-0.5">
+            База клиентов
+          </h2>
+        </div>
+
+        <div className="flex items-center shrink-0">
+          <div className="relative group p-2.5 bg-linear-to-tr from-indigo-50 to-indigo-100/50 text-indigo-600 rounded-xl border border-indigo-100/80 shadow-xs overflow-hidden">
+            <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_2.5s_infinite]" />
+            <Users
+              className="w-4 h-4 relative z-10 text-indigo-600 animate-[pulse_3s_infinite_ease-in-out]"
+              strokeWidth={2.25}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* ПОИСК */}
       <div className="relative bg-white rounded-2xl border border-slate-100 shadow-xs p-1 flex items-center">

@@ -1,9 +1,10 @@
 import uuid
 from datetime import date, time, datetime
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 
+from src.notifications import send_telegram_notification
 from src.schemas import ClientAppointmentResponse, ClientAppointmentCreate
 from src.database import get_db
 from src.models import Service, UserMaster, ClientAppointment
@@ -24,9 +25,12 @@ def minutes_to_time_str(total_minutes: int) -> str:
 @router.post("", response_model=ClientAppointmentResponse, status_code=status.HTTP_201_CREATED)
 async def create_appointment(
     payload: ClientAppointmentCreate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db)
 ):
-    """Эндпоинт создания записи с валидацией услуги"""
+    """Эндпоинт создания записи с валидацией услуги и уведомлением мастера"""
+    
+    # валидация услуги
     service_result = await db.execute(
         select(Service).where(
             and_(Service.master_id == payload.master_id, Service.id == payload.service_id)
@@ -37,6 +41,13 @@ async def create_appointment(
     if not service:
         raise HTTPException(status_code=404, detail="Выбранная услуга не найдена")
 
+    # Сразу достаем telegram_id мастера, чтобы знать, кому слать уведомление
+    master_result = await db.execute(
+        select(UserMaster.telegram_id).where(UserMaster.id == service.master_id)
+    )
+    master_telegram_id = master_result.scalar_one_or_none()
+
+    # парсинг времени
     try:
         hours, minutes = map(int, payload.time.split(':'))
         appointment_time = time(hours, minutes)
@@ -46,6 +57,7 @@ async def create_appointment(
             detail="Некорректный формат времени. Ожидается 'HH:MM'"
         )
 
+    # создание записи
     new_app = ClientAppointment(
         master_id=service.master_id,
         service_id=service.id, 
@@ -58,6 +70,24 @@ async def create_appointment(
 
     db.add(new_app)
     await db.commit()
+
+    # Если мастер найден в системе, ставим задачу на отправку уведомления в бэкграунд
+    if master_telegram_id:
+        message_text = (
+            f"✨ <b>Новая запись!</b>\n\n"
+            f"🛠 <b>Услуга:</b> {service.title}\n"
+            f"👤 <b>Клиент:</b> {payload.client_name}\n"
+            f"📞 <b>Телефон:</b> {payload.client_phone}\n"
+            f"🗓 <b>Дата:</b> {payload.date.strftime('%d.%m.%Y')}\n"
+            f"🕒 <b>Время:</b> {payload.time}\n"
+        )
+        
+        background_tasks.add_task(
+            send_telegram_notification, 
+            chat_id=master_telegram_id, 
+            text=message_text
+        )
+
     return new_app
 
 @router.delete("/{appointment_id}", status_code=status.HTTP_204_NO_CONTENT)

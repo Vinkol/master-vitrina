@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
+import { useAppointments } from '../appointments/useAppointments';
 import { haptic } from '../../shared/lib/haptic/haptic';
 import {
   COUNTRY_CONFIGS,
@@ -10,6 +11,7 @@ import {
 
 export function useBookingForm() {
   const { setScreen } = useBookingStore();
+  const { createAppointment } = useAppointments();
 
   const [name, setName] = useState<string>('');
   const [phoneBody, setPhoneBody] = useState<string>('');
@@ -70,7 +72,8 @@ export function useBookingForm() {
       if (!isFormValid) return;
       setIsSubmitting(true);
       try {
-        await useBookingStore.getState().createAppointment(clientName.trim(), finalPhone);
+        await createAppointment({ name: clientName.trim(), phone: finalPhone });
+
         haptic.notification('success');
         setScreen('booking-success');
       } catch (err) {
@@ -79,7 +82,7 @@ export function useBookingForm() {
         setIsSubmitting(false);
       }
     },
-    [isFormValid, setScreen],
+    [isFormValid, setScreen, createAppointment],
   );
 
   return {

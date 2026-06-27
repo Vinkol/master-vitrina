@@ -1,6 +1,6 @@
 import uuid
 from datetime import date, time, datetime
-from sqlalchemy import BigInteger, String, ForeignKey, Date, Time, text
+from sqlalchemy import BigInteger, Column, Integer, String, ForeignKey, Date, Time, text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database import Base
@@ -22,7 +22,9 @@ class UserMaster(Base):
     avatar: Mapped[str | None] = mapped_column(String, nullable=True)
     schedule: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     currency: Mapped[str] = mapped_column(String(10), nullable=False, server_default=text("'RUB'"), default="RUB")
-
+    slot_step = Column(Integer, default=30, nullable=False)
+    client_buffer = Column(Integer, default=360, nullable=False)
+    master_buffer = Column(Integer, default=120, nullable=False)
     # Связи (Relationships)
     services: Mapped[list["Service"]] = relationship("Service", back_populates="master", cascade="all, delete-orphan")
     appointments: Mapped[list["ClientAppointment"]] = relationship("ClientAppointment", back_populates="master", cascade="all, delete-orphan")

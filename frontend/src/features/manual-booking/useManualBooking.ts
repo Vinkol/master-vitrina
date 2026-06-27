@@ -41,6 +41,7 @@ export function useManualBooking(selectedDate: string, onClose: () => void) {
       selectedService,
       appointments: appointments || [],
       isMaster: true,
+      slotStepMinutes: masterProfile?.slot_step || 30,
     });
   }, [selectedDate, selectedService, appointments, masterProfile, currentMasterId]);
 

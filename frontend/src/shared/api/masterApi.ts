@@ -14,6 +14,9 @@ interface FastAPIProfileResponse {
   bio: string | null;
   avatar: string | null;
   currency?: string;
+  slot_step?: number;
+  client_buffer?: number;
+  master_buffer?: number;
 }
 
 interface FastAPIScheduleResponse {
@@ -59,6 +62,9 @@ export async function getMasterProfileApi(
     avatar: profileData.avatar || '',
     schedule: rawSchedule,
     currency: profileData.currency || 'RUB',
+    slot_step: profileData.slot_step,
+    client_buffer: profileData.client_buffer,
+    master_buffer: profileData.master_buffer,
   };
 }
 
@@ -82,7 +88,10 @@ export async function updateMasterProfileApi(
     updatedFields.name !== undefined ||
     updatedFields.bio !== undefined ||
     updatedFields.avatar !== undefined ||
-    updatedFields.currency !== undefined
+    updatedFields.currency !== undefined ||
+    updatedFields.slot_step !== undefined ||
+    updatedFields.client_buffer !== undefined ||
+    updatedFields.master_buffer !== undefined
   ) {
     const response = await fetch(`${baseUrl}/api/v1/master/profile`, {
       method: 'PATCH',
@@ -92,6 +101,9 @@ export async function updateMasterProfileApi(
         bio: updatedFields.bio,
         avatar: updatedFields.avatar,
         currency: updatedFields.currency,
+        slot_step: updatedFields.slot_step,
+        client_buffer: updatedFields.client_buffer,
+        master_buffer: updatedFields.master_buffer,
       }),
     });
     if (!response.ok) throw new Error('Бэкенд отклонил обновление данных профиля');

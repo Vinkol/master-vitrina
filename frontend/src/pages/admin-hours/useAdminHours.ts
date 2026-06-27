@@ -21,8 +21,13 @@ const defaultSchedule: DaySchedule[] = Array.from({ length: 7 }, (_, i) => ({
 
 export function useAdminHours() {
   const setScreen = useBookingStore((state) => state.setScreen);
-
   const { profile: masterProfile, updateProfile, isSaving: isMutationSaving } = useMasterProfile();
+  const [slotStep, setSlotStep] = useState<number>(() => masterProfile?.slot_step || 30);
+  const [clientBuffer, setClientBuffer] = useState<number>(
+    () => masterProfile?.client_buffer || 360,
+  );
+  const [masterBuffer, setMasterBuffer] = useState<number>(() => masterProfile?.master_buffer || 0);
+
   const [schedule, setSchedule] = useState<DaySchedule[]>(() => {
     const fromDB = masterProfile?.schedule;
     if (!fromDB || !Array.isArray(fromDB) || fromDB.length === 0) {
@@ -102,7 +107,13 @@ export function useAdminHours() {
     }));
 
     try {
-      await updateProfile({ schedule: cleanedSchedule });
+      await updateProfile({
+        schedule: cleanedSchedule,
+        slot_step: slotStep,
+        client_buffer: clientBuffer,
+        master_buffer: masterBuffer,
+      });
+
       setScreen('admin-dashboard');
     } catch (e) {
       console.error('Ошибка сохранения графика:', e);
@@ -119,5 +130,11 @@ export function useAdminHours() {
     removeBreak,
     updateBreak,
     handleSave,
+    slotStep,
+    setSlotStep,
+    clientBuffer,
+    setClientBuffer,
+    masterBuffer,
+    setMasterBuffer,
   };
 }

@@ -7,6 +7,9 @@ export interface MasterProfile {
   avatar: string; // text
   schedule: DaySchedule[];
   currency: string;
+  slot_step?: number;
+  client_buffer?: number;
+  master_buffer?: number;
 }
 
 // Таблица пользователя

@@ -54,7 +54,7 @@ export function generateAvailableSlots({
   let timeBarrierMinutes = 0;
   if (targetDate === todayStr) {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const bufferMinutes = isMaster ? 120 : 360;
+    const bufferMinutes = isMaster ? 0 : 360;
     timeBarrierMinutes = currentMinutes + bufferMinutes;
   }
 

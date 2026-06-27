@@ -1,3 +1,4 @@
+from typing import Optional
 import uuid
 from datetime import date, time
 from pydantic import BaseModel, Field, ConfigDict
@@ -19,6 +20,9 @@ class UserMasterBase(BaseModel):
     avatar: str | None = None
     schedule: list = []
     currency: str = Field(default="RUB", max_length=10)
+    slot_step: int = 30
+    client_buffer: int = 360
+    master_buffer: int = 120
 
 class MasterProfileResponse(BaseModel):
     id: uuid.UUID
@@ -28,15 +32,20 @@ class MasterProfileResponse(BaseModel):
     bio: str | None
     avatar: str | None
     currency: str
+    slot_step: int
+    client_buffer: int
+    master_buffer: int
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class MasterProfileUpdate(BaseModel):
     name: str | None = Field(None, max_length=255)
     bio: str | None = Field(None, max_length=1000)
     avatar: str | None = None
     currency: str | None = Field(None, max_length=10)
+    slot_step: Optional[int] = Field(default=30, ge=15, le=60)
+    client_buffer: Optional[int] = Field(default=360, ge=0)
+    master_buffer: Optional[int] = Field(default=120, ge=0)
 
 class UserMasterCreate(UserMasterBase):
     pass

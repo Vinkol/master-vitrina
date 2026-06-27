@@ -107,7 +107,7 @@ export interface BookingSlice {
   setDate: (date: string) => void;
   setTime: (slot: string) => void;
   resetBooking: () => void;
-  fetchMasterData: () => void;
+  fetchMasterData: () => Promise<void>;
   goToConfirm: () => void;
 }
 

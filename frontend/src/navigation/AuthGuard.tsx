@@ -13,6 +13,7 @@ export const AuthGuard: React.FC = () => {
   const isAuthenticated = useBookingStore((state) => state.isAuthenticated);
   const isRegisteredMaster = useBookingStore((state) => state.isRegisteredMaster);
   const referralId = getStartParam();
+
   useEffect(() => {
     void initAuth();
   }, [initAuth]);

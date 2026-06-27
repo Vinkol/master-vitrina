@@ -5,13 +5,25 @@ import type { MasterProfile } from '../../store/types';
 
 export function useMasterProfile() {
   const queryClient = useQueryClient();
-  const masterId = useBookingStore((state) => state.currentMasterId);
+
+  const currentMasterId = useBookingStore((state) => state.currentMasterId);
   const token = useBookingStore((state) => state.accessToken);
+  const isAuthenticated = useBookingStore((state) => state.isAuthenticated);
+  const isRegisteredMaster = useBookingStore((state) => state.isRegisteredMaster);
+  const user = useBookingStore((state) => state.user); // Достаем текущего юзера сессии
   const setMasterProfileInZustand = useBookingStore((state) => state.updateProfileInDB);
+
+  const isViewingOwnAdmin = !!(
+    isAuthenticated &&
+    isRegisteredMaster &&
+    user?.id === currentMasterId
+  );
+
   const profileQuery = useQuery({
-    queryKey: ['masterProfile', masterId],
-    queryFn: () => getMasterProfileApi(masterId!, token),
-    enabled: !!masterId,
+    queryKey: ['masterProfile', currentMasterId],
+    queryFn: () => getMasterProfileApi(currentMasterId!, token),
+    enabled: !!currentMasterId && isViewingOwnAdmin,
+
     meta: {
       onSuccess: (data: MasterProfile) => {
         void setMasterProfileInZustand(data);
@@ -25,7 +37,7 @@ export function useMasterProfile() {
       void setMasterProfileInZustand(newFields);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['masterProfile', masterId] });
+      void queryClient.invalidateQueries({ queryKey: ['masterProfile', currentMasterId] });
     },
     onError: (err) => {
       console.error('Не удалось обновить профиль на сервере:', err);
@@ -34,7 +46,8 @@ export function useMasterProfile() {
 
   return {
     profile: profileQuery.data,
-    isLoading: profileQuery.isLoading,
+    // Лоадер крутится только если запрос реально активен и ждет сеть
+    isLoading: profileQuery.isLoading && isViewingOwnAdmin,
     isError: profileQuery.isError,
     updateProfile: profileMutation.mutateAsync,
     isSaving: profileMutation.isPending,

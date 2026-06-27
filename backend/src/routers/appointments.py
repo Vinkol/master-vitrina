@@ -82,7 +82,7 @@ async def get_available_slots(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Генератор таймслотов.
+    Генератор таймслотов с учетом динамических настроек из базы данных.
     """
     try:
         master_uuid = uuid.UUID(master_id)
@@ -93,19 +93,24 @@ async def get_available_slots(
     if target_date < today:
         return []
 
-    # Получаем профиль мастера
+    # Получаем профиль мастера из БД
     result = await db.execute(select(UserMaster).where(UserMaster.id == master_uuid))
     master = result.scalar_one_or_none()
     if not master or not master.schedule:
         return []
 
+    # ЧИТАЕМ ДИНАМИЧЕСКИЕ НАСТРОЙКИ ИЗ БАЗЫ ДАННЫХ
+    slot_step_minutes = getattr(master, "slot_step", 30) or 30
+    client_buffer_attr = getattr(master, "client_buffer", 360) if getattr(master, "client_buffer", 360) is not None else 360
+    master_buffer_attr = getattr(master, "master_buffer", 120) if getattr(master, "master_buffer", 120) is not None else 120
     day_index = target_date.weekday()
-    day_config = next((d for d in master.schedule if d.get("day_id") == day_index), None)
+    
+    # ПРОВЕРКА ИНДЕКСА: ищем расписание по дню недели day_index
+    day_config = next((d for d in master.schedule if d.get("day_index") == day_index or d.get("day_id") == day_index), None)
     
     if not day_config or not day_config.get("is_working"):
         return []
 
-    # Защита от старых/новых ключей в JSONB
     start_str = day_config.get("start_time") or day_config.get("working_start")
     end_str = day_config.get("end_time") or day_config.get("working_end")
     if not start_str or not end_str:
@@ -114,11 +119,13 @@ async def get_available_slots(
     work_start = time_to_minutes(start_str)
     work_end = time_to_minutes(end_str)
 
+    # ПРИМЕНЯЕМ ДИНАМИЧЕСКИЕ БУФЕРЫ ВРЕМЕНИ
     time_barrier_minutes = 0
     if target_date == today:
         now = datetime.now()
         current_minutes = now.hour * 60 + now.minute
-        buffer_minutes = 120 if is_master else 360
+        # Берем настройки буферов из базы данных, которые изменил мастер!
+        buffer_minutes = master_buffer_attr if is_master else client_buffer_attr
         time_barrier_minutes = current_minutes + buffer_minutes
 
     # Получаем ВСЕ записи мастера на этот день
@@ -133,7 +140,6 @@ async def get_available_slots(
     service_result = await db.execute(select(Service).where(Service.master_id == master_uuid))
     services_list = service_result.scalars().all()
     
-    # Создаем два быстрых словаря для мгновенного поиска в памяти O(1)
     services_by_id = {s.id: s.duration for s in services_list}
     services_by_title = {s.title.strip().lower(): s.duration for s in services_list}
 
@@ -142,7 +148,6 @@ async def get_available_slots(
     for app in existing_appointments:
         app_start = time_to_minutes(app.time.strftime("%H:%M"))
         
-        # Ищем длительность в кэше памяти без запросов к СУБД!
         app_duration = 60
         if app.service_id and app.service_id in services_by_id:
             app_duration = services_by_id[app.service_id]
@@ -161,9 +166,8 @@ async def get_available_slots(
         if brk.get("start") and brk.get("end"):
             busy_intervals.append((time_to_minutes(brk["start"]), time_to_minutes(brk["end"])))
 
-    # Главный цикл генерации слотов (теперь работает чисто в RAM)
+    # Главный цикл генерации слотов
     available_slots = []
-    slot_step_minutes = 30
     current = work_start
 
     while current + duration_minutes <= work_end:
@@ -175,7 +179,6 @@ async def get_available_slots(
             continue
 
         is_interrupted = False
-        # Проверяем пересечения по массиву интервалов в памяти
         for b_start, b_end in busy_intervals:
             if slot_start < b_end and slot_end > b_start:
                 is_interrupted = True
@@ -184,6 +187,7 @@ async def get_available_slots(
         if not is_interrupted:
             available_slots.append(minutes_to_time_str(slot_start))
 
+        # ИСПОЛЬЗУЕМ ДИНАМИЧЕСКИЙ ШАГ ИЗ БАЗЫ
         current += slot_step_minutes
 
     return available_slots

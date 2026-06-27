@@ -63,7 +63,12 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
       const servicesData = (await servicesRes.json()) as Service[];
 
       set({
-        masterProfile: masterProfileData,
+        masterProfile: {
+          slot_step: 30,
+          client_buffer: 360,
+          master_buffer: 120,
+          ...masterProfileData,
+        },
         services: servicesData,
       });
     } catch (e) {

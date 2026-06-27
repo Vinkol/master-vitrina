@@ -101,7 +101,10 @@ async def get_public_profile(master_id: str, db: AsyncSession = Depends(get_db))
         "name": master.name,
         "bio": master.bio,
         "avatar": master.avatar,
-        "schedule": master.schedule
+        "schedule": master.schedule,
+        "slot_step": master.slot_step,
+        "client_buffer": master.client_buffer,
+        "master_buffer": master.master_buffer
     }
 
 @router.get("/public/master/{master_id}/services")

@@ -16,6 +16,9 @@ export const createMasterSlice: StateCreator<BookingState, [], [], MasterSlice> 
         avatar: '',
         schedule: [],
         currency: 'RUB',
+        slot_step: 30,
+        client_buffer: 360,
+        master_buffer: 120,
       };
       return { masterProfile: { ...currentProfile, ...updatedFields } };
     });

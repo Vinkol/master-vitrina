@@ -4,17 +4,19 @@ import { useBookingStore } from '../../store/useBookingStore';
 import type { Service } from '../../types';
 import { haptic } from '../../shared/lib/haptic/haptic';
 import { api } from '../../shared/api/api';
+import { generateAvailableSlots } from '../slot-generation/slotGenerator';
 import {
   formatPhoneBody,
   validateCngName,
   COUNTRY_CONFIGS,
   type CountryCode,
 } from '../../shared/lib/phone/phoneUtils';
-import { generateAvailableSlots } from '../slot-generation/slotGenerator';
 
-export function useManualBooking(selectedDate: string, onClose: () => void) {
+export function useManualBooking(initialDate: string, onClose: () => void) {
   const queryClient = useQueryClient();
   const { services, currentMasterId, appointments, masterProfile } = useBookingStore();
+  const [currentDate, setCurrentDate] = useState<string>(initialDate);
+  const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
   const [isOpen, setIsOpen] = useState(false);
   const [clientName, setClientName] = useState('');
   const [phoneBody, setPhoneBody] = useState('');
@@ -24,11 +26,15 @@ export function useManualBooking(selectedDate: string, onClose: () => void) {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedTime, setSelectedTime] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const currentSlotStep = masterProfile?.slot_step || 30;
+  const currentClientBuffer = masterProfile?.client_buffer || 360;
+  const currentMasterBuffer = masterProfile?.master_buffer || 120;
 
   // РАСЧЕТ СВОБОДНЫХ ОКОШЕК
   const availableSlots = useMemo<string[]>(() => {
     if (!selectedService || !currentMasterId || !masterProfile?.schedule) return [];
-    const pureDate = selectedDate.split('T')[0];
+
+    const pureDate = currentDate.split('T')[0];
     const jsDayIdx = new Date(pureDate).getDay();
     const targetDayIndex = jsDayIdx === 0 ? 6 : jsDayIdx - 1;
 
@@ -41,14 +47,25 @@ export function useManualBooking(selectedDate: string, onClose: () => void) {
       selectedService,
       appointments: appointments || [],
       isMaster: true,
-      slotStepMinutes: masterProfile?.slot_step || 30,
+      slotStepMinutes: currentSlotStep,
+      clientBufferMinutes: currentClientBuffer,
+      masterBufferMinutes: currentMasterBuffer,
     });
-  }, [selectedDate, selectedService, appointments, masterProfile, currentMasterId]);
+  }, [
+    currentDate,
+    selectedService,
+    appointments,
+    masterProfile,
+    currentSlotStep,
+    currentClientBuffer,
+    currentMasterBuffer,
+    currentMasterId,
+  ]);
 
   const currentConfig = COUNTRY_CONFIGS[selectedCountry];
   const fullRawPhone = `${currentConfig.prefix}${phoneBody.replace(/\D/g, '')}`;
-
   const totalDigitsInPhone = fullRawPhone.replace(/\D/g, '').length;
+
   const isFormValid =
     clientName.trim().length >= 2 &&
     !nameError &&
@@ -74,13 +91,22 @@ export function useManualBooking(selectedDate: string, onClose: () => void) {
     onClose();
   };
 
+  const handleOpenCalendar = () => {
+    haptic.impact('light');
+    setIsCalendarOpen(true);
+  };
+
+  const handleSelectNewDate = (isoDate: string) => {
+    setCurrentDate(isoDate);
+    setIsCalendarOpen(false);
+    setSelectedTime('');
+  };
+
   const handleNameChange = (val: string) => {
     const capitalized = val
       .toLowerCase()
       .replace(/(^|\s|-)[a-zа-яё]/g, (char) => char.toUpperCase());
-
     setClientName(capitalized);
-
     if (capitalized.trim() && !validateCngName(capitalized)) {
       setNameError('Имя может содержать только буквы');
     } else if (capitalized.trim() && capitalized.trim().length < 2) {
@@ -93,11 +119,9 @@ export function useManualBooking(selectedDate: string, onClose: () => void) {
   const handlePhoneChange = (val: string) => {
     const formattedBody = formatPhoneBody(val, selectedCountry);
     setPhoneBody(formattedBody);
-
     const pureDigits = formattedBody.replace(/\D/g, '');
     const requiredBodyLength =
       currentConfig.digitsCount - currentConfig.prefix.replace(/\D/g, '').length;
-
     if (pureDigits.length > 0 && pureDigits.length < requiredBodyLength) {
       setPhoneError('Неполный номер телефона');
     } else {
@@ -123,7 +147,7 @@ export function useManualBooking(selectedDate: string, onClose: () => void) {
       const appointmentPayload = {
         master_id: currentMasterId,
         service_id: selectedService.id,
-        date: selectedDate.split('T')[0],
+        date: currentDate.split('T')[0],
         time: selectedTime,
         client_name: clientName.trim(),
         client_phone: fullRawPhone,
@@ -136,7 +160,6 @@ export function useManualBooking(selectedDate: string, onClose: () => void) {
       setClientName('');
       setPhoneBody('');
       setSelectedTime('');
-
       onClose();
     } catch (err) {
       console.error('Ошибка ручного добавления записи:', err);
@@ -150,25 +173,31 @@ export function useManualBooking(selectedDate: string, onClose: () => void) {
 
   return {
     isOpen,
+    currentDate,
+    isCalendarOpen,
+    setIsCalendarOpen,
     clientName,
-    handleNameChange,
     phoneBody,
-    handlePhoneChange,
     selectedCountry,
-    handleCountryChange,
     currentConfig,
     nameError,
     phoneError,
     isFormValid,
     selectedService,
-    setSelectedService,
     selectedTime,
-    setSelectedTime,
     availableSlots,
     isSubmitting,
+    services,
+    appointments,
     handleOpen,
     handleClose,
+    handleOpenCalendar,
+    handleSelectNewDate,
+    handleNameChange,
+    handlePhoneChange,
+    handleCountryChange,
     handleSave,
-    services,
+    setSelectedService,
+    setSelectedTime,
   };
 }

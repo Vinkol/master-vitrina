@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react'; // Добавили useMemo
 import { useBookingStore } from '../../store/useBookingStore';
 import { useMasterProfile } from '../../features/master/useMasterProfile';
 import type { DaySchedule } from '../../store/types';
@@ -21,12 +21,23 @@ const defaultSchedule: DaySchedule[] = Array.from({ length: 7 }, (_, i) => ({
 
 export function useAdminHours() {
   const setScreen = useBookingStore((state) => state.setScreen);
+  // получаем профиль мастера
   const { profile: masterProfile, updateProfile, isSaving: isMutationSaving } = useMasterProfile();
+  // массив всех записей для сканирования
+  const appointments = useBookingStore((state) => state.appointments);
+  // СТЕЙТЫ НАСТРОЕК
   const [slotStep, setSlotStep] = useState<number>(() => masterProfile?.slot_step || 30);
   const [clientBuffer, setClientBuffer] = useState<number>(
     () => masterProfile?.client_buffer || 360,
   );
   const [masterBuffer, setMasterBuffer] = useState<number>(() => masterProfile?.master_buffer || 0);
+
+  // ВЫЧИСЛЯЕМ НАЛИЧИЕ БУДУЩИХ ЗАПИСЕЙ КЛИЕНТОВ ДЛЯ ЗАЩИТЫ
+  const hasFutureAppointments = useMemo(() => {
+    if (!appointments || appointments.length === 0) return false;
+    const todayStr = new Date().toISOString().split('T')[0];
+    return appointments.some((app) => app.date.split('T')[0] >= todayStr);
+  }, [appointments]);
 
   const [schedule, setSchedule] = useState<DaySchedule[]>(() => {
     const fromDB = masterProfile?.schedule;
@@ -136,5 +147,6 @@ export function useAdminHours() {
     setClientBuffer,
     masterBuffer,
     setMasterBuffer,
+    hasFutureAppointments,
   };
 }

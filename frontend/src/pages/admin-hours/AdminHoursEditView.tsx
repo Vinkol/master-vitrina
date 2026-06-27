@@ -105,14 +105,23 @@ export function AdminHoursEditView() {
       {/* ВКЛАДКА 2: НАСТРОЙКА ИНТЕРВАЛОВ СЛОТОВ И БУФЕРОВ */}
       {activeTab === 'slots' && (
         <div className="space-y-4 animate-fadeIn">
-          {/* Блок 1: Шаг записи */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-100 space-y-3 shadow-xs text-left">
+          {/* Логика защиты */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-100 space-y-3 shadow-xs text-left relative overflow-hidden">
             <div>
-              <h4 className="text-sm font-black text-slate-800">Интервал между окнами</h4>
-              <p className="text-[11px] text-slate-400">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-black text-slate-800">Шаг записи календаря</h4>
+                {hours.hasFutureAppointments && (
+                  <span className="text-[9px] font-black text-rose-500 uppercase tracking-wide bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100/60 animate-pulse">
+                    Заблокировано
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-0.5">
                 Интервал времени между доступными окошками на витрине
               </p>
             </div>
+
+            {/* Сетка кнопок выбора минут */}
             <div className="grid grid-cols-4 gap-2">
               {STEP_OPTIONS.map((minutes) => {
                 const isSelected = hours.slotStep === minutes;
@@ -120,11 +129,14 @@ export function AdminHoursEditView() {
                   <button
                     key={minutes}
                     type="button"
+                    disabled={hours.hasFutureAppointments && !isSelected}
                     onClick={() => hours.setSlotStep(minutes)}
-                    className={`py-2.5 text-xs font-bold rounded-xl border transition-all active:scale-95 ${
+                    className={`py-2.5 text-xs font-bold rounded-xl border transition-all ${
                       isSelected
                         ? 'bg-indigo-600 border-indigo-600 text-white font-black shadow-xs'
-                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300'
+                        : hours.hasFutureAppointments
+                          ? 'bg-slate-100/50 border-slate-200/40 text-slate-300 cursor-not-allowed'
+                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-200 active:scale-95'
                     }`}
                   >
                     {minutes} мин
@@ -132,9 +144,17 @@ export function AdminHoursEditView() {
                 );
               })}
             </div>
+
+            {/* Вывод предупреждения */}
+            {hours.hasFutureAppointments && (
+              <div className="p-3 bg-rose-50/50 rounded-xl border border-rose-100/50 text-[10px] text-rose-600 font-bold leading-normal animate-fadeIn">
+                ⚠️ Нельзя изменить шаг записи, пока в журнале есть активные или будущие визиты.
+                Завершите текущие записи или перенесите их, чтобы разблокировать переключение.
+              </div>
+            )}
           </div>
 
-          {/* Блок 2: Буфер для клиентов */}
+          {/* Буфер для клиентов */}
           <div className="bg-white p-4 rounded-2xl border border-slate-100 space-y-3 shadow-xs text-left">
             <div>
               <h4 className="text-sm font-black text-slate-800">Буфер времени для клиентов</h4>
@@ -163,7 +183,7 @@ export function AdminHoursEditView() {
             </div>
           </div>
 
-          {/* Блок 3: Буфер для мастера */}
+          {/* Буфер для мастера */}
           <div className="bg-white p-4 rounded-2xl border border-slate-100 space-y-3 shadow-xs text-left">
             <div>
               <h4 className="text-sm font-black text-slate-800">Буфер времени для вас</h4>
@@ -194,7 +214,6 @@ export function AdminHoursEditView() {
         </div>
       )}
 
-      {/* НИЖНИЙ ИНФО-БЛОК */}
       <div className="p-4 bg-indigo-50/40 rounded-2xl border border-indigo-100/30 text-left">
         <p className="text-[10px] font-medium text-slate-400 text-center px-4 leading-normal">
           Данные сохраняются только после нажатия кнопки «Сохранить». На основе этих настроек

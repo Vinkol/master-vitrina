@@ -85,7 +85,8 @@ async def create_appointment(
         background_tasks.add_task(
             send_telegram_notification, 
             chat_id=master_telegram_id, 
-            text=message_text
+            text=message_text,
+            client_phone=payload.client_phone
         )
 
     return new_app

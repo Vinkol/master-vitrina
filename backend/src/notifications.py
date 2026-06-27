@@ -1,13 +1,35 @@
 import httpx
+import json
 from src.config import settings
 
-async def send_telegram_notification(chat_id: int, text: str):
+async def send_telegram_notification(chat_id: int, text: str, client_phone: str | None = None):
     """Безопасная фоновая отправка сообщения мастеру через HTTPS Telegram Bot API"""
     url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
+    # кнопки
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {
+                    "text": "📱 Открыть CRM", 
+                    "url": "https://master-vitrina.vercel.app/" 
+                }
+            ]
+        ]
+    }
+    
+    if client_phone and client_phone.startswith('+'):
+        clean_phone = client_phone.replace(" ", "").replace("-", "")
+        keyboard["inline_keyboard"].append([
+            {
+                "text": "💬 Написать клиенту", 
+                "url": f"https://t.me/{clean_phone}"
+            }
+        ])
     payload = {
         "chat_id": chat_id,
         "text": text,
-        "parse_mode": "HTML"
+        "parse_mode": "HTML",
+        "reply_markup": json.dumps(keyboard)
     }
     
     try:
@@ -15,5 +37,4 @@ async def send_telegram_notification(chat_id: int, text: str):
             response = await client.post(url, json=payload, timeout=10.0)
             response.raise_for_status()
     except Exception as e:
-        # Логируем ошибку, чтобы бэкенд не падал при сбоях сети у Telegram
         print(f"Ошибка отправки уведомления в TG: {e}")

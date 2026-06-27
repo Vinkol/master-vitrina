@@ -74,9 +74,9 @@ async def create_appointment(
     if master_telegram_id:
         message_text = (
             f"✨ <b>Новая запись!</b>\n\n"
-            f"🛠 <b>Услуга:</b> {service.title}\n"
-            f"👤 <b>Клиент:</b> {payload.client_name}\n"
-            f"📞 <b>Телефон:</b> {payload.client_phone}\n"
+            f" <b>Услуга:</b> {service.title}\n"
+            f" <b>Клиент:</b> {payload.client_name}\n"
+            f" <b>Телефон:</b> {payload.client_phone}\n"
             f"🗓 <b>Дата:</b> {payload.date.strftime('%d.%m.%Y')}\n"
             f"🕒 <b>Время:</b> {payload.time}\n"
         )

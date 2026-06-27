@@ -6,17 +6,7 @@ async def send_telegram_notification(chat_id: int, text: str, client_phone: str 
     """Безопасная фоновая отправка сообщения мастеру через HTTPS Telegram Bot API"""
     url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
     # кнопки
-    keyboard = {
-        "inline_keyboard": [
-            [
-                {
-                    "text": "📱 Открыть CRM", 
-                    "url": "https://t.me/mastervitrinabot" 
-                }
-            ]
-        ]
-    }
-    
+    keyboard = { "inline_keyboard": [] }
     if client_phone and client_phone.startswith('+'):
         clean_phone = client_phone.replace(" ", "").replace("-", "")
         keyboard["inline_keyboard"].append([

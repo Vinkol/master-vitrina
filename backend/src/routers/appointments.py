@@ -3,11 +3,10 @@ from datetime import date, time, datetime
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
-
-from src.notifications import send_telegram_notification
 from src.schemas import ClientAppointmentResponse, ClientAppointmentCreate
 from src.database import get_db
 from src.models import Service, UserMaster, ClientAppointment
+from src.notifications import send_telegram_notification
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
 

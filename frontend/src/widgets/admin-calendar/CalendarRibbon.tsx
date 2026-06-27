@@ -26,20 +26,21 @@ export function CalendarRibbon({
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {daysList.map((day) => {
-          const isSelected = selectedDate === day.isoDate;
-          const isToday = day.isoDate === todayIso;
+          const dayIsoStr = day.isoDate.toString();
+          const isSelected = selectedDate.toString() === dayIsoStr;
+          const isToday = dayIsoStr === todayIso.toString();
           const dayAppointmentsCount = appointments.filter(
-            (app) => app.date === day.isoDate,
+            (app) => app.date.toString() === dayIsoStr,
           ).length;
           const hasAppointments = dayAppointmentsCount > 0;
 
           return (
             <div
-              key={day.isoDate}
-              data-date={day.isoDate}
+              key={dayIsoStr}
+              data-date={dayIsoStr}
               data-month={day.monthLabel}
               data-active={isSelected}
-              onClick={() => onDaySelect(day.isoDate)}
+              onClick={() => onDaySelect(dayIsoStr)}
               className={`day-tab-card shrink-0 w-14 py-3 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition-all snap-center relative active:scale-95 ${
                 isSelected
                   ? 'border-indigo-600 bg-indigo-600 text-white shadow-md shadow-indigo-100 font-bold'
@@ -54,6 +55,7 @@ export function CalendarRibbon({
                 {day.dayOfWeek}
               </span>
               <span className="text-base font-black mt-0.5">{day.dayOfMonth}</span>
+
               {hasAppointments && (
                 <span
                   className={`absolute -top-1 -right-1 min-w-4 h-4 px-1 flex items-center justify-center text-[9px] font-black rounded-full border shadow-xs transition-colors ${

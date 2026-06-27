@@ -17,11 +17,12 @@ function getAdminCarouselData(): MonthGridResult[] {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonthIdx = now.getMonth();
-  return [
-    generateMonthGrid(currentYear, currentMonthIdx),
-    generateMonthGrid(currentYear, currentMonthIdx + 1),
-    generateMonthGrid(currentYear, currentMonthIdx + 2),
-  ];
+  const months: MonthGridResult[] = [];
+  for (let i = -1; i <= 12; i++) {
+    const targetDate = new Date(currentYear, currentMonthIdx + i, 1);
+    months.push(generateMonthGrid(targetDate.getFullYear(), targetDate.getMonth()));
+  }
+  return months;
 }
 
 export function MonthCalendarSheet({
@@ -33,6 +34,10 @@ export function MonthCalendarSheet({
 }: MonthCalendarSheetProps) {
   const monthsGroup = useMemo(() => getAdminCarouselData(), []);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const initialMonthName = useMemo(() => {
+    const d = selectedDate ? new Date(selectedDate) : new Date();
+    return generateMonthGrid(d.getFullYear(), d.getMonth()).monthName;
+  }, [selectedDate]);
 
   const [currentVisibleMonth, setCurrentVisibleMonth] = useState<string>(
     () => monthsGroup[0]?.monthName || 'Календарь',
@@ -45,6 +50,29 @@ export function MonthCalendarSheet({
     const utcDay = String(d.getUTCDate()).padStart(2, '0');
     return `${utcYear}-${utcMonth}-${utcDay}`;
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const timer = setTimeout(() => {
+      const container = scrollRef.current;
+      if (!container) return;
+
+      const activeBlock = container.querySelector(
+        `[data-month-name="${initialMonthName}"]`,
+      ) as HTMLElement;
+
+      if (activeBlock) {
+        container.scrollTo({
+          left: activeBlock.offsetLeft,
+          behavior: 'auto',
+        });
+        setCurrentVisibleMonth(initialMonthName);
+      }
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [isOpen, initialMonthName]);
 
   useEffect(() => {
     if (!isOpen) return;

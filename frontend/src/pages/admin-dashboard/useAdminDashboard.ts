@@ -1,22 +1,64 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
-import { useAppointments } from '../../features/appointments/useAppointments'; // ИМПОРТ НАШЕГО ХУКА ЗАПИСЕЙ
+import { useAppointments } from '../../features/appointments/useAppointments';
 import type { Appointment, CalendarDay } from '../../types';
-import { getNextNDays, getTodayIsoString } from '../../shared/lib/calendar/dateHelpers';
+import { getTodayIsoString } from '../../shared/lib/calendar/dateHelpers';
 import { haptic } from '../../shared/lib/haptic/haptic';
 import { useServices } from '../../features/master/useServices';
+
+function getDaysAroundDate(targetIso: string): CalendarDay[] {
+  const target = new Date(targetIso);
+  const start = new Date(target);
+  start.setDate(start.getDate() - 30);
+
+  const result: CalendarDay[] = [];
+  const monthsRu = [
+    'Январь',
+    'Февраль',
+    'Март',
+    'Апрель',
+    'Май',
+    'Июнь',
+    'Июль',
+    'Август',
+    'Сентябрь',
+    'Октябрь',
+    'Ноябрь',
+    'Декабрь',
+  ];
+  const daysRu = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+
+  for (let i = 0; i < 150; i++) {
+    const current = new Date(start);
+    current.setDate(start.getDate() + i);
+
+    const year = current.getFullYear();
+    const month = String(current.getMonth() + 1).padStart(2, '0');
+    const day = String(current.getDate()).padStart(2, '0');
+    const isoStr = `${year}-${month}-${day}`;
+
+    result.push({
+      isoDate: isoStr,
+      dayOfMonth: current.getDate(),
+      dayOfWeek: daysRu[current.getDay()],
+      monthLabel: monthsRu[current.getMonth()],
+    });
+  }
+
+  return result;
+}
 
 export function useAdminDashboard() {
   const setScreen = useBookingStore((state) => state.setScreen);
   const { appointments, isLoading: isAppointmentsLoading } = useAppointments();
   const { services, isLoading: isServicesLoading } = useServices();
-
   const todayIso = useMemo(() => getTodayIsoString(), []);
-  const daysList = useMemo<CalendarDay[]>(() => getNextNDays(), []);
-
   const [selectedDate, setSelectedDate] = useState<string>(todayIso);
   const [isMonthModalOpen, setIsMonthModalOpen] = useState<boolean>(false);
   const [isManualBookingOpen, setIsManualBookingOpen] = useState<boolean>(false);
+  const daysList = useMemo<CalendarDay[]>(() => {
+    return getDaysAroundDate(selectedDate);
+  }, [selectedDate]);
 
   const [visibleMonth, setVisibleMonth] = useState<string>(() => {
     const currentDayData = daysList.find((d) => d.isoDate === todayIso);
@@ -24,6 +66,7 @@ export function useAdminDashboard() {
   });
 
   const scrollRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer) return;
@@ -53,13 +96,17 @@ export function useAdminDashboard() {
   }, [daysList]);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      const activeElem = scrollRef.current.querySelector('[data-active="true"]');
-      if (activeElem) {
-        activeElem.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+    const timer = setTimeout(() => {
+      if (scrollRef.current) {
+        const activeElem = scrollRef.current.querySelector('[data-active="true"]');
+        if (activeElem) {
+          activeElem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
       }
-    }
-  }, []);
+    }, 60);
+
+    return () => clearTimeout(timer);
+  }, [selectedDate]);
 
   const filteredAppointments = useMemo<Appointment[]>(() => {
     return appointments.filter((app) => app.date.split('T')[0] === selectedDate);
@@ -71,11 +118,8 @@ export function useAdminDashboard() {
   };
 
   const handleMonthDateSelect = (isoDate: string): void => {
+    haptic.impact('light');
     setSelectedDate(isoDate);
-    setTimeout(() => {
-      const targetElem = scrollRef.current?.querySelector(`[data-date="${isoDate}"]`);
-      targetElem?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }, 100);
   };
 
   return {

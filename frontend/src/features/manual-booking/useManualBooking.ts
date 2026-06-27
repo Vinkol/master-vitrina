@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useBookingStore } from '../../store/useBookingStore';
 import type { Service } from '../../types';
 import { haptic } from '../../shared/lib/haptic/haptic';
@@ -9,21 +10,39 @@ import {
   COUNTRY_CONFIGS,
   type CountryCode,
 } from '../../shared/lib/phone/phoneUtils';
+import { generateAvailableSlots } from '../slot-generation/slotGenerator';
 
 export function useManualBooking(selectedDate: string, onClose: () => void) {
-  const { services, currentMasterId, fetchAppointments, fetchCrmClients } = useBookingStore();
-
+  const queryClient = useQueryClient();
+  const { services, currentMasterId, appointments, masterProfile } = useBookingStore();
   const [isOpen, setIsOpen] = useState(false);
   const [clientName, setClientName] = useState('');
-
   const [phoneBody, setPhoneBody] = useState('');
   const [selectedCountry, setSelectedCountry] = useState<CountryCode>('RU');
   const [nameError, setNameError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
-
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedTime, setSelectedTime] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // РАСЧЕТ СВОБОДНЫХ ОКОШЕК
+  const availableSlots = useMemo<string[]>(() => {
+    if (!selectedService || !currentMasterId || !masterProfile?.schedule) return [];
+    const pureDate = selectedDate.split('T')[0];
+    const jsDayIdx = new Date(pureDate).getDay();
+    const targetDayIndex = jsDayIdx === 0 ? 6 : jsDayIdx - 1;
+
+    const daySchedule = masterProfile.schedule.find((s) => s.day_index === targetDayIndex);
+    if (!daySchedule || !daySchedule.is_working) return [];
+
+    return generateAvailableSlots({
+      selectedDate: pureDate,
+      daySchedule,
+      selectedService,
+      appointments: appointments || [],
+      isMaster: true,
+    });
+  }, [selectedDate, selectedService, appointments, masterProfile, currentMasterId]);
 
   const currentConfig = COUNTRY_CONFIGS[selectedCountry];
   const fullRawPhone = `${currentConfig.prefix}${phoneBody.replace(/\D/g, '')}`;
@@ -44,6 +63,7 @@ export function useManualBooking(selectedDate: string, onClose: () => void) {
     setNameError(null);
     setPhoneError(null);
     setSelectedService(services[0] || null);
+    setSelectedTime('');
     setIsOpen(true);
   };
 
@@ -102,14 +122,15 @@ export function useManualBooking(selectedDate: string, onClose: () => void) {
       const appointmentPayload = {
         master_id: currentMasterId,
         service_id: selectedService.id,
-        date: selectedDate,
+        date: selectedDate.split('T')[0],
         time: selectedTime,
         client_name: clientName.trim(),
         client_phone: fullRawPhone,
       };
 
       await api.post('/api/v1/appointments', appointmentPayload);
-      await Promise.all([fetchAppointments(), fetchCrmClients()]);
+      void queryClient.invalidateQueries({ queryKey: ['appointments', currentMasterId] });
+      void queryClient.invalidateQueries({ queryKey: ['crm-clients'] });
 
       setClientName('');
       setPhoneBody('');
@@ -142,6 +163,7 @@ export function useManualBooking(selectedDate: string, onClose: () => void) {
     setSelectedService,
     selectedTime,
     setSelectedTime,
+    availableSlots,
     isSubmitting,
     handleOpen,
     handleClose,

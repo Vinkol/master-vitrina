@@ -1,3 +1,4 @@
+import { useEffect } from 'react'; // Импортируем useEffect
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useBookingStore } from '../../store/useBookingStore';
 import { getMasterProfileApi, updateMasterProfileApi } from '../../shared/api/masterApi';
@@ -10,7 +11,7 @@ export function useMasterProfile() {
   const token = useBookingStore((state) => state.accessToken);
   const isAuthenticated = useBookingStore((state) => state.isAuthenticated);
   const isRegisteredMaster = useBookingStore((state) => state.isRegisteredMaster);
-  const user = useBookingStore((state) => state.user); // Достаем текущего юзера сессии
+  const user = useBookingStore((state) => state.user);
   const setMasterProfileInZustand = useBookingStore((state) => state.updateProfileInDB);
 
   const isViewingOwnAdmin = !!(
@@ -23,13 +24,15 @@ export function useMasterProfile() {
     queryKey: ['masterProfile', currentMasterId],
     queryFn: () => getMasterProfileApi(currentMasterId!, token),
     enabled: !!currentMasterId && isViewingOwnAdmin,
-
-    meta: {
-      onSuccess: (data: MasterProfile) => {
-        void setMasterProfileInZustand(data);
-      },
-    },
   });
+
+  const fetchedProfile = profileQuery.data;
+
+  useEffect(() => {
+    if (fetchedProfile) {
+      void setMasterProfileInZustand(fetchedProfile);
+    }
+  }, [fetchedProfile, setMasterProfileInZustand]);
 
   const profileMutation = useMutation({
     mutationFn: (fields: Partial<MasterProfile>) => updateMasterProfileApi(fields, token),
@@ -46,7 +49,6 @@ export function useMasterProfile() {
 
   return {
     profile: profileQuery.data,
-    // Лоадер крутится только если запрос реально активен и ждет сеть
     isLoading: profileQuery.isLoading && isViewingOwnAdmin,
     isError: profileQuery.isError,
     updateProfile: profileMutation.mutateAsync,

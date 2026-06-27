@@ -62,7 +62,6 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
       const masterProfileData = (await profileRes.json()) as MasterProfile;
       const servicesData = (await servicesRes.json()) as Service[];
 
-      // Наполняем Zustand-состояние, чтобы витрина клиента ожила
       set({
         masterProfile: masterProfileData,
         services: servicesData,

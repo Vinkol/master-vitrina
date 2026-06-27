@@ -60,6 +60,33 @@ async def create_appointment(
     await db.commit()
     return new_app
 
+@router.delete("/{appointment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_appointment(
+    appointment_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+    # Если нужна авторизация, раскомментируй строку ниже:
+    # current_master: UserMaster = Depends(get_current_master)
+):
+    """Эндпоинт удаления записи (отмены визита)"""
+    result = await db.execute(
+        select(ClientAppointment).where(ClientAppointment.id == appointment_id)
+    )
+    appointment = result.scalar_one_or_none()
+    
+    if not appointment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Запись не найдена или уже удалена"
+        )
+        
+    # Если проверяешь владельца по токену:
+    # if appointment.master_id != current_master.id:
+    #     raise HTTPException(status_code=403, detail="Нет прав на удаление этой записи")
+
+    await db.delete(appointment)
+    await db.commit()
+    return None
+
 @router.get("/master/{master_id}", response_model=list[ClientAppointmentResponse])
 async def get_master_appointments(
     master_id: uuid.UUID,

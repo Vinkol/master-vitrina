@@ -245,6 +245,26 @@ export async function createAppointmentApi(payload: CreateAppointmentPayload): P
   }
 }
 
+// Удаление (отмена) записи клиента
+export async function deleteAppointmentApi(
+  appointmentId: string,
+  token: string | null,
+): Promise<void> {
+  const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
+
+  const response = await fetch(`${baseUrl}/api/v1/appointments/${appointmentId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Бэкенд отклонил удаление записи');
+  }
+}
+
 interface FetchCrmParams {
   masterId: string;
   search: string;

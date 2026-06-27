@@ -1,11 +1,14 @@
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useBookingStore } from '../../store/useBookingStore';
-import { getAppointmentsApi, createAppointmentApi } from '../../shared/api/masterApi';
+import {
+  getAppointmentsApi,
+  createAppointmentApi,
+  deleteAppointmentApi,
+} from '../../shared/api/masterApi';
 
 export function useAppointments() {
   const queryClient = useQueryClient();
-
   const masterId = useBookingStore((state) => state.currentMasterId);
   const token = useBookingStore((state) => state.accessToken);
   const setAppointmentsLocally = useBookingStore((state) => state.setAppointmentsLocally);
@@ -48,11 +51,24 @@ export function useAppointments() {
     },
   });
 
+  // Мутация удаления записи визита
+  const deleteAppointmentMutation = useMutation({
+    mutationFn: (appointmentId: string) => deleteAppointmentApi(appointmentId, token),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['appointments', masterId] });
+    },
+    onError: (err) => {
+      console.error('Не удалось удалить запись:', err);
+    },
+  });
+
   return {
     appointments: appointmentsQuery.data || [],
     isLoading: appointmentsQuery.isLoading,
     isError: appointmentsQuery.isError,
     createAppointment: createAppointmentMutation.mutateAsync,
     isCreating: createAppointmentMutation.isPending,
+    deleteAppointment: deleteAppointmentMutation.mutateAsync,
+    isDeleting: deleteAppointmentMutation.isPending,
   };
 }

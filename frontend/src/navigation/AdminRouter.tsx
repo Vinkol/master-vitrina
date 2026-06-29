@@ -8,6 +8,7 @@ import { AdminServicesView } from '../pages/admin-services/AdminServicesView';
 import { AdminHoursEditView } from '../pages/admin-hours/AdminHoursEditView';
 import { AdminMainDashboardView } from '../pages/admin-dashboard/AdminMainDashboardView';
 import { AdminClientsCrmView } from '../pages/admin-clients/AdminClientsCrmView';
+import { AdminSettingsView } from '../views/admin/AdminSettingsView';
 
 export function AdminRouter() {
   const currentScreen = useBookingStore((state) => state.currentScreen);
@@ -23,6 +24,8 @@ export function AdminRouter() {
         return <AdminProfileEditView />;
       case 'admin-hours-edit':
         return <AdminHoursEditView />;
+      case 'admin-settings':
+        return <AdminSettingsView />;
       case 'admin-placeholder-main':
         return <AdminMainDashboardView />;
       case 'admin-placeholder-clients':

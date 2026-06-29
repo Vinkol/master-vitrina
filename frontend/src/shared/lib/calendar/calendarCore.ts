@@ -37,3 +37,17 @@ export function generateMonthGrid(year: number, monthIdx: number): MonthGridResu
 
   return { monthName, days };
 }
+
+export function generateCalendarRange(monthsPast: number, monthsFuture: number): MonthGridResult[] {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonthIdx = now.getMonth();
+  const months: MonthGridResult[] = [];
+
+  for (let i = -monthsPast; i <= monthsFuture; i++) {
+    const targetDate = new Date(currentYear, currentMonthIdx + i, 1);
+    months.push(generateMonthGrid(targetDate.getFullYear(), targetDate.getMonth()));
+  }
+
+  return months;
+}

@@ -5,7 +5,11 @@ export interface MasterProfile {
   name: string; // text
   bio: string; // text
   avatar: string; // text
-  schedule: DaySchedule[]; // jsonb (Массив расписания дней)
+  schedule: DaySchedule[];
+  currency: string;
+  slot_step?: number;
+  client_buffer?: number;
+  master_buffer?: number;
 }
 
 // Таблица пользователя
@@ -50,6 +54,7 @@ export interface TimeInterval {
 }
 
 export interface DaySchedule {
+  day_id: number;
   day_name: string;
   start_time: string;
   end_time: string;

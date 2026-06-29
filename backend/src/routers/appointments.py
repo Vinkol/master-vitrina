@@ -1,12 +1,12 @@
 import uuid
 from datetime import date, time, datetime
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
-
 from src.schemas import ClientAppointmentResponse, ClientAppointmentCreate
 from src.database import get_db
 from src.models import Service, UserMaster, ClientAppointment
+from src.notifications import send_telegram_notification
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
 
@@ -24,9 +24,12 @@ def minutes_to_time_str(total_minutes: int) -> str:
 @router.post("", response_model=ClientAppointmentResponse, status_code=status.HTTP_201_CREATED)
 async def create_appointment(
     payload: ClientAppointmentCreate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db)
 ):
-    """Эндпоинт создания записи с валидацией услуги"""
+    """Эндпоинт создания записи с валидацией услуги и уведомлением мастера"""
+    
+    # валидация услуги
     service_result = await db.execute(
         select(Service).where(
             and_(Service.master_id == payload.master_id, Service.id == payload.service_id)
@@ -37,6 +40,13 @@ async def create_appointment(
     if not service:
         raise HTTPException(status_code=404, detail="Выбранная услуга не найдена")
 
+    # Сразу достаем telegram_id мастера, чтобы знать, кому слать уведомление
+    master_result = await db.execute(
+        select(UserMaster.telegram_id).where(UserMaster.id == service.master_id)
+    )
+    master_telegram_id = master_result.scalar_one_or_none()
+
+    # парсинг времени
     try:
         hours, minutes = map(int, payload.time.split(':'))
         appointment_time = time(hours, minutes)
@@ -46,6 +56,7 @@ async def create_appointment(
             detail="Некорректный формат времени. Ожидается 'HH:MM'"
         )
 
+    # создание записи
     new_app = ClientAppointment(
         master_id=service.master_id,
         service_id=service.id, 
@@ -58,7 +69,53 @@ async def create_appointment(
 
     db.add(new_app)
     await db.commit()
+
+    # Если мастер найден в системе, ставим задачу на отправку уведомления в бэкграунд
+    if master_telegram_id:
+        message_text = (
+            f"✨ <b>Новая запись!</b>\n\n"
+            f" <b>Услуга:</b> {service.title}\n"
+            f" <b>Клиент:</b> {payload.client_name}\n"
+            f" <b>Телефон:</b> {payload.client_phone}\n"
+            f"🗓 <b>Дата:</b> {payload.date.strftime('%d.%m.%Y')}\n"
+            f"🕒 <b>Время:</b> {payload.time}\n"
+        )
+        
+        background_tasks.add_task(
+            send_telegram_notification, 
+            chat_id=master_telegram_id, 
+            text=message_text,
+            client_phone=payload.client_phone
+        )
+
     return new_app
+
+@router.delete("/{appointment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_appointment(
+    appointment_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+    # Если нужна авторизация, раскомментируй строку ниже:
+    # current_master: UserMaster = Depends(get_current_master)
+):
+    """Эндпоинт удаления записи (отмены визита)"""
+    result = await db.execute(
+        select(ClientAppointment).where(ClientAppointment.id == appointment_id)
+    )
+    appointment = result.scalar_one_or_none()
+    
+    if not appointment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Запись не найдена или уже удалена"
+        )
+        
+    # Если проверяешь владельца по токену:
+    # if appointment.master_id != current_master.id:
+    #     raise HTTPException(status_code=403, detail="Нет прав на удаление этой записи")
+
+    await db.delete(appointment)
+    await db.commit()
+    return None
 
 @router.get("/master/{master_id}", response_model=list[ClientAppointmentResponse])
 async def get_master_appointments(
@@ -82,7 +139,7 @@ async def get_available_slots(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Генератор таймслотов.
+    Генератор таймслотов с учетом динамических настроек из базы данных.
     """
     try:
         master_uuid = uuid.UUID(master_id)
@@ -93,19 +150,24 @@ async def get_available_slots(
     if target_date < today:
         return []
 
-    # Получаем профиль мастера
+    # Получаем профиль мастера из БД
     result = await db.execute(select(UserMaster).where(UserMaster.id == master_uuid))
     master = result.scalar_one_or_none()
     if not master or not master.schedule:
         return []
 
+    # ЧИТАЕМ ДИНАМИЧЕСКИЕ НАСТРОЙКИ ИЗ БАЗЫ ДАННЫХ
+    slot_step_minutes = getattr(master, "slot_step", 30) or 30
+    client_buffer_attr = getattr(master, "client_buffer", 360) if getattr(master, "client_buffer", 360) is not None else 360
+    master_buffer_attr = getattr(master, "master_buffer", 120) if getattr(master, "master_buffer", 120) is not None else 120
     day_index = target_date.weekday()
-    day_config = next((d for d in master.schedule if d.get("day_id") == day_index), None)
+    
+    # ПРОВЕРКА ИНДЕКСА: ищем расписание по дню недели day_index
+    day_config = next((d for d in master.schedule if d.get("day_index") == day_index or d.get("day_id") == day_index), None)
     
     if not day_config or not day_config.get("is_working"):
         return []
 
-    # Защита от старых/новых ключей в JSONB
     start_str = day_config.get("start_time") or day_config.get("working_start")
     end_str = day_config.get("end_time") or day_config.get("working_end")
     if not start_str or not end_str:
@@ -114,11 +176,13 @@ async def get_available_slots(
     work_start = time_to_minutes(start_str)
     work_end = time_to_minutes(end_str)
 
+    # ПРИМЕНЯЕМ ДИНАМИЧЕСКИЕ БУФЕРЫ ВРЕМЕНИ
     time_barrier_minutes = 0
     if target_date == today:
         now = datetime.now()
         current_minutes = now.hour * 60 + now.minute
-        buffer_minutes = 120 if is_master else 360
+        # Берем настройки буферов из базы данных, которые изменил мастер!
+        buffer_minutes = master_buffer_attr if is_master else client_buffer_attr
         time_barrier_minutes = current_minutes + buffer_minutes
 
     # Получаем ВСЕ записи мастера на этот день
@@ -133,7 +197,6 @@ async def get_available_slots(
     service_result = await db.execute(select(Service).where(Service.master_id == master_uuid))
     services_list = service_result.scalars().all()
     
-    # Создаем два быстрых словаря для мгновенного поиска в памяти O(1)
     services_by_id = {s.id: s.duration for s in services_list}
     services_by_title = {s.title.strip().lower(): s.duration for s in services_list}
 
@@ -142,7 +205,6 @@ async def get_available_slots(
     for app in existing_appointments:
         app_start = time_to_minutes(app.time.strftime("%H:%M"))
         
-        # Ищем длительность в кэше памяти без запросов к СУБД!
         app_duration = 60
         if app.service_id and app.service_id in services_by_id:
             app_duration = services_by_id[app.service_id]
@@ -161,9 +223,8 @@ async def get_available_slots(
         if brk.get("start") and brk.get("end"):
             busy_intervals.append((time_to_minutes(brk["start"]), time_to_minutes(brk["end"])))
 
-    # Главный цикл генерации слотов (теперь работает чисто в RAM)
+    # Главный цикл генерации слотов
     available_slots = []
-    slot_step_minutes = 30
     current = work_start
 
     while current + duration_minutes <= work_end:
@@ -175,7 +236,6 @@ async def get_available_slots(
             continue
 
         is_interrupted = False
-        # Проверяем пересечения по массиву интервалов в памяти
         for b_start, b_end in busy_intervals:
             if slot_start < b_end and slot_end > b_start:
                 is_interrupted = True
@@ -184,6 +244,7 @@ async def get_available_slots(
         if not is_interrupted:
             available_slots.append(minutes_to_time_str(slot_start))
 
+        # ИСПОЛЬЗУЕМ ДИНАМИЧЕСКИЙ ШАГ ИЗ БАЗЫ
         current += slot_step_minutes
 
     return available_slots

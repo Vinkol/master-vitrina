@@ -1,23 +1,12 @@
 import { useEffect, useMemo, useState, type RefObject } from 'react';
-import { generateMonthGrid, type MonthGridResult } from '../../shared/lib/calendar/calendarCore';
+import { generateCalendarRange } from '../../shared/lib/calendar/calendarCore';
 
 interface UseClientCalendarOptions {
   scrollRef: RefObject<HTMLDivElement | null>;
 }
 
-function getClientCarouselData(): MonthGridResult[] {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonthIdx = now.getMonth();
-  return [
-    generateMonthGrid(currentYear, currentMonthIdx),
-    generateMonthGrid(currentYear, currentMonthIdx + 1),
-    generateMonthGrid(currentYear, currentMonthIdx + 2),
-  ];
-}
-
 export function useClientCalendar({ scrollRef }: UseClientCalendarOptions) {
-  const monthsGroup = useMemo(() => getClientCarouselData(), []);
+  const monthsGroup = useMemo(() => generateCalendarRange(0, 12), []);
 
   const [currentVisibleMonth, setCurrentVisibleMonth] = useState<string>(
     () => monthsGroup[0]?.monthName || 'Календарь',

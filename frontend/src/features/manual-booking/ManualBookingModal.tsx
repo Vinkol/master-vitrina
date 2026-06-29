@@ -1,9 +1,9 @@
-import { useManualBookingModal } from './useManualBookingModal';
 import { ServiceDropdown } from '../../components/admin/ServiceDropdown';
 import { TimeSlotButton } from './TimeSlotButton';
 import { formatToUserDate } from '../../shared/lib/calendar/dateFormatter';
 import { MonthCalendarSheet } from '../../widgets/admin-calendar/MonthCalendarSheet';
 import type { CountryCode } from '../../shared/lib/phone/phoneUtils';
+import { useManualBooking } from './useManualBooking';
 
 interface ManualBookingModalProps {
   isOpen: boolean;
@@ -12,7 +12,7 @@ interface ManualBookingModalProps {
 }
 
 export function ManualBookingModal({ isOpen, onClose, selectedDate }: ManualBookingModalProps) {
-  const modal = useManualBookingModal(selectedDate, onClose);
+  const modal = useManualBooking(selectedDate, onClose);
 
   const {
     clientName,
@@ -27,13 +27,27 @@ export function ManualBookingModal({ isOpen, onClose, selectedDate }: ManualBook
     isFormValid,
     isSubmitting,
     handleSave,
-  } = modal.booking;
+    setSelectedService,
+    setSelectedTime,
+    services,
+    selectedService,
+    selectedTime,
+    availableSlots,
+    currentDate,
+    isCalendarOpen,
+    setIsCalendarOpen,
+    appointments,
+    handleOpenCalendar,
+    handleSelectNewDate,
+    handleClose,
+  } = modal;
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-end justify-center animate-fadeIn">
-      <div className="absolute inset-0" onClick={modal.booking.handleClose} />
+      {/* Закрытие модалки при клике на фон */}
+      <div className="absolute inset-0" onClick={handleClose} />
 
       <form
         onSubmit={(e) => {
@@ -43,15 +57,15 @@ export function ManualBookingModal({ isOpen, onClose, selectedDate }: ManualBook
       >
         <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-1" />
 
-        {/* Заголовок и Бадж Даты */}
+        {/* Заголовок и Кнопка Календаря */}
         <div>
           <h4 className="text-base font-black text-slate-900">Записать клиента вручную</h4>
           <button
             type="button"
-            onClick={modal.handleOpenCalendar}
+            onClick={handleOpenCalendar}
             className="text-[10px] text-indigo-600 font-extrabold bg-indigo-50 hover:bg-indigo-100/80 px-2.5 py-1 rounded-md inline-flex items-center space-x-1 mt-1.5 active:scale-95 transition-all cursor-pointer border border-indigo-100/40"
           >
-            <span>📅 Дата: {formatToUserDate(modal.currentDate)}</span>
+            <span>📅 Дата: {formatToUserDate(currentDate)}</span>
             <span className="text-[8px] text-indigo-400">▼</span>
           </button>
         </div>
@@ -67,7 +81,11 @@ export function ManualBookingModal({ isOpen, onClose, selectedDate }: ManualBook
             placeholder="Например: Анна (Инстаграм)"
             value={clientName}
             onChange={(e) => handleNameChange(e.target.value)}
-            className={`w-full p-3.5 rounded-xl border focus:outline-none text-sm bg-slate-50/50 font-bold ${nameError ? 'border-rose-400 focus:border-rose-500 text-rose-700' : 'border-slate-200 focus:border-indigo-600 text-slate-700'}`}
+            className={`w-full p-3.5 rounded-xl border focus:outline-none text-sm bg-slate-50/50 font-bold ${
+              nameError
+                ? 'border-rose-400 focus:border-rose-500 text-rose-700'
+                : 'border-slate-200 focus:border-indigo-600 text-slate-700'
+            }`}
           />
           {nameError && (
             <p className="text-[10px] text-rose-500 font-bold mt-1 pl-1">⚠️ {nameError}</p>
@@ -80,7 +98,7 @@ export function ManualBookingModal({ isOpen, onClose, selectedDate }: ManualBook
             Номер телефона *
           </label>
           <div className="flex space-x-2">
-            {/* СЕЛЕКТОР ФЛАГОВ СТРАН СНГ */}
+            {/* Селектор флагов */}
             <div className="relative shrink-0">
               <select
                 value={selectedCountry}
@@ -96,13 +114,17 @@ export function ManualBookingModal({ isOpen, onClose, selectedDate }: ManualBook
               </div>
             </div>
 
-            {/* ИНПУТ ДЛЯ НОМЕРА */}
+            {/* Инпут номера */}
             <input
               type="text"
               placeholder={currentConfig.placeholder}
               value={phoneBody}
               onChange={(e) => handlePhoneChange(e.target.value)}
-              className={`w-full p-3.5 rounded-xl border focus:outline-none text-sm bg-slate-50/50 font-bold ${phoneError ? 'border-rose-400 focus:border-rose-500 text-rose-700' : 'border-slate-200 focus:border-indigo-600 text-slate-700'}`}
+              className={`w-full p-3.5 rounded-xl border focus:outline-none text-sm bg-slate-50/50 font-bold ${
+                phoneError
+                  ? 'border-rose-400 focus:border-rose-500 text-rose-700'
+                  : 'border-slate-200 focus:border-indigo-600 text-slate-700'
+              }`}
             />
           </div>
           {phoneError && (
@@ -112,28 +134,28 @@ export function ManualBookingModal({ isOpen, onClose, selectedDate }: ManualBook
 
         {/* Селектор услуг */}
         <ServiceDropdown
-          services={modal.booking.services}
-          selectedService={modal.booking.selectedService}
-          onSelectService={modal.booking.setSelectedService}
+          services={services}
+          selectedService={selectedService}
+          onSelectService={setSelectedService}
         />
 
-        {/* Сетка Свободного Времени */}
+        {/* Сетка свободного времени */}
         <div>
           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
             Выберите свободное время *
           </label>
           <div className="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto p-1 bg-slate-50 rounded-xl border border-slate-100 scrollbar-none">
-            {modal.availableSlots.length === 0 ? (
+            {availableSlots.length === 0 ? (
               <p className="col-span-4 text-center text-[11px] font-bold text-slate-400 py-4">
                 Нет свободных окошек на этот день 🔒
               </p>
             ) : (
-              modal.availableSlots.map((hour) => (
+              availableSlots.map((hour) => (
                 <TimeSlotButton
                   key={hour}
                   hour={hour}
-                  isSelected={modal.booking.selectedTime === hour}
-                  onSelect={modal.booking.setSelectedTime}
+                  isSelected={selectedTime === hour}
+                  onSelect={setSelectedTime}
                 />
               ))
             )}
@@ -144,7 +166,7 @@ export function ManualBookingModal({ isOpen, onClose, selectedDate }: ManualBook
         <div className="pt-2 flex space-x-2.5">
           <button
             type="button"
-            onClick={modal.booking.handleClose}
+            onClick={handleClose}
             className="w-1/3 bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold py-3 rounded-xl border border-slate-200 transition-all text-sm active:scale-95"
           >
             Отмена
@@ -165,11 +187,11 @@ export function ManualBookingModal({ isOpen, onClose, selectedDate }: ManualBook
 
       {/* Шторка календаря */}
       <MonthCalendarSheet
-        isOpen={modal.isCalendarOpen}
-        onClose={() => modal.setIsCalendarOpen(false)}
-        selectedDate={modal.currentDate}
-        appointments={modal.appointments}
-        onDateSelect={modal.handleSelectNewDate}
+        isOpen={isCalendarOpen}
+        onClose={() => setIsCalendarOpen(false)}
+        selectedDate={currentDate}
+        appointments={appointments}
+        onDateSelect={handleSelectNewDate}
       />
     </div>
   );

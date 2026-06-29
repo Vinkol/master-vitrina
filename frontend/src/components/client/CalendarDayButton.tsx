@@ -5,7 +5,6 @@ interface CalendarDayButtonProps {
   currentDayIso: string;
   isSelected: boolean;
   isToday: boolean;
-  hasAppointments: boolean;
   onSelectDay: (isoDate: string) => void;
 }
 
@@ -14,7 +13,6 @@ export function CalendarDayButton({
   currentDayIso,
   isSelected,
   isToday,
-  hasAppointments,
   onSelectDay,
 }: CalendarDayButtonProps) {
   const handleClick = () => {
@@ -35,13 +33,6 @@ export function CalendarDayButton({
       }`}
     >
       <span>{dayNumber}</span>
-      {hasAppointments && (
-        <span
-          className={`absolute bottom-1 w-1 h-1 rounded-full ${
-            isSelected ? 'bg-white' : 'bg-indigo-500'
-          }`}
-        />
-      )}
     </button>
   );
 }

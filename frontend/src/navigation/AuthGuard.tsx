@@ -5,21 +5,22 @@ import { ClientRouter } from './ClientRouter';
 import { AdminRouter } from './AdminRouter';
 import { Loader } from '../shared/ui/loader/Loader';
 import { getStartParam } from '../shared/lib/getStartParam';
+import { useMasterProfile } from '../features/master/useMasterProfile';
 
 export const AuthGuard: React.FC = () => {
   const initAuth = useBookingStore((state) => state.initAuth);
-  const isLoading = useBookingStore((state) => state.isLoading);
+  const isAuthLoading = useBookingStore((state) => state.isLoading);
   const isAuthenticated = useBookingStore((state) => state.isAuthenticated);
-  const masterProfile = useBookingStore((state) => state.masterProfile);
   const isRegisteredMaster = useBookingStore((state) => state.isRegisteredMaster);
-
   const referralId = getStartParam();
 
   useEffect(() => {
     void initAuth();
   }, [initAuth]);
 
-  if (isLoading) {
+  const { isLoading: isProfileLoading } = useMasterProfile();
+
+  if (isAuthLoading) {
     return <Loader text="Синхронизация с Telegram..." />;
   }
 
@@ -28,12 +29,11 @@ export const AuthGuard: React.FC = () => {
   }
 
   if (isAuthenticated) {
-    if (isRegisteredMaster && !masterProfile) {
+    if (isRegisteredMaster && isProfileLoading) {
       return <Loader text="Загрузка профиля мастера..." />;
     }
 
-    const hasNoProfile = !masterProfile || !masterProfile.name || masterProfile.name === 'Мастер';
-    const needsRegistration = !isRegisteredMaster || hasNoProfile;
+    const needsRegistration = !isRegisteredMaster;
 
     if (needsRegistration) {
       return <RegistrationForm />;

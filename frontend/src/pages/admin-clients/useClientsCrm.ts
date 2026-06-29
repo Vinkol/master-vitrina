@@ -1,75 +1,94 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useBookingStore } from '../../store/useBookingStore';
+import { getCrmClientsApi, blockClientApi, unblockClientApi } from '../../shared/api/masterApi';
 
 export type CrmFilter = 'all' | 'new' | 'loyal' | 'active' | 'blocked';
 
+const PAGE_SIZE = 20;
+
 export function useClientsCrm() {
-  const crmClients = useBookingStore((state) => state.crmClients);
-  const hasMoreClients = useBookingStore((state) => state.hasMoreClients);
-  const fetchCrmClients = useBookingStore((state) => state.fetchCrmClients);
-  const toggleBlock = useBookingStore((state) => state.blockClient);
-  const toggleUnblock = useBookingStore((state) => state.unblockClient);
+  const queryClient = useQueryClient();
+
+  const masterId = useBookingStore((state) => state.currentMasterId);
+  const localBlock = useBookingStore((state) => state.blockClient);
+  const localUnblock = useBookingStore((state) => state.unblockClient);
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<CrmFilter>('all');
-  const [page, setPage] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
+  useEffect(() => {
+    const delay = searchQuery ? 300 : 0;
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), delay);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
+    queryKey: ['crmClients', masterId, debouncedSearch, activeFilter],
+    queryFn: ({ pageParam = 0 }) =>
+      getCrmClientsApi({
+        masterId: masterId!,
+        search: debouncedSearch,
+        filter: activeFilter,
+        page: pageParam,
+        size: PAGE_SIZE,
+      }),
+    initialPageParam: 0,
+    enabled: !!masterId,
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.length === PAGE_SIZE ? allPages.length : undefined;
+    },
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const filteredClients = useMemo(() => {
+    return data?.pages.flat() || [];
+  }, [data]);
+
+  const loadMore = useCallback(async () => {
+    if (!hasNextPage || isFetchingNextPage) return;
+    await fetchNextPage();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleSearchChange = useCallback((query: string) => {
     setSearchQuery(query);
-    setIsLoading(true);
-    setPage(0);
   }, []);
 
   const handleFilterChange = useCallback((filter: CrmFilter) => {
-    setActiveFilter(filter);
-    setIsLoading(true);
-    setPage(0);
+    setActiveFilter((current) => (current === filter ? current : filter));
   }, []);
 
-  useEffect(() => {
-    const delay = searchQuery ? 300 : 0;
-    const delayDebounce = setTimeout(async () => {
-      try {
-        await fetchCrmClients(searchQuery, activeFilter, 0);
-      } finally {
-        setIsLoading(false);
-      }
-    }, delay);
+  // Мутация блокировки клиента
+  const blockMutation = useMutation({
+    mutationFn: (phone: string) => blockClientApi(masterId!, phone),
+    onMutate: (phone) => {
+      localBlock(phone);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['crmClients'] });
+    },
+  });
 
-    return () => {
-      clearTimeout(delayDebounce);
-    };
-  }, [searchQuery, activeFilter, fetchCrmClients]);
-
-  const loadMore = useCallback(async () => {
-    if (isLoading || !hasMoreClients) return;
-
-    setIsLoading(true);
-    const nextPage = page + 1;
-    setPage(nextPage);
-
-    try {
-      await fetchCrmClients(searchQuery, activeFilter, nextPage);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [hasMoreClients, searchQuery, activeFilter, page, fetchCrmClients, isLoading]);
+  // Мутация разблокировки клиента
+  const unblockMutation = useMutation({
+    mutationFn: (phone: string) => unblockClientApi(masterId!, phone),
+    onMutate: (phone) => {
+      localUnblock(phone);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['crmClients'] });
+    },
+  });
 
   const toggleBlockClient = useCallback(
     async (clientPhone: string, currentlyBlocked: boolean) => {
-      setIsLoading(true);
-      try {
-        if (currentlyBlocked) {
-          await toggleUnblock(clientPhone);
-        } else {
-          await toggleBlock(clientPhone);
-        }
-      } finally {
-        setIsLoading(false);
+      if (currentlyBlocked) {
+        await unblockMutation.mutateAsync(clientPhone);
+      } else {
+        await blockMutation.mutateAsync(clientPhone);
       }
     },
-    [toggleBlock, toggleUnblock],
+    [blockMutation, unblockMutation],
   );
 
   return {
@@ -77,11 +96,10 @@ export function useClientsCrm() {
     setSearchQuery: handleSearchChange,
     activeFilter,
     setActiveFilter: handleFilterChange,
-    filteredClients: crmClients,
+    filteredClients,
     loadMore,
-    hasMoreClients,
+    hasMoreClients: hasNextPage,
     toggleBlockClient,
-    isLoading,
-    currentPage: page,
+    isLoading: isLoading || isFetchingNextPage,
   };
 }

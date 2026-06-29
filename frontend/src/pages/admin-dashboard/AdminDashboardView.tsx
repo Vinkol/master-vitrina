@@ -1,20 +1,19 @@
 import { useMemo } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
-import { DashboardStats } from '../../components/admin/DashboardStats';
+import { useMasterProfile } from '../../features/master/useMasterProfile'; // Оставили только профиль
 import { MenuRowButton } from '../../components/admin/MenuRowButton';
 import { Loader } from '../../shared/ui/loader/Loader';
 import { haptic } from '../../shared/lib/haptic/haptic';
-import { CalendarClock, MessageSquare } from 'lucide-react';
+import { CalendarClock, MessageSquare, Settings } from 'lucide-react';
 
 export function AdminDashboardView() {
-  const masterProfile = useBookingStore((state) => state.masterProfile);
-  const appointments = useBookingStore((state) => state.appointments);
   const setScreen = useBookingStore((state) => state.setScreen);
+  const { profile: masterProfile, isLoading: isProfileLoading } = useMasterProfile();
   const workingDaysCount = useMemo(() => {
     return masterProfile?.schedule?.filter((d) => d.is_working).length || 0;
   }, [masterProfile?.schedule]);
 
-  if (!masterProfile) {
+  if (isProfileLoading || !masterProfile) {
     return <Loader text="Загрузка панели..." />;
   }
 
@@ -33,15 +32,10 @@ export function AdminDashboardView() {
     }
   };
 
-  const activeAppointmentsCount = appointments?.length || 0;
-
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-4 bg-slate-50 min-h-screen text-slate-800 pb-24 select-none animate-fadeIn">
-      {/* КАРТОЧКА БЫСТРОЙ СТАТИСТИКИ */}
-      <DashboardStats appointmentsCount={activeAppointmentsCount} />
-
       {/* СПИСОК НАСТРОЕК ВИТРИНЫ */}
-      <div className="space-y-3">
+      <div className="space-y-3 pt-2">
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-2">
           Настройки витрины
         </p>
@@ -74,6 +68,13 @@ export function AdminDashboardView() {
           title="Рабочее время"
           subtitle={`Рабочих дней на этой неделе: ${workingDaysCount} из 7`}
           icon={<CalendarClock className="w-5 h-5 text-indigo-600" />}
+        />
+
+        <MenuRowButton
+          onClick={() => handleNavigate('admin-settings')}
+          title="Общие настройки"
+          subtitle="Валюта, настройка языка и темы"
+          icon={<Settings className="w-5 h-5 text-indigo-600" />}
         />
 
         <MenuRowButton

@@ -7,7 +7,7 @@ interface MasterProfileCardProps {
 }
 
 export function MasterProfileCard({ profile, workingHoursLabel }: MasterProfileCardProps) {
-  const isWeekend = workingHoursLabel === 'Сегодня выходной';
+  const isWeekend = workingHoursLabel === 'Выходной';
 
   return (
     <div className="bg-white p-5 rounded-3xl shadow-xs border border-slate-100 text-center relative overflow-hidden">

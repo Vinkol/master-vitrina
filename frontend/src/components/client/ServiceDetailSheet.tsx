@@ -1,3 +1,5 @@
+import { formatPrice } from '../../shared/lib/formatPrice/priceFormatter';
+import { useBookingStore } from '../../store/useBookingStore';
 import type { Service } from '../../types';
 
 interface ServiceDetailSheetProps {
@@ -7,6 +9,7 @@ interface ServiceDetailSheetProps {
 }
 
 export function ServiceDetailSheet({ service, onClose, onSelect }: ServiceDetailSheetProps) {
+  const masterCurrency = useBookingStore((state) => state.masterProfile?.currency) || 'RUB';
   if (!service) return null;
 
   return (
@@ -23,7 +26,9 @@ export function ServiceDetailSheet({ service, onClose, onSelect }: ServiceDetail
               ⏱ Длительность: {service.duration} минут
             </p>
           </div>
-          <p className="text-lg font-black text-indigo-600 shrink-0 ml-4">{service.price} ₽</p>
+          <p className="text-lg font-black text-indigo-600 shrink-0 ml-4">
+            {formatPrice(service.price, masterCurrency)}
+          </p>
         </div>
 
         <p className="text-xs text-slate-500 leading-relaxed mb-6 bg-slate-50 p-3.5 rounded-xl border border-slate-100 font-medium">

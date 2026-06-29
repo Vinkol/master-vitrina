@@ -3,10 +3,12 @@ import { haptic } from '../../shared/lib/haptic/haptic';
 import { formatToUserDate } from '../../shared/lib/calendar/dateFormatter';
 import { Briefcase, Calendar, Clock, Timer, CheckCircle2 } from 'lucide-react';
 import { useEffect } from 'react';
+import { formatPrice } from '../../shared/lib/formatPrice/priceFormatter';
 
 export function BookingSuccessView() {
   const { selectedService, selectedDate, selectedTime, setScreen, resetBooking, masterProfile } =
     useBookingStore();
+  const masterCurrency = masterProfile?.currency || 'RUB';
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
@@ -57,7 +59,9 @@ export function BookingSuccessView() {
               <Timer className="w-3.5 h-3.5 text-slate-400 shrink-0" strokeWidth={2} />
               <span>{selectedService?.duration} мин</span>
               <span className="text-slate-300">·</span>
-              <span className="text-indigo-600 font-extrabold">{selectedService?.price} ₽</span>
+              <span className="text-indigo-600 font-extrabold">
+                {selectedService ? formatPrice(selectedService.price, masterCurrency) : ''}
+              </span>
             </div>
 
             <div className="h-px bg-slate-100 my-2" />

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { Service } from '../../types';
 import { haptic } from '../../shared/lib/haptic/haptic';
 import { ChevronDown, Briefcase, Clock, Check } from 'lucide-react';
+import { formatPrice } from '../../shared/lib/formatPrice/priceFormatter';
+import { useBookingStore } from '../../store/useBookingStore';
 
 interface ServiceDropdownProps {
   services: Service[];
@@ -15,6 +17,7 @@ export function ServiceDropdown({
   onSelectService,
 }: ServiceDropdownProps) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const masterCurrency = useBookingStore((state) => state.masterProfile?.currency) || 'RUB';
 
   return (
     <div className="relative">
@@ -35,7 +38,8 @@ export function ServiceDropdown({
           <div className="flex items-center space-x-2 text-left">
             <span className="text-indigo-600 font-extrabold">{selectedService.title}</span>
             <span className="text-[11px] text-slate-400 font-medium">
-              ({selectedService.price} ₽ · {selectedService.duration} мин)
+              ({formatPrice(selectedService.price, masterCurrency)} · {selectedService.duration}{' '}
+              мин)
             </span>
           </div>
         ) : (
@@ -95,7 +99,7 @@ export function ServiceDropdown({
                             : 'text-slate-500 font-extrabold'
                         }
                       >
-                        {service.price} ₽
+                        {formatPrice(service.price, masterCurrency)}
                       </span>
                       {isSelected && (
                         <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" strokeWidth={3} />

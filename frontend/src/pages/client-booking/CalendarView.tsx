@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
 import { TimeSlotsSheet } from '../../components/client/TimeSlotsSheet';
 import { haptic } from '../../shared/lib/haptic/haptic';
@@ -13,7 +13,6 @@ export function CalendarView() {
     setTime,
     selectedDate,
     selectedTime,
-    appointments,
     currentMasterId,
     goToConfirm,
   } = useBookingStore();
@@ -28,7 +27,7 @@ export function CalendarView() {
     goToConfirm();
   }, [goToConfirm]);
 
-  // 📡 ЗАПРОС СЛОТОВ FASTAPI БЭКЕНДА
+  // ЗАПРОС СЛОТОВ С БЭКЕНДА
   useEffect(() => {
     if (!currentMasterId || !selectedDate || !selectedService?.duration) return;
 
@@ -37,10 +36,11 @@ export function CalendarView() {
     const fetchSlots = async () => {
       setIsSlotsLoading(true);
       try {
+        const pureDateStr = selectedDate.split('T')[0];
         const response = await api.get('/api/v1/appointments/slots', {
           params: {
             master_id: currentMasterId,
-            target_date: selectedDate,
+            target_date: pureDateStr,
             duration_minutes: selectedService.duration,
             is_master: false,
           },
@@ -121,7 +121,6 @@ export function CalendarView() {
       <ClientCalendarRibbon
         scrollRef={scrollRef}
         selectedDate={selectedDate}
-        appointments={appointments}
         onSelectDay={handleSelectDay}
       />
 

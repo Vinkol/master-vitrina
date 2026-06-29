@@ -1,5 +1,4 @@
 import { useClientCalendar } from './useClientCalendar';
-import type { Appointment } from '../../types';
 import type { RefObject } from 'react';
 import { formatToUserDate } from '../../shared/lib/calendar/dateFormatter';
 import { CalendarDayButton } from '../../components/client/CalendarDayButton';
@@ -7,7 +6,6 @@ import { CalendarDayButton } from '../../components/client/CalendarDayButton';
 interface ClientCalendarRibbonProps {
   scrollRef: RefObject<HTMLDivElement | null>;
   selectedDate: string;
-  appointments: Appointment[];
   onSelectDay: (isoDate: string) => void;
 }
 
@@ -16,7 +14,6 @@ const WEEK_DAYS_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 export function ClientCalendarRibbon({
   scrollRef,
   selectedDate,
-  appointments,
   onSelectDay,
 }: ClientCalendarRibbonProps) {
   const calendar = useClientCalendar({ scrollRef });
@@ -72,9 +69,6 @@ export function ClientCalendarRibbon({
                 const currentDayIso = day.isoDate.split('T')[0];
                 const isSelected = selectedDate.split('T')[0] === currentDayIso;
                 const isToday = currentDayIso === calendar.todayIso;
-                const hasAppointments = appointments.some(
-                  (app) => app.date.split('T')[0] === currentDayIso,
-                );
 
                 return (
                   <CalendarDayButton
@@ -83,7 +77,6 @@ export function ClientCalendarRibbon({
                     currentDayIso={currentDayIso}
                     isSelected={isSelected}
                     isToday={isToday}
-                    hasAppointments={hasAppointments}
                     onSelectDay={onSelectDay}
                   />
                 );

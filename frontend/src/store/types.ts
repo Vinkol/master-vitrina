@@ -9,6 +9,7 @@ export type Screen =
   | 'admin-profile-edit'
   | 'admin-hours-edit'
   | 'admin-link-share'
+  | 'admin-settings'
   | 'admin-placeholder-main'
   | 'booking-confirm'
   | 'booking-success'
@@ -72,8 +73,8 @@ export interface CrmSlice {
   crmClients: CrmClient[];
   hasMoreClients: boolean;
   fetchCrmClients: (search?: string, filter?: CrmFilter, page?: number) => Promise<void>;
-  blockClient: (clientPhone: string) => Promise<void>;
-  unblockClient: (clientPhone: string) => Promise<void>;
+  blockClient: (clientPhone: string) => void;
+  unblockClient: (clientPhone: string) => void;
   crmSearchQuery: string;
   crmActiveFilter: CrmFilter;
   crmCurrentPage: number;
@@ -82,20 +83,18 @@ export interface CrmSlice {
 export interface MasterSlice {
   masterProfile: MasterProfile | null;
   services: Service[];
-  fetchProfile: () => Promise<void>;
-  updateProfileInDB: (updatedFields: Partial<MasterProfile>) => Promise<void>;
-  fetchServices: () => Promise<void>;
-  addService: (service: Omit<Service, 'id'>) => Promise<void>;
-  updateService: (id: string, updatedService: Partial<Service>) => Promise<void>;
-  deleteService: (id: string) => Promise<void>;
+  updateProfileInDB: (updatedFields: Partial<MasterProfile>) => void;
+  setServicesLocally: (services: Service[]) => void;
+  addService: (service: Omit<Service, 'id'>) => void;
+  updateService: (id: string, updatedService: Partial<Service>) => void;
+  deleteService: (id: string) => void;
 }
 
 export interface BookingSlice {
   currentScreen: Screen;
   setScreen: (screen: Screen) => void;
   appointments: Appointment[];
-  fetchAppointments: () => Promise<void>;
-  createAppointment: (clientName: string, clientPhone: string) => Promise<void>;
+  setAppointmentsLocally: (appointments: Appointment[]) => void;
   currentMasterId: string | null;
   isOwner: boolean;
   botUsername: string;

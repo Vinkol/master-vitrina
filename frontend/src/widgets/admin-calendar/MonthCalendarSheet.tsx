@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import type { Appointment } from '../../types';
-import { generateMonthGrid, type MonthGridResult } from '../../shared/lib/calendar/calendarCore';
 import { haptic } from '../../shared/lib/haptic/haptic';
+import { generateCalendarRange, generateMonthGrid } from '../../shared/lib/calendar/calendarCore';
 
 interface MonthCalendarSheetProps {
   isOpen: boolean;
@@ -13,17 +13,6 @@ interface MonthCalendarSheetProps {
 
 const WEEK_DAYS_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
-function getAdminCarouselData(): MonthGridResult[] {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonthIdx = now.getMonth();
-  return [
-    generateMonthGrid(currentYear, currentMonthIdx),
-    generateMonthGrid(currentYear, currentMonthIdx + 1),
-    generateMonthGrid(currentYear, currentMonthIdx + 2),
-  ];
-}
-
 export function MonthCalendarSheet({
   isOpen,
   onClose,
@@ -31,8 +20,12 @@ export function MonthCalendarSheet({
   appointments,
   onDateSelect,
 }: MonthCalendarSheetProps) {
-  const monthsGroup = useMemo(() => getAdminCarouselData(), []);
+  const monthsGroup = useMemo(() => generateCalendarRange(1, 12), []);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const initialMonthName = useMemo(() => {
+    const d = selectedDate ? new Date(selectedDate) : new Date();
+    return generateMonthGrid(d.getFullYear(), d.getMonth()).monthName;
+  }, [selectedDate]);
 
   const [currentVisibleMonth, setCurrentVisibleMonth] = useState<string>(
     () => monthsGroup[0]?.monthName || 'Календарь',
@@ -45,6 +38,29 @@ export function MonthCalendarSheet({
     const utcDay = String(d.getUTCDate()).padStart(2, '0');
     return `${utcYear}-${utcMonth}-${utcDay}`;
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const timer = setTimeout(() => {
+      const container = scrollRef.current;
+      if (!container) return;
+
+      const activeBlock = container.querySelector(
+        `[data-month-name="${initialMonthName}"]`,
+      ) as HTMLElement;
+
+      if (activeBlock) {
+        container.scrollTo({
+          left: activeBlock.offsetLeft,
+          behavior: 'auto',
+        });
+        setCurrentVisibleMonth(initialMonthName);
+      }
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [isOpen, initialMonthName]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -142,9 +158,10 @@ export function MonthCalendarSheet({
                   const currentDayIso = day.isoDate.split('T')[0];
                   const isSelected = selectedDate.split('T')[0] === currentDayIso;
                   const isToday = currentDayIso === todayIso;
-                  const hasAppointments = appointments.some(
+                  const dayAppointmentsCount = appointments.filter(
                     (app) => app.date.split('T')[0] === currentDayIso,
-                  );
+                  ).length;
+                  const hasAppointments = dayAppointmentsCount > 0;
 
                   return (
                     <button
@@ -164,11 +181,17 @@ export function MonthCalendarSheet({
                             : 'bg-white border-slate-100 text-slate-700 shadow-xs hover:border-slate-200'
                       }`}
                     >
-                      <span>{day.dayNumber}</span>
+                      <span className={hasAppointments ? 'mt-0.5' : ''}>{day.dayNumber}</span>
                       {hasAppointments && (
                         <span
-                          className={`absolute bottom-1 w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-indigo-500'}`}
-                        />
+                          className={`absolute -top-1 -right-1 min-w-3.75 h-3.5 px-0.5 flex items-center justify-center text-[8px] font-black rounded-full border transition-colors ${
+                            isSelected
+                              ? 'bg-white text-indigo-600 border-indigo-600'
+                              : 'bg-indigo-500 text-white border-white'
+                          }`}
+                        >
+                          {dayAppointmentsCount}
+                        </span>
                       )}
                     </button>
                   );

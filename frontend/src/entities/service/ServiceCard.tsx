@@ -1,4 +1,6 @@
+import { formatPrice } from '../../shared/lib/formatPrice/priceFormatter';
 import { haptic } from '../../shared/lib/haptic/haptic';
+import { useBookingStore } from '../../store/useBookingStore';
 import type { Service } from '../../types';
 import { Pencil, Clock, Trash2 } from 'lucide-react';
 
@@ -9,6 +11,8 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({ service, onEdit, onDelete }: ServiceCardProps) {
+  const masterCurrency = useBookingStore((state) => state.masterProfile?.currency) || 'RUB';
+
   return (
     <div className="p-4 bg-white rounded-2xl border border-slate-100 hover:border-indigo-100 shadow-xs flex justify-between items-center group animate-fadeIn cursor-pointer transition-all active:scale-[0.99]">
       <div
@@ -32,7 +36,9 @@ export function ServiceCard({ service, onEdit, onDelete }: ServiceCardProps) {
           <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" strokeWidth={2} />
           <span>{service.duration} мин</span>
           <span className="text-slate-300 font-light">·</span>
-          <span className="text-indigo-600 font-extrabold">{service.price} ₽</span>
+          <span className="text-indigo-600 font-extrabold">
+            {formatPrice(service.price, masterCurrency)}
+          </span>
         </div>
 
         {service.description && (

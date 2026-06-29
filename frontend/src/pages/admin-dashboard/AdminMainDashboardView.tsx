@@ -7,6 +7,7 @@ import { formatToUserDate } from '../../shared/lib/calendar/dateFormatter';
 import { AppointmentRow } from '../../entities/appointment/AppointmentRow';
 import { MonthCalendarSheet } from '../../widgets/admin-calendar/MonthCalendarSheet';
 import { PlusCircle, Link2, CalendarX } from 'lucide-react';
+import { AppointmentRowSkeleton } from '../../entities/appointment/AppointmentRowSkeleton';
 
 export function AdminMainDashboardView() {
   const dashboard = useAdminDashboard();
@@ -77,7 +78,13 @@ export function AdminMainDashboardView() {
           </span>
         </div>
 
-        {dashboard.filteredAppointments.length === 0 ? (
+        {dashboard.isLoading && dashboard.appointments.length === 0 ? (
+          <div className="space-y-2">
+            <AppointmentRowSkeleton />
+            <AppointmentRowSkeleton />
+            <AppointmentRowSkeleton />
+          </div>
+        ) : dashboard.filteredAppointments.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 bg-white border border-dashed border-slate-200 rounded-2xl text-center">
             <div className="p-3 bg-slate-50 text-slate-300 rounded-full mb-2 shrink-0">
               <CalendarX className="w-6 h-6" strokeWidth={1.5} />

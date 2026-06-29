@@ -1,6 +1,7 @@
 import type { FormEvent, ChangeEvent } from 'react';
 import type { Service } from '../../types';
 import { haptic } from '../../shared/lib/haptic/haptic';
+import { useBookingStore } from '../../store/useBookingStore';
 
 interface ServiceFormSheetProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export function ServiceFormSheet({
   setDuration,
   onSave,
 }: ServiceFormSheetProps) {
+  const masterCurrency = useBookingStore((state) => state.masterProfile?.currency) || 'RUB';
   if (!isOpen) return null;
 
   return (
@@ -82,7 +84,7 @@ export function ServiceFormSheet({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-              Цена (₽):
+              Цена ({masterCurrency}):
             </label>
             <input
               type="number"

@@ -1,28 +1,33 @@
 import { useState } from 'react';
 import { useBookingStore } from '../../store/useBookingStore';
+import { useMasterProfile } from '../../features/master/useMasterProfile'; // ИМПОРТ НАШЕГО ХУКА
 import { Loader } from '../../shared/ui/loader/Loader';
 import { haptic } from '../../shared/lib/haptic/haptic';
 import { PageHeader } from '../../shared/ui/page-header/PageHeader';
 import { supabase } from '../../shared/api/supabase';
+import imageCompression from 'browser-image-compression';
 
 export function AdminProfileEditView() {
-  const masterProfile = useBookingStore((state) => state.masterProfile);
-  const updateProfileInDB = useBookingStore((state) => state.updateProfileInDB);
   const setScreen = useBookingStore((state) => state.setScreen);
-
+  const {
+    profile: masterProfile,
+    updateProfile,
+    isSaving: isMutationSaving,
+    isLoading,
+  } = useMasterProfile();
   const [name, setName] = useState<string>(() => masterProfile?.name || '');
   const [bio, setBio] = useState<string>(() => masterProfile?.bio || '');
   const [avatar, setAvatar] = useState<string | null>(() => masterProfile?.avatar || null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
 
-  if (!masterProfile) {
+  if (isLoading || !masterProfile) {
     return <Loader text="Загрузка профиля..." />;
   }
 
   const handleSave = async () => {
     haptic.impact('medium');
-    setIsSaving(true);
+    setIsUploading(true);
     try {
       let finalAvatarUrl = avatar;
       if (avatarFile) {
@@ -37,23 +42,37 @@ export function AdminProfileEditView() {
         const { data: urlData } = bucket.getPublicUrl(filePath);
         finalAvatarUrl = urlData.publicUrl;
       }
-      await updateProfileInDB({ name, bio, avatar: finalAvatarUrl || undefined });
+      await updateProfile({ name, bio, avatar: finalAvatarUrl || undefined });
       setScreen('admin-dashboard');
     } catch (e) {
       console.error('Ошибка сохранения профиля:', e);
     } finally {
-      setIsSaving(false);
+      setIsUploading(false);
     }
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      haptic.impact('light');
+    if (!file) return;
+    haptic.impact('light');
+    const options = {
+      maxSizeMB: 0.05,
+      maxWidthOrHeight: 400,
+      useWebWorker: true,
+      fileType: 'image/jpeg',
+    };
+
+    try {
+      const compressedFile = await imageCompression(file, options);
+      setAvatarFile(compressedFile);
+      setAvatar(URL.createObjectURL(compressedFile));
+    } catch (error) {
+      console.error('Ошибка сжатия изображения:', error);
       setAvatarFile(file);
       setAvatar(URL.createObjectURL(file));
     }
   };
+  const isCombinedSaving = isUploading || isMutationSaving;
 
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-4 bg-slate-50 min-h-screen text-slate-800 pb-24 select-none">
@@ -64,7 +83,7 @@ export function AdminProfileEditView() {
         onSaveClick={() => {
           void handleSave();
         }}
-        isSaving={isSaving}
+        isSaving={isCombinedSaving}
       />
 
       <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-5">
@@ -101,7 +120,9 @@ export function AdminProfileEditView() {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={handleAvatarChange}
+                onChange={(e) => {
+                  void handleAvatarChange(e);
+                }}
               />
             </label>
           </div>
@@ -138,10 +159,9 @@ export function AdminProfileEditView() {
           </div>
         </div>
       </div>
-
       <div className="p-4 bg-indigo-50/40 rounded-2xl border border-indigo-100/30 text-left">
-        <p className="text-[11px] text-indigo-900/80 font-semibold leading-relaxed">
-          ✨ Данные сохраняются только после нажатия кнопки «Сохранить». Ваши клиенты сразу увидят
+        <p className="text-[10px] font-medium text-slate-400 text-center px-4 leading-normal">
+          Данные сохраняются только после нажатия кнопки «Сохранить». Ваши клиенты сразу увидят
           обновленный профиль на витрине онлайн-записи.
         </p>
       </div>

@@ -14,7 +14,7 @@ function App() {
   return (
     <div>
       <div className="fixed-global-canvas" />
-      <Header theme={theme} toggleTheme={toggleTheme} />    
+      <Header theme={theme} toggleTheme={toggleTheme} />
       <Hero />
       <Steps />
       <Demo />

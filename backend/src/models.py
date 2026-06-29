@@ -1,9 +1,10 @@
 import uuid
 from datetime import date, time, datetime
-from sqlalchemy import BigInteger, Column, Integer, String, ForeignKey, Date, Time, text
+from sqlalchemy import BigInteger, Column, DateTime, Integer, String, ForeignKey, Date, Time, func, text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database import Base
+
 
 class UserMaster(Base):
     """Таблица user_master — профили мастеров"""
@@ -68,3 +69,15 @@ class BlockedClient(Base):
     created_at: Mapped[datetime] = mapped_column(Date, default=date.today, server_default=text("now()"))
 
     master: Mapped["UserMaster"] = relationship("UserMaster", back_populates="blocked_clients")
+
+class BetaRequest(Base):
+    """Таблица заявок с сайта на платные подписки"""
+    __tablename__ = "beta_requests"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    tg_username: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    plan_name: Mapped[str] = mapped_column(String(50), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), 
+        server_default=func.now()
+    )

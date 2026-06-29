@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @variant dark (&:where(.dark, .dark *));
 
@@ -29,21 +29,22 @@ body {
   z-index: 0;
   pointer-events: none;
   background-size: 40px 40px;
-  
+
   /* Сетка для светлой темы */
-  background-image: linear-gradient(to right, rgba(99, 102, 241, 0.05) 1px, transparent 1px),
-                    linear-gradient(to bottom, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
-                    
+  background-image:
+    linear-gradient(to right, rgba(99, 102, 241, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
+
   /* плавно плывет по диагонали  */
   animation: gridFlow 3s linear infinite;
 }
 
 /* Сетка для темной темы  */
 .dark .fixed-global-canvas {
-  background-image: linear-gradient(to right, rgba(99, 102, 241, 0.04) 1px, transparent 1px),
-                    linear-gradient(to bottom, rgba(99, 102, 241, 0.04) 1px, transparent 1px);
+  background-image:
+    linear-gradient(to right, rgba(99, 102, 241, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(99, 102, 241, 0.04) 1px, transparent 1px);
 }
-
 
 /* СТИЛИ ДЛЯ ВИДЖЕТОВ И НЕОНА  */
 .glass-widget {
@@ -59,50 +60,102 @@ body {
 }
 
 .neon-glow {
-  box-shadow: 0 0 40px -5px rgba(99, 102, 241, 0.15), 0 0 20px -5px rgba(168, 85, 247, 0.1);
+  box-shadow:
+    0 0 40px -5px rgba(99, 102, 241, 0.15),
+    0 0 20px -5px rgba(168, 85, 247, 0.1);
 }
 
 /*  ВСЕ АНИМАЦИИ И ИХ КЛАССЫ  */
 
 /* Ленивое перетекание световых масс (Aurora) */
 @keyframes blob-pulse-1 {
-  0%, 100% { transform: translate(0px, 0px) scale(1); }
-  33% { transform: translate(40px, -60px) scale(1.15); }
-  66% { transform: translate(-30px, 40px) scale(0.9); }
+  0%,
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(40px, -60px) scale(1.15);
+  }
+  66% {
+    transform: translate(-30px, 40px) scale(0.9);
+  }
 }
 @keyframes blob-pulse-2 {
-  0%, 100% { transform: translate(0px, 0px) scale(1.1); }
-  50% { transform: translate(-50px, 50px) scale(0.85); }
+  0%,
+  100% {
+    transform: translate(0px, 0px) scale(1.1);
+  }
+  50% {
+    transform: translate(-50px, 50px) scale(0.85);
+  }
 }
-.animate-blob-1 { animation: blob-pulse-1 12s infinite ease-in-out; }
-.animate-blob-2 { animation: blob-pulse-2 16s infinite ease-in-out; }
+.animate-blob-1 {
+  animation: blob-pulse-1 12s infinite ease-in-out;
+}
+.animate-blob-2 {
+  animation: blob-pulse-2 16s infinite ease-in-out;
+}
 
 /* Бесконечное движение сетки */
 @keyframes gridFlow {
-  0% { background-position: 0 0; }
-  100% { background-position: 40px 40px; }
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 40px 40px;
+  }
 }
 
 /* Мягкое покачивание (плавание элементов) */
 @keyframes float-slow {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(1deg); }
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(1deg);
+  }
 }
 @keyframes float-delayed {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(12px) rotate(-1.5deg); }
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(12px) rotate(-1.5deg);
+  }
 }
-.animate-float-1 { animation: float-slow 6s ease-in-out infinite; }
-.animate-float-2 { animation: float-delayed 7s ease-in-out infinite; }
+.animate-float-1 {
+  animation: float-slow 6s ease-in-out infinite;
+}
+.animate-float-2 {
+  animation: float-delayed 7s ease-in-out infinite;
+}
 
 /* Плавное появление */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.animate-reveal { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+.animate-reveal {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}

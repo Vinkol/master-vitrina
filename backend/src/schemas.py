@@ -1,7 +1,9 @@
 from typing import Optional
+import re
 import uuid
 from datetime import date, time
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
+
 
 # СХЕМЫ АВТОРИЗАЦИИ
 class AuthRequest(BaseModel):
@@ -113,3 +115,27 @@ class ClientBlockPayload(BaseModel):
     client_phone: str
     
     model_config = ConfigDict(from_attributes=True)
+
+class BetaRequestCreate(BaseModel):
+    tg_username: str = Field(..., min_length=5, max_length=32, description="Никнейм в Telegram")
+    plan_name: str = Field(..., max_length=50, description="Название выбранного тарифа")
+
+    @field_validator("tg_username")
+    @classmethod
+    def validate_tg_username(cls, v: str) -> str:
+        clean_username = v.replace("@", "").strip()
+
+        if not re.match(r"^[a-zA-Z0-9_]+$", clean_username):
+            raise ValueError("Никнейм должен содержать только латинские буквы, цифры и символ подчеркивания")
+            
+        if len(clean_username) < 5:
+            raise ValueError("Никнейм должен быть не короче 5 символов")
+            
+        return clean_username
+
+class BetaRequestResponse(BaseModel):
+    id: int
+    tg_username: str
+    plan_name: str
+    
+    model_config = ConfigDict(from_attributes=True) 

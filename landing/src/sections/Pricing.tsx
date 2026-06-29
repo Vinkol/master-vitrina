@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '../components/Button';
 import { PricingModal } from '../components/PricingModal';
-import { getPricingPlans, type PricingPlan } from '../config/pricingPlans';
+import { getPricingPlans, type PricingPlan, type CurrencyCode } from '../config/pricingPlans';
 
 interface ModalState {
   isOpen: boolean;
@@ -10,9 +10,9 @@ interface ModalState {
 
 export function Pricing() {
   const [isAnnual, setIsAnnual] = useState<boolean>(false);
+  const [currency, setCurrency] = useState<CurrencyCode>('BYN');
   const [modalState, setModalState] = useState<ModalState>({ isOpen: false, planName: '' });
-
-  const plans: PricingPlan[] = getPricingPlans(isAnnual);
+  const plans: PricingPlan[] = getPricingPlans(isAnnual, currency);
 
   const openModal = (planName: string): void => {
     setModalState({ isOpen: true, planName });
@@ -37,29 +37,49 @@ export function Pricing() {
           Инвестируйте в свой комфорт
         </h2>
 
-        {/* Переключатель периода */}
-        <div className="mt-8 flex items-center justify-center gap-3">
-          <span
-            className={`text-xs font-bold transition-colors ${!isAnnual ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}
-          >
-            Ежемесячно
-          </span>
-          <button
-            onClick={() => setIsAnnual(!isAnnual)}
-            className="relative flex h-6 w-12 cursor-pointer items-center rounded-full bg-slate-200 p-1 transition-colors dark:bg-slate-800"
-          >
-            <div
-              className={`h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${isAnnual ? 'translate-x-6' : 'translate-x-0'}`}
-            />
-          </button>
-          <span
-            className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${isAnnual ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}
-          >
-            Ежегодно{' '}
-            <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-black text-emerald-600 dark:text-emerald-400">
-              Скидка 20%
+        <div className="mt-8 flex flex-col items-center justify-center gap-6 sm:flex-row sm:gap-12">
+          
+          {/* Переключатель ВАЛЮТЫ */}
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl border border-slate-200/40 dark:border-slate-700/30">
+            {(['RUB', 'BYN', 'USD'] as CurrencyCode[]).map((cur) => (
+              <button
+                key={cur}
+                onClick={() => setCurrency(cur)}
+                className={`text-[10px] font-black tracking-wider px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  currency === cur
+                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                }`}
+              >
+                {cur}
+              </button>
+            ))}
+          </div>
+
+          {/* Переключатель периода */}
+          <div className="flex items-center justify-center gap-3">
+            <span
+              className={`text-xs font-bold transition-colors ${!isAnnual ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}
+            >
+              Ежемесячно
             </span>
-          </span>
+            <button
+              onClick={() => setIsAnnual(!isAnnual)}
+              className="relative flex h-6 w-12 cursor-pointer items-center rounded-full bg-slate-200 p-1 transition-colors dark:bg-slate-800"
+            >
+              <div
+                className={`h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${isAnnual ? 'translate-x-6' : 'translate-x-0'}`}
+              />
+            </button>
+            <span
+              className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${isAnnual ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}
+            >
+              Ежегодно{' '}
+              <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+                Скидка 20%
+              </span>
+            </span>
+          </div>
         </div>
 
         {/* Сетка тарифов */}
@@ -93,7 +113,7 @@ export function Pricing() {
 
                 <div className="my-6 flex items-baseline gap-1.5">
                   <span className="text-4xl font-black tracking-tight text-slate-950 dark:text-white">
-                    {plan.price} ₽
+                    {plan.price} {plan.currencySymbol}
                   </span>
                   <span className="text-xs font-bold text-slate-400 dark:text-slate-500">
                     / мес
@@ -150,3 +170,4 @@ export function Pricing() {
     </section>
   );
 }
+

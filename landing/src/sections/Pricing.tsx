@@ -1,101 +1,114 @@
 import { useState } from 'react';
 import { Button } from '../components/Button';
+import { PricingModal } from '../components/PricingModal';
+import { getPricingPlans, type PricingPlan } from '../config/pricingPlans';
+
+interface ModalState {
+  isOpen: boolean;
+  planName: string;
+}
 
 export function Pricing() {
-  const [isAnnual, setIsAnnual] = useState(false);
+  const [isAnnual, setIsAnnual] = useState<boolean>(false);
+  const [modalState, setModalState] = useState<ModalState>({ isOpen: false, planName: '' });
 
-  const plans = [
-    {
-      name: 'Базовый',
-      price: '0',
-      description: 'Все основные инструменты для легкого старта',
-      features: ['До 30 записей в месяц', 'Каталог услуг и прайс', 'Онлайн-календарь 24/7', 'Базовая статистика клиентов'],
-      buttonText: 'Начать бесплатно',
-      isPopular: false,
-      tag: 'Для новичков',
-    },
-    {
-      name: 'Профессиональный',
-      price: isAnnual ? '390' : '490',
-      description: 'Максимум возможностей для роста вашего дохода',
-      features: ['Безлимитные записи клиентов', 'Умная CRM и история визитов', 'Черный список (Блокировка)', 'Аналитика прибыли за месяц', 'Приоритетная поддержка 24/7'],
-      buttonText: 'Активировать PRO',
-      isPopular: true,
-      tag: 'Рекомендуем',
-    },
-    {
-      name: 'Бизнес / Студия',
-      price: isAnnual ? '990' : '1190',
-      description: 'Для небольших студий, салонов и команд',
-      features: ['До 5 мастеров в одной витрине', 'Авто-напоминания клиентам', 'Рассылки по базе в Telegram', 'Экспорт базы в Excel/CSV', 'Персональный менеджер'],
-      buttonText: 'Подключить Студию',
-      isPopular: false,
-      tag: 'Для команд',
-    },
-  ];
+  const plans: PricingPlan[] = getPricingPlans(isAnnual);
+
+  const openModal = (planName: string): void => {
+    setModalState({ isOpen: true, planName });
+  };
+
+  const closeModal = (): void => {
+    setModalState({ isOpen: false, planName: '' });
+  };
 
   return (
-    <section id="pricing" className="bg-transparent py-24 px-4 select-none transition-colors duration-500 relative">
-      <div className="max-w-6xl mx-auto text-center">
-        
+    <section
+      id="pricing"
+      className="relative bg-transparent px-4 py-24 transition-colors duration-500 select-none"
+    >
+      <div className="mx-auto max-w-6xl text-center">
         <div className="mb-4">
-          <span className="text-[11px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1 rounded-md border border-indigo-100 dark:border-indigo-900/30">
+          <span className="rounded-md border border-indigo-100 bg-indigo-50 px-3 py-1 text-[11px] font-black tracking-widest text-indigo-600 uppercase dark:border-indigo-900/30 dark:bg-indigo-950/40 dark:text-indigo-400">
             Тарифы
           </span>
         </div>
-        <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+        <h2 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl dark:text-white">
           Инвестируйте в свой комфорт
         </h2>
 
         {/* Переключатель периода */}
-        <div className="flex items-center justify-center gap-3 mt-8">
-          <span className={`text-xs font-bold transition-colors ${!isAnnual ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}>Ежемесячно</span>
+        <div className="mt-8 flex items-center justify-center gap-3">
+          <span
+            className={`text-xs font-bold transition-colors ${!isAnnual ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}
+          >
+            Ежемесячно
+          </span>
           <button
             onClick={() => setIsAnnual(!isAnnual)}
-            className="w-12 h-6 bg-slate-200 dark:bg-slate-800 rounded-full p-1 transition-colors relative flex items-center cursor-pointer"
+            className="relative flex h-6 w-12 cursor-pointer items-center rounded-full bg-slate-200 p-1 transition-colors dark:bg-slate-800"
           >
-            <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${isAnnual ? 'translate-x-6' : 'translate-x-0'}`} />
+            <div
+              className={`h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${isAnnual ? 'translate-x-6' : 'translate-x-0'}`}
+            />
           </button>
-          <span className={`text-xs font-bold flex items-center gap-1.5 transition-colors ${isAnnual ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}>
-            Ежегодно <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] px-2 py-0.5 rounded font-black">Скидка 20%</span>
+          <span
+            className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${isAnnual ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}
+          >
+            Ежегодно{' '}
+            <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+              Скидка 20%
+            </span>
           </span>
         </div>
 
-        {/* Новая трехколоночная сетка */}
-        <div className="grid md:grid-cols-3 gap-6 mt-16 items-stretch">
+        {/* Сетка тарифов */}
+        <div className="mt-16 grid items-stretch gap-6 md:grid-cols-3">
           {plans.map((plan) => (
             <div
-              key={plan.name}
-              className={`bg-white dark:bg-slate-900/40 rounded-3xl p-6 lg:p-8 text-left flex flex-col justify-between transition-all duration-300 relative border ${
-                plan.isPopular 
-                  ? 'border-indigo-500 dark:border-indigo-500/80 neon-glow md:scale-105 z-10' 
+              key={plan.id}
+              className={`relative flex flex-col justify-between rounded-3xl border bg-white p-6 text-left transition-all duration-300 lg:p-8 dark:bg-slate-900/40 ${
+                plan.isPopular
+                  ? 'neon-glow z-10 border-indigo-500 md:scale-105 dark:border-indigo-500/80'
                   : 'border-slate-200/60 dark:border-slate-800/60'
               }`}
             >
-              {/* Верхний аккуратный бейдж для каждой карточки */}
-              <span className={`absolute -top-3 left-6 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-md shadow-sm ${
-                plan.isPopular 
-                  ? 'bg-linear-to-r from-indigo-600 to-purple-600 text-white' 
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700/50'
-              }`}>
+              <span
+                className={`absolute -top-3 left-6 rounded-md px-3 py-1 text-[9px] font-black tracking-widest uppercase shadow-sm ${
+                  plan.isPopular
+                    ? 'bg-linear-to-r from-indigo-600 to-purple-600 text-white'
+                    : 'border border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700/50 dark:bg-slate-800 dark:text-slate-400'
+                }`}
+              >
                 {plan.tag}
               </span>
-              
+
               <div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white mt-2">{plan.name}</h3>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium leading-relaxed min-h-8">{plan.description}</p>
-                
-                <div className="flex items-baseline gap-1.5 my-6">
-                  <span className="text-4xl font-black text-slate-950 dark:text-white tracking-tight">{plan.price} ₽</span>
-                  <span className="text-xs font-bold text-slate-400 dark:text-slate-500">/ month</span>
+                <h3 className="mt-2 text-lg font-black text-slate-900 dark:text-white">
+                  {plan.name}
+                </h3>
+                <p className="mt-1.5 min-h-8 text-[11px] leading-relaxed font-medium text-slate-400 dark:text-slate-500">
+                  {plan.description}
+                </p>
+
+                <div className="my-6 flex items-baseline gap-1.5">
+                  <span className="text-4xl font-black tracking-tight text-slate-950 dark:text-white">
+                    {plan.price} ₽
+                  </span>
+                  <span className="text-xs font-bold text-slate-400 dark:text-slate-500">
+                    / мес
+                  </span>
                 </div>
 
-                <div className="h-px bg-slate-100 dark:bg-slate-800/60 my-5" />
+                <div className="my-5 h-px bg-slate-100 dark:bg-slate-800/60" />
 
                 <ul className="space-y-3.5">
                   {plan.features.map((feat) => (
-                    <li key={feat} className="flex items-start gap-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 leading-tight">
-                      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-black text-[9px]">
+                    <li
+                      key={feat}
+                      className="flex items-start gap-2.5 text-xs leading-tight font-semibold text-slate-600 dark:text-slate-300"
+                    >
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-indigo-500/10 text-[9px] font-black text-indigo-600 dark:text-indigo-400">
                         ✓
                       </span>
                       {feat}
@@ -103,17 +116,37 @@ export function Pricing() {
                   ))}
                 </ul>
               </div>
-              <Button variant={plan.isPopular ? 'popular' : 'secondary'}>
-                {plan.buttonText}
-              </Button>
-              
+
+              <div className="mt-8">
+                {plan.price === '0' ? (
+                  <a
+                    href="https://t.me/mastervitrinabot"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block w-full"
+                  >
+                    <Button variant="secondary">{plan.buttonText}</Button>
+                  </a>
+                ) : (
+                  <Button
+                    variant={plan.isPopular ? 'popular' : 'secondary'}
+                    onClick={() => openModal(plan.name)}
+                    className="w-full cursor-pointer"
+                  >
+                    {plan.buttonText}
+                  </Button>
+                )}
+              </div>
             </div>
           ))}
         </div>
-
       </div>
+
+      <PricingModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        selectedPlan={modalState.planName}
+      />
     </section>
   );
 }
-
-

@@ -19,23 +19,22 @@ export function Header({ theme, toggleTheme }: HeaderProps) {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 glass-widget backdrop-blur-xl border-b border-white/20 dark:border-white/3 transition-colors duration-500 shadow-sm">
-      <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-        
-        <button 
+    <header className="glass-widget fixed top-0 right-0 left-0 z-40 border-b border-white/20 shadow-sm backdrop-blur-xl transition-colors duration-500 dark:border-white/3">
+      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
+        <button
           onClick={() => handleScroll('hero')}
-          className="text-xs font-black text-slate-900 dark:text-white tracking-widest uppercase flex items-center gap-1.5 cursor-pointer"
+          className="flex cursor-pointer items-center gap-1.5 text-xs font-black tracking-widest text-slate-900 uppercase dark:text-white"
         >
           <span className="text-indigo-500">⚡</span> booking.twa
         </button>
 
         <div className="flex items-center gap-6">
-          <nav className="hidden sm:flex items-center gap-6">
+          <nav className="hidden items-center gap-6 sm:flex">
             {menuItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => handleScroll(item.id)}
-                className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
+                className="cursor-pointer text-[11px] font-black tracking-wider text-slate-500 uppercase transition-colors hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400"
               >
                 {item.label}
               </button>
@@ -44,12 +43,11 @@ export function Header({ theme, toggleTheme }: HeaderProps) {
 
           <button
             onClick={toggleTheme}
-            className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer bg-slate-100/50 dark:bg-white/4 border border-slate-200/50 dark:border-white/5 px-3 py-1.5 rounded-full select-none active:scale-95"
+            className="cursor-pointer rounded-full border border-slate-200/50 bg-slate-100/50 px-3 py-1.5 text-[11px] font-black tracking-wider text-slate-700 uppercase transition-colors select-none hover:text-indigo-600 active:scale-95 dark:border-white/5 dark:bg-white/4 dark:text-slate-300 dark:hover:text-indigo-400"
           >
             {theme === 'dark' ? '☀️ Светлая' : '🌙 Темная'}
           </button>
         </div>
-
       </div>
     </header>
   );

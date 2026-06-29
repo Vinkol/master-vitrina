@@ -17,6 +17,7 @@ origins = [
     "http://127.0.0.1:5173",
     "https://*.serveo.net",
     "https://master-vitrina.vercel.app",
+    "https://master-vitrina-rmjc.vercel.app",
 ]
 
 # Настройка CORS

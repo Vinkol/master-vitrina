@@ -4,7 +4,6 @@ import uuid
 from datetime import date, time
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
-
 # СХЕМЫ АВТОРИЗАЦИИ
 class AuthRequest(BaseModel):
     init_data: str

@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str  
     TELEGRAM_BOT_TOKEN: str
     JWT_SECRET: str
+    ADMIN_TELEGRAM_ID: int
     
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_DAYS: int = 7

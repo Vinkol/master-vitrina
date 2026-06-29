@@ -48,5 +48,15 @@ services:
     depends_on:
       - backend_api
 
+  # 4. Сайт-Лендинг (Порт 8080)
+  landing_page:
+    build: ./landing
+    container_name: twa_landing
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend_api
+
 volumes:
   pg_twa_data:

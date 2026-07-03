@@ -3,7 +3,7 @@ import { useBookingStore } from '../store/useBookingStore';
 import { RegistrationForm } from './RegistrationForm';
 import { ClientRouter } from './ClientRouter';
 import { AdminRouter } from './AdminRouter';
-import { Loader } from '../shared/ui/loader/Loader';
+import { AppSplashLoader } from '../shared/ui/loader/AppSplashLoader';
 import { getStartParam } from '../shared/lib/getStartParam';
 import { useMasterProfile } from '../features/master/useMasterProfile';
 
@@ -21,7 +21,7 @@ export const AuthGuard: React.FC = () => {
   const { isLoading: isProfileLoading } = useMasterProfile();
 
   if (isAuthLoading) {
-    return <Loader text="Синхронизация с Telegram..." />;
+    return <AppSplashLoader text="Синхронизация..." />;
   }
 
   if (referralId) {
@@ -30,7 +30,7 @@ export const AuthGuard: React.FC = () => {
 
   if (isAuthenticated) {
     if (isRegisteredMaster && isProfileLoading) {
-      return <Loader text="Загрузка профиля мастера..." />;
+      return <AppSplashLoader text="Загрузка профиля мастера..." />;
     }
 
     const needsRegistration = !isRegisteredMaster;

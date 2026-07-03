@@ -1,4 +1,4 @@
-import { useAdminDashboard } from './useAdminDashboard';
+import { useAdminDashboard } from '../../pages/admin-dashboard/useAdminDashboard';
 import { DashboardHeader } from '../../components/admin/DashboardHeader';
 import { ManualBookingModal } from '../../features/manual-booking/ManualBookingModal';
 import { haptic } from '../../shared/lib/haptic/haptic';

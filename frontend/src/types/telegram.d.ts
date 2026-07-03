@@ -45,7 +45,7 @@ export interface TelegramWebApp {
     };
     start_param?: string;
   };
-  MainButton: TelegramMainButton; // Подставляем наш расширенный интерфейс кнопки
+  MainButton: TelegramMainButton;
   HapticFeedback?: TelegramHapticFeedback;
 }
 

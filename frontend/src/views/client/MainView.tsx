@@ -1,4 +1,4 @@
-import { useMainView } from './useMainView';
+import { useMainView } from '../../pages/client-main/useMainView';
 import { MasterProfileCard } from '../../components/client/MasterProfileCard';
 import { ServiceDetailSheet } from '../../components/client/ServiceDetailSheet';
 import { ServiceClientCard } from '../../entities/service/ServiceClientCard';

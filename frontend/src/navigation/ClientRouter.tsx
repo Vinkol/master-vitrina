@@ -1,5 +1,5 @@
-import { CalendarView } from '../pages/client-booking/CalendarView';
-import { MainView } from '../pages/client-booking/MainView';
+import { CalendarView } from '../views/client/CalendarView';
+import { MainView } from '../views/client/MainView';
 import { useBookingStore } from '../store/useBookingStore';
 import { BookingConfirmView } from '../views/client/BookingConfirmView';
 import { BookingSuccessView } from '../views/client/BookingSuccessView';

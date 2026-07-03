@@ -1,14 +1,14 @@
 import { useBookingStore } from '../store/useBookingStore';
-import { AdminLinkShareView } from '../views/admin/AdminLinkShareView';
-import { AdminProfileEditView } from '../views/admin/AdminProfileEditView';
+import { AdminLinkShareView } from '../pages/admin-link/AdminLinkShareView';
+import { AdminProfileEditView } from '../pages/admin-profile/AdminProfileEditView';
 import { TabBar } from './TabBar';
 // import { AdminPlaceholderView } from '../components/admin/AdminPlaceholderView';
-import { AdminDashboardView } from '../pages/admin-dashboard/AdminDashboardView';
-import { AdminServicesView } from '../pages/admin-services/AdminServicesView';
+import { AdminDashboardView } from '../views/admin/AdminDashboardView';
+import { AdminServicesView } from '../views/admin/AdminServicesView';
 import { AdminHoursEditView } from '../pages/admin-hours/AdminHoursEditView';
-import { AdminMainDashboardView } from '../pages/admin-dashboard/AdminMainDashboardView';
-import { AdminClientsCrmView } from '../pages/admin-clients/AdminClientsCrmView';
-import { AdminSettingsView } from '../views/admin/AdminSettingsView';
+import { AdminClientsCrmView } from '../views/admin/AdminClientsCrmView';
+import { AdminSettingsView } from '../pages/admin-settings/AdminSettingsView';
+import { AdminMainDashboardView } from '../views/admin/AdminMainDashboardView';
 
 export function AdminRouter() {
   const currentScreen = useBookingStore((state) => state.currentScreen);

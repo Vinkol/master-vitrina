@@ -81,7 +81,7 @@ export const createAuthSlice: StateCreator<BookingState, [], [], AuthState> = (s
           currentMasterId: startParam,
           isRegisteredMaster: false,
         });
-        store.fetchMasterData();
+        void store.fetchMasterData();
         store.setScreen('profile');
       } else {
         console.log('Приложение запущено в режиме мастера (админка)');

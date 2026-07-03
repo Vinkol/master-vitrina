@@ -4,8 +4,8 @@ import { CrmEmptyState } from '../../components/admin/CrmEmptyState';
 import { ClientCrmCard } from '../../entities/client/ClientCrmCard';
 import { Search, Users, X } from 'lucide-react';
 
-import { useClientsCrm } from './useClientsCrm';
-import { useIntersectionObserver } from '../../views/admin/useIntersectionObserver';
+import { useClientsCrm } from '../../pages/admin-clients/useClientsCrm';
+import { useIntersectionObserver } from '../../pages/admin-clients/useIntersectionObserver';
 import { haptic } from '../../shared/lib/haptic/haptic';
 import { ClientCrmSkeletonCard } from '../../components/admin/ClientCrmSkeletonCard';
 

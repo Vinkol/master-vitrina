@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "front:init": "npm run --prefix frontend i",
-    "front:dev": "npm run --prefix frontend dev",
+    "front:dev": "cd frontend && (start http://localhost:5173) && npm run dev",
     "front:build": "npm run --prefix frontend build",
     
     "back:init": "uv venv --python 3.12 backend/.venv && cd backend && uv add fastapi \"uvicorn[standard]\" pydantic-settings sqlalchemy asyncpg alembic pyjwt passlib",

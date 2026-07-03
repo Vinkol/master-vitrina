@@ -1,4 +1,4 @@
-import type { RefObject } from 'react';
+import { useMemo, type RefObject } from 'react';
 import type { CalendarDay, Appointment } from '../../types';
 
 interface CalendarRibbonProps {
@@ -18,20 +18,27 @@ export function CalendarRibbon({
   appointments,
   onDaySelect,
 }: CalendarRibbonProps) {
+  const appointmentsCountMap = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (let i = 0; i < appointments.length; i++) {
+      const dateStr = appointments[i].date.toString();
+      counts[dateStr] = (counts[dateStr] || 0) + 1;
+    }
+    return counts;
+  }, [appointments]);
+
   return (
     <div className="bg-white p-4 rounded-3xl shadow-xs border border-slate-100 space-y-2">
       <div
         ref={scrollRef}
-        className="flex space-x-2 overflow-x-auto pb-2 pt-1 scrollbar-none snap-x scroll-smooth"
+        className="flex space-x-2 overflow-x-auto pb-2 pt-1 scrollbar-none snap-x snap-mandatory scroll-smooth will-change-transform"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {daysList.map((day) => {
           const dayIsoStr = day.isoDate.toString();
           const isSelected = selectedDate.toString() === dayIsoStr;
           const isToday = dayIsoStr === todayIso.toString();
-          const dayAppointmentsCount = appointments.filter(
-            (app) => app.date.toString() === dayIsoStr,
-          ).length;
+          const dayAppointmentsCount = appointmentsCountMap[dayIsoStr] || 0;
           const hasAppointments = dayAppointmentsCount > 0;
 
           return (

@@ -12,7 +12,7 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
   botAppName: 'app',
   isRegistered: null,
   isOwner: false,
-
+  fetchError: false,
   selectedService: null,
   selectedDate: '',
   selectedTime: '',
@@ -38,6 +38,7 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
       selectedService: null,
       selectedDate: '',
       selectedTime: '',
+      fetchError: false,
     });
   },
 
@@ -46,7 +47,7 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
     if (!masterId) return;
 
     try {
-      set({ isRegistered: true });
+      set({ isRegistered: true, fetchError: false });
       const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000';
 
       console.log('Загрузка публичных данных мастера для клиента...');
@@ -73,6 +74,7 @@ export const createBookingSlice: StateCreator<BookingState, [], [], BookingSlice
       });
     } catch (e) {
       console.error('Ошибка при загрузке публичных данных мастера для витрины:', e);
+      set({ fetchError: true });
     }
   },
 });

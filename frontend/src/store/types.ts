@@ -100,6 +100,7 @@ export interface BookingSlice {
   botUsername: string;
   botAppName: string;
   isRegistered: boolean | null;
+  fetchError: boolean;
   selectedService: Service | null;
   selectedDate: string;
   selectedTime: string;

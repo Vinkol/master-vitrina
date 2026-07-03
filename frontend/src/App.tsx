@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { AuthGuard } from './navigation/AuthGuard';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import { ErrorBoundary } from './shared/ui/error/ErrorBoundary';
 
 export default function App() {
   useEffect(() => {
@@ -11,9 +12,9 @@ export default function App() {
   }, []);
 
   return (
-    <>
+    <ErrorBoundary>
       <AuthGuard />
       <SpeedInsights />
-    </>
+    </ErrorBoundary>
   );
 }

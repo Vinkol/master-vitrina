@@ -12,6 +12,7 @@ export const AuthGuard: React.FC = () => {
   const isAuthLoading = useBookingStore((state) => state.isLoading);
   const isAuthenticated = useBookingStore((state) => state.isAuthenticated);
   const isRegisteredMaster = useBookingStore((state) => state.isRegisteredMaster);
+  const fetchError = useBookingStore((state) => state.fetchError);
   const referralId = getStartParam();
 
   useEffect(() => {
@@ -19,6 +20,10 @@ export const AuthGuard: React.FC = () => {
   }, [initAuth]);
 
   const { isLoading: isProfileLoading } = useMasterProfile();
+
+  if (fetchError) {
+    throw new Error('ShowcaseNotFound');
+  }
 
   if (isAuthLoading) {
     return <AppSplashLoader text="Синхронизация..." />;

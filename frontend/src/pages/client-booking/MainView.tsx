@@ -1,14 +1,14 @@
 import { useMainView } from './useMainView';
 import { MasterProfileCard } from '../../components/client/MasterProfileCard';
 import { ServiceDetailSheet } from '../../components/client/ServiceDetailSheet';
-import { Loader } from '../../shared/ui/loader/Loader';
 import { ServiceClientCard } from '../../entities/service/ServiceClientCard';
+import { AppSplashLoader } from '../../shared/ui/loader/AppSplashLoader';
 
 export function MainView() {
   const view = useMainView();
 
   if (!view.masterProfile) {
-    return <Loader text="Загрузка витрины мастера..." />;
+    return <AppSplashLoader text="Загрузка витрины мастера..." />;
   }
 
   return (

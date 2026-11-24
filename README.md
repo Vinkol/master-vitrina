@@ -1,6 +1,11 @@
-#  МАСТЕР ВИТРИНА — Telegram Mini App (TWA)
+# Master Vitrina
 
-Full-stack веб-приложение (Telegram Mini App) для автоматизации онлайн-записи бьюти-мастеров, барберов и независимых специалистов в СНГ, развёрнутое в изолированном Docker-контуре.
+Full-stack Telegram Mini App (TWA) для автоматизации онлайн-записи, управления расписанием и ведения клиентской базы (CRM).
+
+**Landing Page:** [Landing](master-vitrina-rmjc.vercel.app/)  
+**Telegram Mini App (Bot):** [@mastervitrinabot](https://t.me/mastervitrinabot)
+
+---
 
 <div align="center">
   <table border="0" cellpadding="0" cellspacing="0">
@@ -21,72 +26,91 @@ Full-stack веб-приложение (Telegram Mini App) для автомат
   </table>
 </div>
 
+---
 
-## 🏗 Архитектура приложения
+## Технологический стек
 
-Проект спроектирован по классической трехзвенной схеме и полностью контейнеризирован:
+### Frontend (`/frontend`)
+- **Core:** React 19, TypeScript, Vite
+- **State Management & Data Fetching:** TanStack Query (server state, кэширование, инвалидация), Zustand (client/UI state), Axios
+- **Styling & UI:** Tailwind CSS v4, Lucide Icons
+- **Telegram & Media:** `@twa-dev/sdk` (нативная навигация, MainButton, HapticFeedback), `browser-image-compression` (оптимизация изображений на клиенте перед загрузкой)
+- **Storage & Monitoring:** `@supabase/supabase-js`, Vercel Speed Insights
+
+### Backend (`/backend`)
+- **Core:** Python 3.11+, FastAPI
+- **Database & ORM:** PostgreSQL 16 (Supabase), SQLAlchemy (asyncpg), Alembic
+- **Security:** JWT-авторизация с валидацией подписи `initData` от Telegram WebApp
+
+### Инфраструктура и качество кода
+- **Контейнеризация и CI:** Docker Compose, GitHub Actions
+- **Тестирование:** Vitest, React Testing Library, jsdom
+- **Линтинг и форматирование:** ESLint (flat config), Prettier, Husky + lint-staged
+
+---
+
+## Структура репозитория
 
 ```text
-┌────────────────────────────────────────────────────────┐
-│              Telegram Mini App (Frontend)              │
-│  React 19 / Vite SPA  ➔  Zustand State  ➔  Axios Client │
-└───────────────────────────┬────────────────────────────┘
-                            │
-                            │ API-запросы (JWT Bearer)
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│              Python FastAPI (Backend API)              │
-│  SQLAlchemy ORM  ➔  Alembic Migrations  ➔  JWT Guard   │
-└───────────────────────────┬────────────────────────────┘
-                            │
-                            │ Драйвер asyncpg
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│               PostgreSQL 16 (Data Layer)               │
-│       Таблицы: user_master, client, services...        │
-└────────────────────────────────────────────────────────┘
+master-vitrina/
+├── frontend/               # Клиентское SPA-приложение (Telegram Mini App)
+├── backend/                # REST API сервис (FastAPI) и миграции БД
+├── landing/                # Промо-лендинг проекта
+├── .github/workflows/      # CI/CD и автоматизация обслуживания БД
+├── docker-compose.yml      # Оркестрация сервисов для локальной разработки
+└── .env.example            # Шаблон переменных окружения
 ```
-### 💻 Frontend Component (Клиентская часть)
-- Развёрнут на **React 19** и **Vite**.
-- Локальное состояние и кэширование данных координируются через **Zustand**.
-- Стилизация построена на базе **Tailwind CSS v4** с использованием аппаратных анимаций выезда шторок (*Bottom Sheets*).
-- Интегрирован **Telegram WebApp SDK**: нативная работа с кнопкой `MainButton`, тактильные микровибрации смартфона через `HapticFeedback` и бесшовное сворачивание TWA при переходе в чат техподдержки.
 
-### 🐍 Backend Component (Серверная часть)
-- Высокопроизводительный асинхронный API-сервер на **Python 3.11+ / FastAPI**.
-- Безопасность: авторизация по Telegram ID с выдачей защищенных JWT-токенов доступа.
-- Работа с базой организована через асинхронный движок **SQLAlchemy (asyncpg)**.
-- Контроль структуры таблиц и версионирование схемы данных реализованы через **Alembic**.
+---
 
-### 🛢 Data Layer (Слой данных)
-- Реляционная СУБД **PostgreSQL 16 (Alpine)**.
-- Архитектура таблиц включает автоматическую генерацию UUID (`gen_random_uuid()`), хранение сложных конфигураций рабочих дней в массивах `JSONB` и каскадное удаление зависимых записей (`ON DELETE CASCADE`).
+## Архитектурные решения
 
+1. **Разделение стейта:** Серверные данные, кэширование запросов и фоновое обновление изолированы в **TanStack Query**, тогда как глобальное состояние интерфейса (модальные окна, шторки, текущая сессия) управляется через **Zustand**.
+2. **Оптимизация медиа на клиенте:** Загружаемые мастерами фотографии сжимаются и конвертируются непосредственно в браузере (`browser-image-compression`) до отправки в облачное хранилище, что снижает нагрузку на сеть в мобильном клиенте Telegram.
+3. **Интеграция с Telegram WebApp:** Приложение адаптируется под цветовую схему клиента Telegram, использует нативную кнопку `MainButton` для целевых действий и тактильный отклик (`HapticFeedback`).
+4. **Безопасность данных:** Аутентификация строится на проверке криптографической подписи `initData` на стороне бэкенда с последующей выдачей JWT-токена.
 
-## 🛠 Контур автоматизации и контроля качества (CI/CD)
+---
 
-1. **Тестовая среда (Vitest):** Быстрый запуск юнит- и интеграционных тестов в среде `jsdom`. Написаны сценарии для проверки моков Telegram SDK и фолбэков.
-2. **Git Hooks (Husky + lint-staged):** Робот перехватывает команду `git commit`. Он изолирует измененные файлы, форматирует их через `Prettier` по единому стандарту (`.prettierrc`) и запускает тесты. Если тест упал — коммит блокируется.
-3. **Строгий TypeScript:** Конфигурация `tsconfig.json` переведена на современный стандарт разрешения модулей `bundler`, включены строгие правила типизации (запрет `any`, контроль switch-case).
+## Локальный запуск
 
+### Вариант 1: Полный стек через Docker Compose
 
-## 🚀 Быстрый запуск в Docker (Локально)
-1. **Клонируйте проект:**
+1. Клонируйте репозиторий и создайте файл конфигурации:
    ```bash
-   git clone https://github.com
+   git clone https://github.com/Vinkol/master-vitrina.git
    cd master-vitrina
+   cp .env.example .env
    ```
-2. **Настройте окружение:**
-   Создайте файл `.env` в корне проекта на основе `.env.example` и укажите данные для подключения к БД и токен вашего Telegram-бота.
+   *(Заполните переменные окружения в `.env`)*
 
-3. **Запустите всю инфраструктуру одной командой:**
+2. Запустите контейнеры:
    ```bash
    docker-compose up --build
    ```
-   *Docker автоматически соберет бэкенд на FastAPI, поднимет PostgreSQL, применит миграции, скомпилирует фронтенд на React и начнет раздавать его через Nginx на 3000 порту.*
+   - Frontend: `http://localhost:3000`
+   - Backend API / Swagger UI: `http://localhost:8000/docs`
 
-4. **Генерация тестовой CRM-базы (Опционально):**
-   Чтобы наполнить админку тестовыми клиентами для проверки аналитики визитов, выполните внутри контейнера бэкенда:
+3. *(Опционально)* Заполнение базы тестовыми данными CRM:
    ```bash
    docker exec -it twa_fastapi python -m src.seed_crm
    ```
+
+### Вариант 2: Отладка Frontend внутри Telegram (Tunnel)
+
+Для тестирования TWA на мобильном устройстве предусмотрен скрипт поднятия публичного HTTPS-туннеля через Serveo:
+
+```bash
+cd frontend
+npm install
+npm run dev:tg
+```
+
+---
+
+## Скрипты Frontend
+
+- `npm run dev` — запуск dev-сервера Vite
+- `npm run dev:tg` — параллельный запуск Vite и SSH-туннеля (`serveo.net`) для теста в Telegram
+- `npm run build` — проверка типов (`tsc`) и production-сборка
+- `npm run lint` / `npm run format` — проверка и автоформатирование кода

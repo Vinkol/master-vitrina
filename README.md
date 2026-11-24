@@ -2,8 +2,10 @@
 
 Full-stack Telegram Mini App (TWA) для автоматизации онлайн-записи, управления расписанием и ведения клиентской базы (CRM).
 
-**Landing Page:** [master-vitrina-rmjc.vercel.app](https://master-vitrina-rmjc.vercel.app) 
-**Telegram Mini App (Bot):** [@mastervitrinabot](https://t.me/mastervitrinabot)
+<p>
+  <strong>Landing Page:</strong> <a href="https://master-vitrina-rmjc.vercel.app" target="_blank" rel="noopener noreferrer">master-vitrina-rmjc.vercel.app</a><br>
+  <strong>Telegram Mini App (Bot):</strong> <a href="https://t.me/mastervitrinabot" target="_blank" rel="noopener noreferrer">@mastervitrinabot</a>
+</p>
 
 ---
 

@@ -44,6 +44,11 @@ Full-stack Telegram Mini App (TWA) для автоматизации онлай�
 - **Database & ORM:** PostgreSQL 16 (Supabase), SQLAlchemy (asyncpg), Alembic
 - **Security:** JWT-авторизация с валидацией подписи `initData` от Telegram WebApp
 
+### Landing (`/landing`)
+- **Core:** React, TypeScript, Vite, Tailwind CSS
+- **Architecture:** Модульная структура (`sections`, `components`, `hook`, `services`, `config`) с вынесенной бизнес-логикой и конфигурацией
+- **Purpose:** Промо-лендинг продукта с презентацией функционала и переходом в Telegram-бот
+
 ### Инфраструктура и качество кода
 - **Контейнеризация и CI:** Docker Compose, GitHub Actions
 - **Тестирование:** Vitest, React Testing Library, jsdom
